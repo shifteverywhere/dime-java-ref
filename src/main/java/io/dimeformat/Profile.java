@@ -13,11 +13,26 @@ public enum Profile {
     /**
      * Undefined profile, used when a profile wasn't set properly, for errors.
      */
-    UNDEFINED,
+    UNDEFINED(0x00),
     /**
      * First generation cryptographic profile. Ed25519 for identity keys, X25519 for key exchange (agreement),
      * Blake2b-256 for hashes, and XYZ for encryption.
      */
-    UNO
+    UNO(0x01);
+
+    Profile(int value) {
+        this.value = value;
+    }
+
+    public int value;
+
+    public static Profile valueOf(int value) {
+
+        switch (value) {
+            case 0x00: return Profile.UNDEFINED;
+            case 0x01: return Profile.UNO;
+            default: throw new IllegalStateException("Unexpected value: " + value);
+        }
+    }
 
 }

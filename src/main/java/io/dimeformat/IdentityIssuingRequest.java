@@ -8,6 +8,9 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeDateException;
+import io.dimeformat.exceptions.DimeFormatException;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -46,7 +49,7 @@ public class IdentityIssuingRequest extends Item {
         return this;
     }
 
-    public void verify(Key key) {
+    public void verify(Key key) throws DimeDateException {
         super.verify(key);
     }
 
@@ -69,7 +72,7 @@ public class IdentityIssuingRequest extends Item {
     /// PROTECTED ///
 
     @Override
-    protected void decode(String encoded) {
+    protected void decode(String encoded) throws DimeFormatException {
 
     }
 

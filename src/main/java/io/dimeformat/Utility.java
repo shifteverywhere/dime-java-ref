@@ -48,11 +48,16 @@ public final class Utility {
     }
 
     public static byte[] combine(byte[] first, byte[] second) {
-        return null;
+        byte[] result = new byte[first.length + second.length];
+        System.arraycopy(first, 0, result, 0, first.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 
     public static byte[] subArray(byte[] array, int start, int length) {
-        return null;
+        byte[] result = new byte[length];
+        System.arraycopy(array, start, result, 0, length);
+        return result;
     }
 
     public static byte[] subArray(byte[] array, int start) {

@@ -8,6 +8,11 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeDateException;
+import io.dimeformat.exceptions.DimeFormatException;
+
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.UnexpectedException;
 import java.util.UUID;
 
 public abstract class Item {
@@ -19,44 +24,61 @@ public abstract class Item {
     public abstract UUID getUniqueId();
 
     public boolean isSigned() {
-        return this._signature != null;
+        return (this._signature != null);
     }
 
-    public static Item importItem(String encoded) {
-        return null;
+    public static <T extends Item> T importFromEncoded(String encoded) throws DimeFormatException {
+        Envelope envelope = Envelope.importFromEncoded(encoded);
+        Item[] items = envelope.getItems();
+        if (items.length > 1) { throw new DimeFormatException("Multiple items found, import as 'Envelope' instead."); }
+        return (T)items[0];
     }
 
-    public String exportItem() {
-        return null;
+    public String exportToEncoded() {
+        Envelope envelope = new Envelope();
+        envelope.addItem(this);
+        return envelope.exportToEncoded();
     }
 
-    public String toEncoded() {
-        return null;
-    }
-
-    public static Item fromEncoded(String encoded) {
-        return null;
+    public static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
+        Class t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
+        T item = null;
+        try {
+            item = (T)t.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+           throw new DimeFormatException("Unexpected exception (I1001).", e);
+        }
+        item.decode(encoded);
+        return item;
     }
 
     public void sign(Key key) {
 
     }
 
-    public String Thumbprint() {
-        return Item.Thumbprint(this.toEncoded());
+    public String thumbprint() {
+        return Item.thumbprint(this.toEncoded());
     }
 
-    public static String Thumbprint(String encoded) {
+    public static String thumbprint(String encoded) {
         return null;
     }
 
-    // internal static Type TypeFromTag(string iid)
+    private static Class classFromTag(String tag) {
+        switch (tag) {
+            case Identity.TAG: return Identity.class;
+            case IdentityIssuingRequest.TAG: return IdentityIssuingRequest.class;
+            case Message.TAG: return Message.class;
+            case Key.TAG: return Key.class;
+            default: return null;
+        }
+    }
 
     public void verify(String publicKey) {
 
     }
 
-    public void verify(Key key) {
+    public void verify(Key key) throws DimeDateException {
 
     }
 
@@ -65,7 +87,7 @@ public abstract class Item {
     protected String _encoded;
     protected String _signature;
 
-    protected abstract void decode(String encoded);
+    protected abstract void decode(String encoded) throws DimeFormatException;
 
     protected abstract String encode();
 

@@ -8,6 +8,23 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.DimeUnsupportedProfileException;
+import io.dimeformat.libsodium.Sodium;
+import com.goterl.lazysodium.LazySodium;
+import com.goterl.lazysodium.LazySodiumJava;
+import com.goterl.lazysodium.SodiumJava;
+import com.goterl.lazysodium.exceptions.SodiumException;
+import com.goterl.lazysodium.interfaces.*;
+//import com.goterl.lazysodium.utils.Key;
+import com.goterl.lazysodium.utils.KeyPair;
+import com.goterl.lazysodium.utils.LibraryLoader;
+import com.sun.jna.NativeLong;
+
+import java.util.UUID;
+
+import static io.dimeformat.KeyType.*;
+
 public class Crypto {
 
     /// PUBLIC ///
@@ -22,12 +39,25 @@ public class Crypto {
         return null;
     }
 
-    public static boolean verifySignature(String data, Key key) {
-        return false;
+    public static boolean verifySignature(String data, String signature, Key key) throws DimeIntegrityException {
+       throw new DimeIntegrityException("");
     }
 
-    public static Key generateKey(Profile profile, KeyType type) {
-        return null;
+    public static io.dimeformat.Key generateKey(Profile profile, KeyType type) throws DimeUnsupportedProfileException {
+        if (!Crypto.isSupportedProfile(profile)) { throw new DimeUnsupportedProfileException(); }
+        byte[] publicKey = new byte[32];
+        byte[] secretKey = new byte[32];
+        switch (type) {
+            case IDENTITY:
+                sodium.crypto_sign_keypair(publicKey, secretKey);
+                break;
+            case EXCHANGE:
+                sodium.crypto_kx_keypair(publicKey, secretKey);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown or unsupported key type.");
+        }
+        return new io.dimeformat.Key(UUID.randomUUID(), type, secretKey, publicKey, profile);
     }
 
     public static Key generateSharedSecret(Key localKey, Key remoteKey, byte[] salt, byte[] info) {
@@ -48,5 +78,6 @@ public class Crypto {
 
     /// PRIVATE ///
 
+    private static final SodiumJava sodium = new SodiumJava();
 
 }

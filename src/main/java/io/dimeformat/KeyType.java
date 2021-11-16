@@ -16,22 +16,40 @@ public enum KeyType {
     /**
      * Undefined usage of the key (should not happen).
      */
-    UNDEFINED,
+    UNDEFINED(0x00),
     /**
      * Key type for asymmetric key used for signing.
      */
-    IDENTITY,
+    IDENTITY(0x10),
     /**
      * Key type for asymmetric keys used for key exchange (agreement).
      */
-    EXCHANGE,
+    EXCHANGE(0x20),
     /**
      * Key type for secret (symmetric) keys, used for encryption.
      */
-    SECRET,
+    SECRET(0xE0),
     /**
      * Key type for shared (symmetric) keys, multipurpose.
      */
-    SHARED
+    SHARED(0xF0);
+
+    KeyType(int value) {
+        this.value = value;
+    }
+
+    public final int value;
+
+    public static KeyType valueOf(int value) {
+
+        switch (value) {
+            case 0x00: return KeyType.UNDEFINED;
+            case 0x10: return KeyType.IDENTITY;
+            case 0x20: return KeyType.EXCHANGE;
+            case 0xE0: return KeyType.SECRET;
+            case 0xF0: return KeyType.SHARED;
+            default: throw new IllegalStateException("Unexpected value: " + value);
+        }
+    }
 
 }
