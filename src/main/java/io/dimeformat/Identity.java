@@ -59,6 +59,11 @@ public class Identity extends Item {
     }
 
     // public [String, Any] getPrinciples() {}
+
+    public List<String> getAmbits() {
+        return this._claims.amb;
+    }
+
     // public [String] getAmbit() {}
 
     public Identity getTrustChain() {
@@ -96,7 +101,11 @@ public class Identity extends Item {
     }
 
     public boolean hasCapability(Capability capability) {
-       return this._claims.cap.contains(capability);
+       return (this._claims.cap != null) ? this._claims.cap.contains(capability) : false;
+    }
+
+    public boolean hasAmbit(String ambit) {
+        return (this._claims.amb != null) ? this._claims.amb.contains(ambit) : false;
     }
 
     public static Identity fromEncoded(String encoded) throws DimeFormatException {
@@ -109,7 +118,7 @@ public class Identity extends Item {
 
     Identity() { }
 
-    Identity(String systemName, UUID subjectId, String publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, String[] ambit) {
+    Identity(String systemName, UUID subjectId, String publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, List<String> ambit) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
         this._claims = new IdentityClaims(systemName,
                 UUID.randomUUID(),
@@ -120,8 +129,9 @@ public class Identity extends Item {
                 publicKey,
                 null,
                 principles,
-                ambit);
+                null);
         this._claims.cap = capabilities;
+        this._claims.amb = ambit;
     }
 
     void setTrustChain(Identity trustChain) {

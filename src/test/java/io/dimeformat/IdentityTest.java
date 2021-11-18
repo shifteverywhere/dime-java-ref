@@ -228,4 +228,18 @@ class IdentityTest {
         }
     }
 
+    @Test
+    void ambitTest1() {
+        try { 
+            String[] ambit = new String[] { "global", "administrator" };
+            Key key = Key.generateKey(KeyType.IDENTITY);
+            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambit);
+            assertEquals(2, identity.getAmbits().size());
+            assertTrue(identity.hasAmbit(ambit[0]));
+            assertTrue(identity.hasAmbit(ambit[1]));
+        } catch (Exception e) { 
+            fail("Unexpected exception thrown: " + e); 
+        }
+    }
+
 }

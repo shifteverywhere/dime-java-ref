@@ -189,7 +189,8 @@ public class IdentityIssuingRequest extends Item {
             Instant now = Instant.now();
             Instant expires = now.plusSeconds(validFor);
             UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
-            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, this._claims.cap, null/*this._claims.pri*/, ambit);
+            List<String> ambitList = (ambit != null) ? Arrays.asList(ambit) : null;
+            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, this._claims.cap, null/*this._claims.pri*/, ambitList);
             if (Identity.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId() != Identity.getTrustedIdentity().getSubjectId()) {
                 issuerIdentity.verifyTrust();
                 // The chain will only be set if this is not the trusted identity (and as long as one is set)
