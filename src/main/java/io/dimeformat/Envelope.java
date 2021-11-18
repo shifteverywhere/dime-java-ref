@@ -10,11 +10,11 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import org.json.JSONObject;
-
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.UUID;
 
 public class Envelope {
@@ -24,15 +24,15 @@ public class Envelope {
     public static final String HEADER = "Di";
 
     public UUID getIssuerId() {
-        return this._claims.iss;
+        return (this._claims != null) ? this._claims.iss : null;
     }
 
     public Instant getIssuedAt() {
-        return this._claims.iat;
+        return (this._claims != null) ? this._claims.iat : null;
     }
 
     public String getContext() {
-        return this._claims.ctx;
+        return (this._claims != null) ? this._claims.ctx : null;
     }
 
     public Item[] getItems() {
@@ -49,6 +49,10 @@ public class Envelope {
 
     public Envelope() { }
 
+    public Envelope(UUID issuerId) {
+        this(issuerId, null);
+    }
+
     public Envelope(UUID issuerId, String context) {
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         this._claims = new EnvelopeClaims(issuerId, Instant.now(), context);
@@ -61,7 +65,8 @@ public class Envelope {
         String[] components = sections[0].split("\\" + Envelope._COMPONENT_DELIMITER);
         Envelope envelope;
         if (components.length == 2) {
-            envelope = new Envelope(Utility.fromBase64(components[1]));
+            byte[] json = Utility.fromBase64(components[1]);
+            envelope = new Envelope(new String(json, StandardCharsets.UTF_8));
         } else if (components.length == 1) {
             envelope = new Envelope();
         } else {
@@ -97,7 +102,7 @@ public class Envelope {
         return this;
     }
 
-    public Envelope sign(Key key) {
+    public Envelope sign(Key key) throws DimeUnsupportedProfileException {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
         if (this._signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
         if (this._items == null || this._items.size() == 0) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
@@ -105,11 +110,11 @@ public class Envelope {
         return this;
     }
 
-    public Envelope verify(String publicKey) throws DimeIntegrityException {
+    public Envelope verify(String publicKey) throws DimeIntegrityException, DimeUnsupportedProfileException, DimeFormatException {
         return verify(new Key(publicKey));
     }
 
-    public Envelope verify(Key key) throws DimeIntegrityException {
+    public Envelope verify(Key key) throws DimeIntegrityException, DimeUnsupportedProfileException {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         if (this._signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
         Crypto.verifySignature(encode(), this._signature, key);
@@ -125,7 +130,7 @@ public class Envelope {
         }
     }
 
-    public String thumbprint() {
+    public String thumbprint() throws DimeUnsupportedProfileException {
         String encoded = encode();
         if (!this.isAnonymous()) {
             encoded += Envelope._SECTION_DELIMITER + this._signature;
@@ -133,8 +138,8 @@ public class Envelope {
         return Envelope.thumbprint(encoded);
     }
 
-    public static String thumbprint(String encoded) {
-        return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded));
+    public static String thumbprint(String encoded) throws DimeUnsupportedProfileException {
+        return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded.getBytes(StandardCharsets.UTF_8)));
     }
 
     /// PACKAGE-PRIVATE ///
@@ -156,18 +161,18 @@ public class Envelope {
             this.ctx = ctx;
         }
 
-        public EnvelopeClaims(byte[] json) {
+        public EnvelopeClaims(String json) {
             JSONObject jsonObject = new JSONObject(json);
-            this.iss = UUID.fromString(jsonObject.getString("iss"));
-            this.iat = Instant.parse(jsonObject.getString("iat"));
-            this.ctx = jsonObject.getString("ctx");
+            this.iss = jsonObject.has("iss") ? UUID.fromString(jsonObject.getString("iss")) : null;
+            this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
+            this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
         }
 
         public String toJSONString() {
             JSONObject jsonObject = new JSONObject();
             if (this.iss != null) { jsonObject.put("iss", this.iss.toString()); }
             if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
-            if (this.ctx != null) { jsonObject.put("key", this.ctx); }
+            if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
             return jsonObject.toString();
         }
 
@@ -178,7 +183,7 @@ public class Envelope {
     private String _encoded;
     private String _signature;
 
-    private Envelope(byte[] json) {
+    private Envelope(String json) {
         this._claims = new EnvelopeClaims(json);
     }
 

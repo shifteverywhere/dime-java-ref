@@ -10,19 +10,18 @@ package io.dimeformat;
 
 public enum KeyVariant {
 
-    PRIVATE(0x00),
+    SECRET(0x00),
     PUBLIC(0x01);
 
     KeyVariant(int value) {
-        this.value = value;
+        this.value = (byte)value;
     }
 
-    public final int value;
+    public final byte value;
 
-    public static KeyVariant valueOf(int value) {
-
+    public static KeyVariant valueOf(byte value) {
         switch (value) {
-            case 0x00: return KeyVariant.PRIVATE;
+            case 0x00: return KeyVariant.SECRET;
             case 0x01: return KeyVariant.PUBLIC;
             default: throw new IllegalStateException("Unexpected value: " + value);
         }

@@ -65,7 +65,10 @@ public final class Utility {
     }
 
     public static byte[] prefix(byte prefix, byte[] array) {
-        return null;
+        byte[] bytes = new byte[array.length + 1];
+        System.arraycopy(array, 0, bytes, 1, array.length);
+        bytes[0] = prefix;
+        return bytes;
     }
 
     public static String toTimestamp(Date date) {

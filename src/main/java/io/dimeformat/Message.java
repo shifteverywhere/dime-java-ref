@@ -8,13 +8,10 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeDateException;
-import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
-
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Date;
 import java.util.UUID;
 
 public class Message extends Item {
@@ -86,7 +83,7 @@ public class Message extends Item {
     }
 
     @Override
-    public void sign(Key key) {
+    public void sign(Key key) throws DimeUnsupportedProfileException {
         if (this._payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
         super.sign(key);
     }
@@ -104,7 +101,7 @@ public class Message extends Item {
     }
 
     @Override
-    public void verify(Key key) throws DimeDateException {
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException {
         if (this._payload == null || this._payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
         // Verify IssuedAt and ExpiresAt
         Instant now = Instant.now();
@@ -114,20 +111,20 @@ public class Message extends Item {
         super.verify(key);
     }
 
-    public void verify(String publicKey, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException {
+    public void verify(String publicKey, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeUnsupportedProfileException {
         verify(new Key(publicKey), linkedItem);
     }
 
-    public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException {
+    public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeUnsupportedProfileException {
         verify(key);
         if (linkedItem != null) {
             if (this._claims.lnk == null || this._claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
             String[] components = this._claims.lnk.split("\\" + Envelope._COMPONENT_DELIMITER);
             if (components == null || components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
-            if (components[Message._LINK_ITEM_TYPE_INDEX] != linkedItem.getTag()
-                    || components[Message._LINK_UID_INDEX] != linkedItem.getUniqueId().toString()
-                    || components[Message._LINK_THUMBPRINT_INDEX] != msgHash) {
+            if (components[Message._LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
+                    || components[Message._LINK_UID_INDEX].compareTo(linkedItem.getUniqueId().toString()) != 0
+                    || components[Message._LINK_THUMBPRINT_INDEX].compareTo(msgHash) != 0) {
                 throw new DimeIntegrityException("Failed to verify link Dime item (provided item did not match).");
             }
         }
@@ -138,7 +135,11 @@ public class Message extends Item {
         this._payload = Utility.toBase64(payload);
     }
 
-    public void setPayload(byte[] payload, Key localKey, Key remoteKey, byte[] salt) {
+    public void setPayload(byte[] payload, Key localKey, Key remoteKey) throws DimeUnsupportedProfileException, DimeKeyMismatchException {
+        setPayload(payload, localKey, remoteKey, null);
+    }
+
+    public void setPayload(byte[] payload, Key localKey, Key remoteKey, byte[] salt) throws DimeUnsupportedProfileException, DimeKeyMismatchException {
         throwIfSigned();
         if (localKey == null || localKey.getSecret() == null) { throw new IllegalArgumentException("Provided local key may not be null."); }
         if (remoteKey == null || remoteKey.getPublic() == null) { throw new IllegalArgumentException("Provided remote key may not be null."); }
@@ -154,7 +155,11 @@ public class Message extends Item {
         return Utility.fromBase64(this._payload);
     }
 
-    public byte[] getPayload(Key localKey, Key remoteKey, byte[] salt) throws DimeFormatException {
+    public byte[] getPayload(Key localKey, Key remoteKey) throws DimeFormatException, DimeUnsupportedProfileException, DimeKeyMismatchException {
+        return getPayload(localKey, remoteKey, null);
+    }
+
+    public byte[] getPayload(Key localKey, Key remoteKey, byte[] salt) throws DimeFormatException, DimeUnsupportedProfileException, DimeKeyMismatchException {
         if (localKey == null) { throw new IllegalArgumentException("Provided local key may not be null."); }
         if (remoteKey == null || remoteKey.getPublic() == null) { throw new IllegalArgumentException("Provided remote key may not be null."); }
         if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to dectrypt payload."); }
@@ -171,16 +176,21 @@ public class Message extends Item {
         this._claims.lnk = item.getTag() + Envelope._COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope._COMPONENT_DELIMITER + item.thumbprint();
     }
 
+    /// PACKAGE-PRIVATE ///
+
+    Message() { }
+
     /// PROTECTED ///
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("//" + Envelope._COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
         if (components.length != Message._NBR_EXPECTED_COMPONENTS_NO_SIGNATURE || components.length != Message._NBR_EXPECTED_COMPONENTS_SIGNATURE) {
             throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message._NBR_EXPECTED_COMPONENTS_NO_SIGNATURE + " or " + Message._NBR_EXPECTED_COMPONENTS_SIGNATURE + ", got " + components.length +".");
         }
-        if (components[Message._TAG_INDEX] != Message.TAG) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message._TAG_INDEX] + "."); }
-        this._claims = new MessageClaims(Utility.fromBase64(components[Message._CLAIMS_INDEX]));
+        if (components[Message._TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message._TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Message._CLAIMS_INDEX]);
+        this._claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
         this._payload = components[Message._PAYLOAD_INDEX];
         if (components.length == Message._NBR_EXPECTED_COMPONENTS_SIGNATURE) {
             this._signature = components[components.length - 1];
@@ -193,7 +203,7 @@ public class Message extends Item {
             StringBuffer buffer = new StringBuffer();
             buffer.append(Message.TAG);
             buffer.append(Envelope._COMPONENT_DELIMITER);
-            buffer.append(this._claims.toJSONString());
+            buffer.append(Utility.toBase64(this._claims.toJSONString()));
             buffer.append(Envelope._COMPONENT_DELIMITER);
             buffer.append(this._payload);
             this._encoded = buffer.toString();
@@ -225,27 +235,27 @@ public class Message extends Item {
             this.lnk = lnk;
         }
 
-        public MessageClaims(byte[] json) {
+        public MessageClaims(String json) {
             JSONObject jsonObject = new JSONObject(json);
-            this.uid = UUID.fromString(jsonObject.getString("uid"));
-            this.aud = UUID.fromString(jsonObject.getString("aud"));
-            this.iss = UUID.fromString(jsonObject.getString("iss"));
-            this.iat = Instant.parse(jsonObject.getString("iat"));
-            this.exp = Instant.parse(jsonObject.getString("exp"));
-            this.kid = UUID.fromString(jsonObject.getString("kid"));
-            this.pub = Utility.fromBase64(jsonObject.getString("pub"));
-            this.lnk = jsonObject.getString("lnk");
+            this.uid = jsonObject.has("uid") ? UUID.fromString(jsonObject.getString("uid")) : null;
+            this.aud = jsonObject.has("aud") ? UUID.fromString(jsonObject.getString("aud")) : null;
+            this.iss = jsonObject.has("iss") ? UUID.fromString(jsonObject.getString("iss")) : null;
+            this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
+            this.exp = jsonObject.has("exp") ? Instant.parse(jsonObject.getString("exp")) : null;
+            this.kid = jsonObject.has("kid") ? UUID.fromString(jsonObject.getString("kid")) : null;
+            this.pub = jsonObject.has("pub") ? Utility.fromBase64(jsonObject.getString("pub")) : null;
+            this.lnk = jsonObject.has("lnk") ? jsonObject.getString("lnk") : null;
         }
 
         public String toJSONString() {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("uid", this.uid.toString());
-            if (this.aud != null) { jsonObject.put("aud", this.iss.toString()); }
-            jsonObject.put("iss", this.uid.toString());
+            if (this.aud != null) { jsonObject.put("aud", this.aud.toString()); }
+            jsonObject.put("iss", this.iss.toString());
             if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
-            if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
+            if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
             if (this.kid != null) { jsonObject.put("kid", this.iss.toString()); }
-            if (this.pub != null) { jsonObject.put("pub", "null"); }
+            if (this.pub != null) { jsonObject.put("pub", Base58.encode(this.pub, null)); }
             if (this.lnk != null) { jsonObject.put("lnk", this.lnk); }
             return jsonObject.toString();
         }
@@ -263,8 +273,6 @@ public class Message extends Item {
 
     private MessageClaims _claims;
     private String _payload;
-
-    private Message() { }
 
     private static byte[] uuidToByteArray(UUID uuid) {
         long msb = uuid.getMostSignificantBits();

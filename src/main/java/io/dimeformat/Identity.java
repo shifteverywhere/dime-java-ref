@@ -8,17 +8,13 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeDateException;
-import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
-import io.dimeformat.exceptions.DimeUntrustedIdentityException;
+import io.dimeformat.exceptions.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.nio.charset.StandardCharsets;
-import java.time.DateTimeException;
 import java.time.Instant;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +42,10 @@ public class Identity extends Item {
         return this._claims.sub;
     }
 
+    public UUID getIssuerId() {
+        return this._claims.iss;
+    }
+
     public Instant getIssuedAt() {
         return this._claims.iat;
     }
@@ -54,7 +54,7 @@ public class Identity extends Item {
         return this._claims.exp;
     }
 
-    public byte[] getPublicKey() {
+    public String getPublicKey() {
         return this._claims.pub;
     }
 
@@ -77,26 +77,26 @@ public class Identity extends Item {
         Identity._trustedIdentity = trustedIdentity;
     }
 
-    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
+    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException, DimeUnsupportedProfileException {
         if (Identity._trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no trusted identity set."); }
         Instant now = Instant.now();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
         if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
         if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
-        if (Identity._trustedIdentity.getSystemName() != this.getSystemName()) { throw new DimeUntrustedIdentityException("Unable to trust identity, identity part of another system."); }
+        if (Identity._trustedIdentity.getSystemName().compareTo(this.getSystemName()) != 0) { throw new DimeUntrustedIdentityException("Unable to trust identity, identity part of another system."); }
         if (this._trustChain != null) {
             this._trustChain.verifyTrust();
         }
-        byte[] publicKey = (this._trustChain != null) ? this._trustChain.getPublicKey() : Identity._trustedIdentity.getPublicKey();
+        String publicKey = (this._trustChain != null) ? this._trustChain.getPublicKey() : Identity._trustedIdentity.getPublicKey();
         try {
             Crypto.verifySignature(this._encoded, this._signature, Key.fromBase58Key(publicKey));
-        } catch (DimeIntegrityException e) {
-            throw new DimeUntrustedIdentityException("Identity cannot be trusted.");
+        } catch (DimeIntegrityException | DimeFormatException e) {
+            throw new DimeUntrustedIdentityException("Unable to verify trust of entity. (I1003)", e);
         }
     }
 
     public boolean hasCapability(Capability capability) {
-        return false;
+       return this._claims.cap.contains(capability);
     }
 
     public static Identity fromEncoded(String encoded) throws DimeFormatException {
@@ -107,7 +107,9 @@ public class Identity extends Item {
 
     /// PACKAGE-PRIVATE ///
 
-    Identity(String systemName, UUID subjectId, byte[] publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, Capability[] capabilities, Map<String, Object> principles, String[] ambit) {
+    Identity() { }
+
+    Identity(String systemName, UUID subjectId, String publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, String[] ambit) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
         this._claims = new IdentityClaims(systemName,
                 UUID.randomUUID(),
@@ -116,21 +118,26 @@ public class Identity extends Item {
                 issuedAt,
                 expiresAt,
                 publicKey,
-                capabilities,
+                null,
                 principles,
                 ambit);
+        this._claims.cap = capabilities;
+    }
+
+    void setTrustChain(Identity trustChain) {
+        this._trustChain = trustChain;
     }
 
     /// PROTECTED ///
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("//" + Envelope._COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
         if (components.length != Identity._NBR_EXPECTED_COMPONENTS_MIN &&
                 components.length != Identity._NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity._NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity._NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
-        if (components[Identity._TAG_INDEX] != Identity.TAG) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity._TAG_INDEX] + "."); }
+        if (components[Identity._TAG_INDEX].compareTo(Identity.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity._TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Identity._CLAIMS_INDEX]);
-        this._claims = new IdentityClaims(json);
+        this._claims = new IdentityClaims(new String(json, StandardCharsets.UTF_8));
         if (this._claims.sys == null || this._claims.sys.length() == 0) { throw new DimeFormatException("System name missing from identity."); }
         if (components.length == Identity._NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
             byte[] issIdentity = Utility.fromBase64(components[Identity._CHAIN_INDEX]);
@@ -166,12 +173,12 @@ public class Identity extends Item {
         public UUID iss;
         public Instant iat;
         public Instant exp;
-        public byte[] pub;
-        public JSONArray cap;
+        public String pub;
+        public List<Capability> cap;
         public JSONObject pri;
-        public JSONArray amb;
+        public List<String> amb;
 
-        public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, byte[] pub, Capability[] cap, Map<String, Object> pri, String[] amb) {
+        public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, Capability[] cap, Map<String, Object> pri, String[] amb) {
             this.sys = sys;
             this.uid = uid;
             this.sub = sub;
@@ -179,43 +186,47 @@ public class Identity extends Item {
             this.iat = iat;
             this.exp = exp;
             this.pub = pub;
-            if (cap != null && cap.length > 0) {
-                this.cap = new JSONArray();
-                for (Capability capability: cap) {
-                    this.cap.put(capability.name().toLowerCase());
-                }
-            }
+            this.cap = (cap != null) ? Arrays.asList(cap) : null;
             this.pri = (pri != null && pri.size() > 0) ? new JSONObject(pri) : null;
-            if (amb != null && amb.length > 0) {
-                this.amb = new JSONArray();
-                this.amb.putAll(cap);
-            }
+            this.amb = (amb != null) ? Arrays.asList(amb) : null;
         }
 
-        public IdentityClaims(byte[] json) {
+        public IdentityClaims(String json) {
             JSONObject jsonObject = new JSONObject(json);
-            this.sys = jsonObject.getString("sys");
-            this.uid = UUID.fromString(jsonObject.getString("uid"));
-            this.sub = UUID.fromString(jsonObject.getString("sub"));
-            this.iss = UUID.fromString(jsonObject.getString("iss"));
-            this.iat = Instant.parse(jsonObject.getString("iat"));
-            this.exp = Instant.parse(jsonObject.getString("exp"));
-            this.pub = Utility.fromBase64(jsonObject.getString("pub"));
-            this.cap = jsonObject.getJSONArray("cap");
-            this.pri = jsonObject.getJSONObject("pri");
-            this.amb = jsonObject.getJSONArray("amb");
+            this.sys = (jsonObject.has("sys")) ? jsonObject.getString("sys") : null;
+            this.uid = (jsonObject.has("uid")) ? UUID.fromString(jsonObject.getString("uid")) : null;
+            this.sub = (jsonObject.has("sub")) ? UUID.fromString(jsonObject.getString("sub")) : null;
+            this.iss = (jsonObject.has("iss")) ? UUID.fromString(jsonObject.getString("iss")) : null;
+            this.iat = (jsonObject.has("iat")) ? Instant.parse(jsonObject.getString("iat")) : null;
+            this.exp = (jsonObject.has("exp")) ? Instant.parse(jsonObject.getString("exp")) : null;
+            this.pub = (jsonObject.has("pub")) ? jsonObject.getString("pub") : null;
+            if (jsonObject.has("cap")) {
+                this.cap = new ArrayList<Capability>();
+                JSONArray array = jsonObject.getJSONArray("cap");
+                for (int i = 0;  i < array.length(); i++) {
+                    this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
+                }
+            }
+            this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri") : null;
+            this.amb = (jsonObject.has("amb")) ? (List<String>)(Object)jsonObject.getJSONArray("amb").toList() : null;
         }
 
         public String toJSONString() {
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("sys", this.sys);
-            jsonObject.put("uid", this.uid.toString());
-            jsonObject.put("sub", this.sub.toString());
-            jsonObject.put("iss", this.iss.toString());
-            jsonObject.put("iat", this.iat.toString());
-            jsonObject.put("exp", this.iat.toString());
-            jsonObject.put("pub", "null");
-            if (this.cap != null) { jsonObject.put("cap", this.cap); }
+            if (this.sys != null) { jsonObject.put("sys", this.sys); }
+            if (this.uid != null) { jsonObject.put("uid", this.uid.toString()); }
+            if (this.sub != null) { jsonObject.put("sub", this.sub.toString()); }
+            if (this.iss != null) { jsonObject.put("iss", this.iss.toString()); }
+            if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
+            if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
+            if (this.pub != null) { jsonObject.put("pub", this.pub); }
+            if (this.cap != null) {
+                String[] caps = new String[this.cap.size()];
+                for (int i = 0; i < this.cap.size(); i++) {
+                    caps[i] = this.cap.get(i).name().toLowerCase();
+                }
+                jsonObject.put("cap", caps);
+            }
             if (this.pri != null) { jsonObject.put("pri", this.pri); }
             if (this.amb != null) { jsonObject.put("amb", this.amb); }
             return jsonObject.toString();
@@ -234,5 +245,4 @@ public class Identity extends Item {
     private IdentityClaims _claims;
     private Identity _trustChain;
 
-    private Identity() { }
 }

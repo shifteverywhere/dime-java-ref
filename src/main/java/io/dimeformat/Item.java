@@ -10,9 +10,9 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
-
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.UnexpectedException;
+import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.DimeUnsupportedProfileException;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public abstract class Item {
@@ -52,8 +52,10 @@ public abstract class Item {
         return item;
     }
 
-    public void sign(Key key) {
-
+    public void sign(Key key) throws DimeUnsupportedProfileException {
+        if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed."); }
+        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null."); }
+        this._signature = Crypto.generateSignature(encode(), key);
     }
 
     public String thumbprint() {
@@ -61,7 +63,18 @@ public abstract class Item {
     }
 
     public static String thumbprint(String encoded) {
-        return null;
+        try {
+            return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded.getBytes(StandardCharsets.UTF_8)));
+        } catch (DimeUnsupportedProfileException e) {
+            throw new RuntimeException(); // This should not really happen
+        }
+    }
+
+    public String toEncoded() {
+        if (this.isSigned()) {
+            return encode() + Envelope._COMPONENT_DELIMITER + this._signature;
+        }
+        return encode();
     }
 
     private static Class classFromTag(String tag) {
@@ -74,12 +87,13 @@ public abstract class Item {
         }
     }
 
-    public void verify(String publicKey) {
-
+    public void verify(String publicKey) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException, DimeFormatException {
+        verify(new Key(publicKey));
     }
 
-    public void verify(Key key) throws DimeDateException {
-
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException {
+        if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
+        Crypto.verifySignature(encode(), this._signature, key);
     }
 
     /// PROTECTED ///

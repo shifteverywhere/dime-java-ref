@@ -1,5 +1,5 @@
 //
-//  DimeFormatException.java
+//  DimeCapabilityException.java
 //  Di:ME - Digital Identity Message Envelope
 //  Compact messaging format for assertion and practical use of digital identities
 //
@@ -8,13 +8,10 @@
 //
 package io.dimeformat.exceptions;
 
-public class DimeFormatException extends Exception {
+public class DimeCapabilityException extends Exception {
 
-    public DimeFormatException(String message) {
+    public DimeCapabilityException(String message) {
         super(message);
     }
 
-    public DimeFormatException(String message, Exception exception) {
-        super(message, exception);
-    }
 }

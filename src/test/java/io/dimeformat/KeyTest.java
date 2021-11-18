@@ -10,10 +10,9 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import org.junit.jupiter.api.Test;
-
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class KeyTest {
@@ -47,7 +46,7 @@ class KeyTest {
     @Test
     public void exportTest1() {
         Key key = Key.generateKey(KeyType.IDENTITY);
-        String exported = key.exportItem();
+        String exported = key.exportToEncoded();
         assertNotNull(exported);
         assertTrue(exported.startsWith(Envelope.HEADER + ":" + Key.TAG));
         assertTrue(exported.split("\\.").length == 2);
@@ -55,14 +54,18 @@ class KeyTest {
 
     @Test
     public void importTest1() {
-        String exported = "Di:KEY.eyJ1aWQiOiIzMTEyNjAxYS0xZWFlLTRkYjgtYTczYi0wNDc0N2EzOGU4N2MiLCJpYXQiOiIyMDIxLTA4LTEwVDA2OjM0OjQzLjUxNzIzWiIsImtleSI6IjFoRWl3UjNCcUxZMkV1QVJYZFpVRmFIb2l1aDVSdVg1dlZZNW4xNWVnVTVReFhuU2VYbUFjIiwicHViIjoiMWhQS3luTG1xaWlDa1RHN1JIendtOVFXTXJvaFdFMjV5bTgzQTdZbW9wQ2hIWWF2YUFEemcifQ";
-        Key key = (Key)Item.importItem(exported);
-        assertEquals(Profile.UNO, key.getProfile());
-        assertEquals(KeyType.IDENTITY, key.getKeyType());
-        assertEquals(UUID.fromString("3112601a-1eae-4db8-a73b-04747a38e87c"), key.getUniqueId());
-        assertEquals(Instant.parse("2021-08-10T06:34:43.51723Z"), key.getIssuedAt()); // TODO: check this
-        assertEquals("1hEiwR3BqLY2EuARXdZUFaHoiuh5RuX5vVY5n15egU5QxXnSeXmAc", key.getSecret());
-        assertEquals("1hPKynLmqiiCkTG7RHzwm9QWMrohWE25ym83A7YmopChHYavaADzg", key.getPublic());
+        try {
+            String exported = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
+            Key key = (Key)Item.importFromEncoded(exported);
+            assertEquals(Profile.UNO, key.getProfile());
+            assertEquals(KeyType.IDENTITY, key.getKeyType());
+            assertEquals(UUID.fromString("3f00cd13-4474-4c04-9b6b-7383d490f17f"), key.getUniqueId());
+            assertEquals(Instant.parse("2021-11-18T08:48:25.137918Z"), key.getIssuedAt());
+            assertEquals("S21Tkgozxhzk5ttFgHhgey6t1419WCMUUM98ZhniVAjfT4iniUknfUrNqfPqdLua2SvxFf8SXkHS1PTBCrdkYXN6qTEm7Mwa2LRd", key.getSecret());
+            assertEquals("S21TZSL1uvF5mTWKiomQKNhmkcYPw5XZ1VBfbSPqmyqG5GaNCUGB7Pj19WShuJuLkhREEJ4kLThehqRkadJLSTAkL9DtyhmLxGfn", key.getPublic());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
+        }
     }
 
     @Test
@@ -85,15 +88,18 @@ class KeyTest {
             fail("Unexpected exception thrown.");
         }
     }
-/*
+
     @Test
     public void PublicOnlyTest2() {
-        Key key = Key.generateKey(KeyType.IDENTITY, -1, Profile.UNO);
-        Message message = new Message(Commons.AudienceIdentity.SubjectId, Commons.IssuerIdentity.SubjectId, 100);
-        message.SetPayload(Encoding.UTF8.GetBytes("Racecar is racecar backwards."));
-        message.Sign(Commons.IssuerKey);
-        Key pubOnly = Commons.IssuerKey.PublicCopy();
-        message.Verify(pubOnly);
+        try {
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            Key pubOnly = Commons.getIssuerKey().publicCopy();
+            message.verify(pubOnly);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
     }
-*/
+
 }
