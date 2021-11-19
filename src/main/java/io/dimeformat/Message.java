@@ -93,7 +93,7 @@ public class Message extends Item {
     }
 
     @Override
-    public void sign(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public void sign(Key key) throws DimeCryptographicException {
         if (this._payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
         super.sign(key);
     }
@@ -111,7 +111,7 @@ public class Message extends Item {
     }
 
     @Override
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException {
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (this._payload == null || this._payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
         // Verify IssuedAt and ExpiresAt
         Instant now = Instant.now();
@@ -121,11 +121,11 @@ public class Message extends Item {
         super.verify(key);
     }
 
-    public void verify(String publicKey, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeUnsupportedProfileException, DimeCryptographicException {
+    public void verify(String publicKey, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
         verify(new Key(publicKey), linkedItem);
     }
 
-    public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeUnsupportedProfileException, DimeCryptographicException {
+    public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
         verify(key);
         if (linkedItem != null) {
             if (this._claims.lnk == null || this._claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
@@ -145,7 +145,7 @@ public class Message extends Item {
         this._payload = Utility.toBase64(payload);
     }
 
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeUnsupportedProfileException, DimeKeyMismatchException, DimeCryptographicException {
+    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         setPayload(payload, issuerKey, audienceKey, null);
     }
 
@@ -156,10 +156,9 @@ public class Message extends Item {
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
      * @param salt An optional salt that will be used for the encryption, must be the same when at encryption/decryption, may be null.
-     * @throws DimeUnsupportedProfileException
      * @throws DimeKeyMismatchException
      */
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey, byte[] salt) throws DimeUnsupportedProfileException, DimeKeyMismatchException, DimeCryptographicException {
+    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey, byte[] salt) throws DimeKeyMismatchException, DimeCryptographicException {
         throwIfSigned();
         if (this.getAudienceId() == null) { throw new IllegalStateException("AudienceId must be set in the message for encrypted payloads."); }
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
@@ -167,7 +166,7 @@ public class Message extends Item {
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, issuer key of invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, audience key invalid key type."); }
-        byte[] info = Crypto.generateHash(audienceKey.getProfile(), (issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
+        byte[] info = Crypto.generateHash((issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
         Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey, salt, info);
         setPayload(Crypto.encrypt(payload, shared));
     }
@@ -176,17 +175,17 @@ public class Message extends Item {
         return Utility.fromBase64(this._payload);
     }
 
-    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeFormatException, DimeUnsupportedProfileException, DimeKeyMismatchException, DimeCryptographicException {
+    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeFormatException, DimeKeyMismatchException, DimeCryptographicException {
         return getPayload(issuerKey, audienceKey, null);
     }
 
-    public byte[] getPayload(Key issuerKey, Key audienceKey, byte[] salt) throws DimeFormatException, DimeUnsupportedProfileException, DimeKeyMismatchException, DimeCryptographicException {
+    public byte[] getPayload(Key issuerKey, Key audienceKey, byte[] salt) throws DimeFormatException, DimeKeyMismatchException, DimeCryptographicException {
         if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
         if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to dectrypt payload."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, audience key invalid key type."); }
-        byte[] info = Crypto.generateHash(audienceKey.getProfile(), (issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
+        byte[] info = Crypto.generateHash((issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
         Key key = Crypto.generateSharedSecret(issuerKey, audienceKey, salt, info);
         return Crypto.decrypt(getPayload(), key);
     }

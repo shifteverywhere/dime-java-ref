@@ -9,7 +9,6 @@
 package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
@@ -26,13 +25,9 @@ public class Key extends Item {
         return Key.TAG;
     }
 
-    public Profile getProfile() {
-        return getVersion();
-    }
-
-    public Profile getVersion() {
+    public int getVersion() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
-        return  Key.getVersion(key);
+        return (int)(key[0]);
     }
 
     public UUID getIssuerId() {
@@ -72,15 +67,11 @@ public class Key extends Item {
     }
 
     public static Key generateKey(KeyType type) {
-        try {
-            return Key.generateKey(type, -1, Crypto.DEFAULT_PROFILE);
-        } catch (DimeUnsupportedProfileException e) {
-            throw new RuntimeException("This should not happen (K1001)");
-        }
+        return Key.generateKey(type, -1);
     }
 
-    public static Key generateKey(KeyType type, long validFor, Profile profile) throws DimeUnsupportedProfileException {
-        Key key = Crypto.generateKey(profile, type);
+    public static Key generateKey(KeyType type, long validFor) {
+        Key key = Crypto.generateKey(type);
         if (validFor != -1) {
             key._claims.exp = key._claims.iat.plusSeconds(validFor);
         }
@@ -92,17 +83,12 @@ public class Key extends Item {
     }
 
     public Key publicCopy() {
-        try {
-            return new Key(this._claims.uid, this.getKeyType(), null, getRawPublic(), getProfile());
-        } catch (DimeUnsupportedProfileException e) {
-            throw new RuntimeException(); // This should never happen
-        }
+        return new Key(this._claims.uid, this.getKeyType(), null, getRawPublic());
     }
 
     /// PACKAGE-PRIVATE ///
 
-    Key(UUID id, KeyType type, byte[] key, byte[] pub, Profile profile) throws DimeUnsupportedProfileException {
-        if (profile != Profile.UNO) { throw new DimeUnsupportedProfileException(); }
+    Key(UUID id, KeyType type, byte[] key, byte[] pub) {
         Instant iat = Instant.now();
         this._claims = new KeyClaims(null,
                 id,
@@ -223,10 +209,6 @@ public class Key extends Item {
     private static final int _HEADER_SIZE = 6;
 
     private KeyClaims _claims;
-
-    private static Profile getVersion(byte[] key) {
-        return Profile.valueOf(key[0]);
-    }
 
     private static byte[] headerFrom(KeyType type, KeyVariant variant) {
         switch (type) {

@@ -83,7 +83,7 @@ public class Identity extends Item {
         Identity._trustedIdentity = trustedIdentity;
     }
 
-    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException, DimeUnsupportedProfileException {
+    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
         if (Identity._trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no trusted identity set."); }
         Instant now = Instant.now();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }

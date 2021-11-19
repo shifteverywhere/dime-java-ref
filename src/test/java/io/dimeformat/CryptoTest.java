@@ -18,7 +18,7 @@ class CryptoTest {
     void generateSignatureTest1() {
         try {
             String data = "Racecar is racecar backwards.";
-            Key key = Crypto.generateKey(Profile.UNO, KeyType.IDENTITY);
+            Key key = Crypto.generateKey(KeyType.IDENTITY);
             String sig = Crypto.generateSignature(data, key);
             Crypto.verifySignature(data, sig, key);
         } catch (Exception e) {
@@ -61,7 +61,7 @@ class CryptoTest {
         try {
             String ref = "b9f050dd8bfbf027ea9fc729e9e764fda64c2bca20030a5d25264c35c486d892";
             byte[] data = "Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8);
-            byte[] hash = Crypto.generateHash(Profile.UNO, data);
+            byte[] hash = Crypto.generateHash(data);
             assertNotNull(hash);
             String hex = Utility.toHex(hash);
             assertEquals(ref, hex);

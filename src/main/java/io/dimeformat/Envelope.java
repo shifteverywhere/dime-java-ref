@@ -11,7 +11,6 @@ package io.dimeformat;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -23,6 +22,7 @@ public class Envelope {
     /// PUBLIC ///
     public static final int MAX_CONTEXT_LENGTH = 84;
     public static final String HEADER = "Di";
+    public static final int DIME_VERSION = 0x01;
 
     public UUID getIssuerId() {
         return (this._claims != null) ? this._claims.iss : null;
@@ -103,7 +103,7 @@ public class Envelope {
         return this;
     }
 
-    public Envelope sign(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public Envelope sign(Key key) throws DimeCryptographicException {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
         if (this._signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
         if (this._items == null || this._items.size() == 0) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
@@ -111,11 +111,11 @@ public class Envelope {
         return this;
     }
 
-    public Envelope verify(String publicKey) throws DimeIntegrityException, DimeUnsupportedProfileException, DimeFormatException {
+    public Envelope verify(String publicKey) throws DimeIntegrityException, DimeFormatException {
         return verify(new Key(publicKey));
     }
 
-    public Envelope verify(Key key) throws DimeIntegrityException, DimeUnsupportedProfileException {
+    public Envelope verify(Key key) throws DimeIntegrityException {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         if (this._signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
         Crypto.verifySignature(encode(), this._signature, key);
@@ -131,7 +131,7 @@ public class Envelope {
         }
     }
 
-    public String thumbprint() throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public String thumbprint() throws DimeCryptographicException {
         String encoded = encode();
         if (!this.isAnonymous()) {
             encoded += Envelope._SECTION_DELIMITER + this._signature;
@@ -139,8 +139,8 @@ public class Envelope {
         return Envelope.thumbprint(encoded);
     }
 
-    public static String thumbprint(String encoded) throws DimeUnsupportedProfileException, DimeCryptographicException {
-        return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded.getBytes(StandardCharsets.UTF_8)));
+    public static String thumbprint(String encoded) throws DimeCryptographicException {
+        return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
     }
 
     /// PACKAGE-PRIVATE ///

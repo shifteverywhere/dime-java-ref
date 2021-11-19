@@ -11,7 +11,6 @@ package io.dimeformat;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import io.dimeformat.exceptions.DimeKeyMismatchException;
-import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import com.goterl.lazysodium.SodiumJava;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -22,15 +21,8 @@ public class Crypto {
 
     /// PUBLIC ///
 
-    public static final Profile DEFAULT_PROFILE = Profile.UNO;
-
-    public static boolean isSupportedProfile(Profile profile) {
-        return profile == Crypto.DEFAULT_PROFILE;
-    }
-
-    public static String generateSignature(String data, Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public static String generateSignature(String data, Key key) throws DimeCryptographicException {
         if (key == null || key.getRawSecret() == null) { throw new IllegalArgumentException("Unable to sign, key must not be null."); }
-        if (!Crypto.isSupportedProfile(key.getProfile())) { throw new DimeUnsupportedProfileException(); }
         if (key.getKeyType() != IDENTITY) { throw new IllegalArgumentException("Unable to sign, wrong key type provided, got: " + key.getKeyType() + ", expected: " + IDENTITY + "."); }
         byte[] signature = new byte[Crypto._NBR_SIGNATURE_BYTES];
         byte[] message = data.getBytes(StandardCharsets.UTF_8);
@@ -41,9 +33,8 @@ public class Crypto {
         return Utility.toBase64(signature);
     }
 
-    public static void verifySignature(String data, String signature, Key key) throws DimeIntegrityException, DimeUnsupportedProfileException {
+    public static void verifySignature(String data, String signature, Key key) throws DimeIntegrityException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
-        if (!Crypto.isSupportedProfile(key.getProfile())) { throw new DimeUnsupportedProfileException(); }
         if (data == null) { throw new IllegalArgumentException("Data must not be null."); }
         if (signature == null) { throw new IllegalArgumentException("Signature must not be null."); }
         if (key.getRawPublic() == null) { throw new IllegalArgumentException("Unable to sign, public key in keybox must not be null."); }
@@ -56,12 +47,11 @@ public class Crypto {
         }
     }
 
-    public static io.dimeformat.Key generateKey(Profile profile, KeyType type) throws DimeUnsupportedProfileException {
-        if (!Crypto.isSupportedProfile(profile)) { throw new DimeUnsupportedProfileException(); }
+    public static io.dimeformat.Key generateKey(KeyType type) {
         if (type == ENCRYPTION) {
             byte[] secretKey = new byte[Crypto._NBR_S_KEY_BYTES];
             Crypto.sodium.crypto_secretbox_keygen(secretKey);
-            return new Key(UUID.randomUUID(), type, secretKey, null, profile);
+            return new Key(UUID.randomUUID(), type, secretKey, null);
         } else {
             byte[] publicKey = new byte[Crypto._NBR_A_KEY_BYTES];
             byte[] secretKey = new byte[Crypto._NBR_A_KEY_BYTES * 2];
@@ -75,13 +65,12 @@ public class Crypto {
                 default:
                     throw new IllegalArgumentException("Unknown or unsupported key type.");
             }
-            return new Key(UUID.randomUUID(), type, secretKey, publicKey, profile);
+            return new Key(UUID.randomUUID(), type, secretKey, publicKey);
         }
     }
 
-    public static Key generateSharedSecret(Key clientKey, Key serverKey, byte[] salt, byte[] info) throws DimeKeyMismatchException, DimeUnsupportedProfileException, DimeCryptographicException {
-        if (clientKey.getProfile() != serverKey.getProfile()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from diffrent profiles."); }
-        if (!Crypto.isSupportedProfile(clientKey.getProfile())) { throw new DimeUnsupportedProfileException(); }
+    public static Key generateSharedSecret(Key clientKey, Key serverKey, byte[] salt, byte[] info) throws DimeKeyMismatchException, DimeCryptographicException {
+        if (clientKey.getVersion() != serverKey.getVersion()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from diffrent versions."); }
         if (clientKey.getKeyType() != EXCHANGE || serverKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
         byte[] shared = new byte[Crypto._NBR_X_KEY_BYTES];
         if (clientKey.getRawSecret() != null) {
@@ -97,7 +86,7 @@ public class Crypto {
         }
         System.out.println("shared: " + Utility.toHex(shared));
         System.out.println("---");
-        return new Key(UUID.randomUUID(), KeyType.ENCRYPTION, shared, null, Profile.UNO);
+        return new Key(UUID.randomUUID(), KeyType.ENCRYPTION, shared, null);
     }
 
     public static byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
@@ -108,27 +97,25 @@ public class Crypto {
         if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) != 0) {
             throw new DimeCryptographicException("Cryptographic operation failed. C1005)"); 
         }
-        return Utility.prefix((byte)Crypto.DEFAULT_PROFILE.value, Utility.combine(nonce, cipherText));
+        return Utility.combine(nonce, cipherText);
     }
 
-    public static byte[] decrypt(byte[] cipherText, Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public static byte[] decrypt(byte[] cipherText, Key key) throws DimeCryptographicException {
         if (cipherText == null ||cipherText.length == 0) { throw new IllegalArgumentException("Cipher text to decrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (!Crypto.isSupportedProfile(Profile.valueOf(cipherText[0]))) { throw new DimeUnsupportedProfileException(); }
-        byte[] nonce = Utility.subArray(cipherText, 1, Crypto._NBR_NONCE_BYTES);
-        byte[] bytes = Utility.subArray(cipherText, Crypto._NBR_NONCE_BYTES + 1);
+        byte[] nonce = Utility.subArray(cipherText, 0, Crypto._NBR_NONCE_BYTES);
+        byte[] bytes = Utility.subArray(cipherText, Crypto._NBR_NONCE_BYTES);
         byte[] plainText = new byte[bytes.length - Crypto._NBR_MAC_BYTES];
         if (Crypto.sodium.crypto_secretbox_open_easy(plainText, bytes, bytes.length, nonce, key.getRawSecret()) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. C1006)");
+            throw new DimeCryptographicException("Cryptographic operation failed. C1007)");
         }
         return plainText;
     }
 
-    public static byte[] generateHash(Profile profile, byte[] data) throws DimeUnsupportedProfileException, DimeCryptographicException {
-        if (!Crypto.isSupportedProfile(profile)) { throw new DimeUnsupportedProfileException(); }
+    public static byte[] generateHash(byte[] data) throws DimeCryptographicException {
         byte[] hash = new byte[Crypto._NBR_HASH_BYTES];
         if (Crypto.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. C1007)");
+            throw new DimeCryptographicException("Cryptographic operation failed. C1008)");
         }
         return hash;
     }

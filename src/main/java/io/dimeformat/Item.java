@@ -12,7 +12,6 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-import io.dimeformat.exceptions.DimeUnsupportedProfileException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -42,7 +41,7 @@ public abstract class Item {
     }
 
     public static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
-        Class t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
+        var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
         T item = null;
         try {
             item = (T)t.getDeclaredConstructor().newInstance();
@@ -53,7 +52,7 @@ public abstract class Item {
         return item;
     }
 
-    public void sign(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
+    public void sign(Key key) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null."); }
         this._signature = Crypto.generateSignature(encode(), key);
@@ -64,11 +63,7 @@ public abstract class Item {
     }
 
     public static String thumbprint(String encoded) throws DimeCryptographicException {
-        try {
-            return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded.getBytes(StandardCharsets.UTF_8)));
-        } catch (DimeUnsupportedProfileException e) {
-            throw new RuntimeException(); // This should not really happen
-        }
+        return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
     }
 
     public String toEncoded() {
@@ -88,11 +83,11 @@ public abstract class Item {
         }
     }
 
-    public void verify(String publicKey) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException, DimeFormatException {
+    public void verify(String publicKey) throws DimeDateException, DimeIntegrityException, DimeFormatException {
         verify(new Key(publicKey));
     }
 
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeUnsupportedProfileException {
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         Crypto.verifySignature(encode(), this._signature, key);
     }
