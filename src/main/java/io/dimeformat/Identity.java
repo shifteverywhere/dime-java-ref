@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -58,13 +59,13 @@ public class Identity extends Item {
         return this._claims.pub;
     }
 
-    // public [String, Any] getPrinciples() {}
+    public Map<String, Object> getPrinciples() {
+        return (this._claims != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
+    }
 
     public List<String> getAmbits() {
         return this._claims.amb;
     }
-
-    // public [String] getAmbit() {}
 
     public Identity getTrustChain() {
         return this._trustChain;
@@ -185,7 +186,7 @@ public class Identity extends Item {
         public Instant exp;
         public String pub;
         public List<Capability> cap;
-        public JSONObject pri;
+        public Map<String, Object> pri;
         public List<String> amb;
 
         public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, Capability[] cap, Map<String, Object> pri, String[] amb) {
@@ -197,7 +198,7 @@ public class Identity extends Item {
             this.exp = exp;
             this.pub = pub;
             this.cap = (cap != null) ? Arrays.asList(cap) : null;
-            this.pri = (pri != null && pri.size() > 0) ? new JSONObject(pri) : null;
+            this.pri = pri;
             this.amb = (amb != null) ? Arrays.asList(amb) : null;
         }
 
@@ -217,7 +218,7 @@ public class Identity extends Item {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
                 }
             }
-            this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri") : null;
+            this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri").toMap() : null;
             this.amb = (jsonObject.has("amb")) ? (List<String>)(Object)jsonObject.getJSONArray("amb").toList() : null;
         }
 

@@ -11,6 +11,10 @@ package io.dimeformat;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeUntrustedIdentityException;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -239,6 +243,47 @@ class IdentityTest {
             assertTrue(identity.hasAmbit(ambit[1]));
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 
+        }
+    }
+
+    @Test
+    void principlesTest1() {
+        try {
+            Key key = Key.generateKey(KeyType.IDENTITY);
+            Map<String, Object> principles = new HashMap<String, Object>();
+            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
+            Identity identity =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Map<String, Object> pri = identity.getPrinciples();
+            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            List<String> nbr = (List<String>)pri.get("nbr");
+            assertEquals(3, nbr.size());
+            assertEquals("two", nbr.get(1));
+            try {
+                pri.put("key", "value");
+                fail("Should not happen.");
+            } catch (UnsupportedOperationException e) { return; }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void principlesTest2() {
+        try {
+            Key key = Key.generateKey(KeyType.IDENTITY);
+            Map<String, Object> principles = new HashMap<String, Object>();
+            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
+            Identity identity1 =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
+            Map<String, Object> pri = identity2.getPrinciples();
+            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            List<String> nbr = (List<String>)pri.get("nbr");
+            assertEquals(3, nbr.size());
+            assertEquals("three", nbr.get(2));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
     }
 

@@ -9,10 +9,12 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
-
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class IdentityIssuingRequestTest {
@@ -23,7 +25,7 @@ class IdentityIssuingRequestTest {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY));
             assertEquals("IIR", iir.getTag());
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
         }
     }
 
@@ -34,7 +36,7 @@ class IdentityIssuingRequestTest {
         } catch (IllegalArgumentException e) {
             return; // All is well
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
         }
         fail("Should not happen.");
     }
@@ -48,7 +50,7 @@ class IdentityIssuingRequestTest {
             assertNotNull(iir.getIssuedAt());
             assertNotNull(iir.getPublicKey());
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
         }
     }
 
@@ -172,4 +174,43 @@ class IdentityIssuingRequestTest {
 
 }
 */
+    @Test
+    void principlesTest1() {
+        try {
+            Map<String, Object> principles = new HashMap<String, Object>();
+            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
+            IdentityIssuingRequest iir =  IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), new Capability[] { Capability.GENERIC }, principles);
+            Map<String, Object> pri = iir.getPrinciples();
+            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            List<String> nbr = (List<String>)pri.get("nbr");
+            assertEquals(3, nbr.size());
+            assertEquals("two", nbr.get(1));
+            try {
+                pri.put("key", "value");
+                fail("Should not happen.");
+            } catch (UnsupportedOperationException e) { return; }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void principlesTest2() {
+        try {
+            Map<String, Object> principles = new HashMap<String, Object>();
+            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
+            IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), new Capability[] { Capability.GENERIC }, principles);
+            IdentityIssuingRequest iir2 = Item.importFromEncoded(iir1.exportToEncoded());
+            Map<String, Object> pri = iir2.getPrinciples();
+            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            List<String> nbr = (List<String>)pri.get("nbr");
+            assertEquals(3, nbr.size());
+            assertEquals("three", nbr.get(2));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 }

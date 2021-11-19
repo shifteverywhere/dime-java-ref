@@ -40,7 +40,9 @@ public class IdentityIssuingRequest extends Item {
         return this._claims.pub;
     }
 
-    // public [String, Any] getPrinciples() {}
+    public Map<String, Object> getPrinciples() {
+        return (this._claims != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
+    }
 
     public static IdentityIssuingRequest generateIIR(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
         return generateIIR(key, null, null);
@@ -130,14 +132,14 @@ public class IdentityIssuingRequest extends Item {
         public Instant iat;
         public String pub;
         public List<Capability> cap;
-        public JSONObject pri;
+        public Map<String, Object> pri;
 
         public IdentityIssuingRequestClaims(UUID uid, Instant iat, String pub, Capability[] cap, Map<String, Object> pri) {
             this.uid = uid;
             this.iat = iat;
             this.pub = pub;
-            this.cap = Arrays.asList(cap);
-            this.pri = (pri != null && pri.size() > 0) ? new JSONObject(pri) : null;
+            this.cap = (cap != null) ? Arrays.asList(cap) : null;
+            this.pri = pri;
         }
 
         public IdentityIssuingRequestClaims(String json) {
@@ -152,7 +154,7 @@ public class IdentityIssuingRequest extends Item {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
                 }
             }
-            this.pri = jsonObject.has("pri") ? jsonObject.getJSONObject("pri") : null;
+            this.pri = jsonObject.has("pri") ? jsonObject.getJSONObject("pri").toMap() : null;
         }
 
         public String toJSONString() {
@@ -190,7 +192,7 @@ public class IdentityIssuingRequest extends Item {
             Instant expires = now.plusSeconds(validFor);
             UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
             List<String> ambitList = (ambit != null) ? Arrays.asList(ambit) : null;
-            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, this._claims.cap, null/*this._claims.pri*/, ambitList);
+            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, this._claims.cap, this._claims.pri, ambitList);
             if (Identity.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId() != Identity.getTrustedIdentity().getSubjectId()) {
                 issuerIdentity.verifyTrust();
                 // The chain will only be set if this is not the trusted identity (and as long as one is set)
