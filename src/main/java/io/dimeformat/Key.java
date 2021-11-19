@@ -199,13 +199,6 @@ public class Key extends Item {
 
     }
 
-    private static final byte[] HEADER_AEAD = new byte[]         { (byte)0x01, (byte)0x10, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, AEAD, XChaCha20-Poly1305, 256-bit, extension, extension
-    private static final byte[] HEADER_ECDH_SECRET = new byte[]  { (byte)0x01, (byte)0x40, (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, public, extension, extension
-    private static final byte[] HEADER_ECDH = new byte[]         { (byte)0x01, (byte)0x40, (byte)0x02, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, private, extension, extension
-    private static final byte[] HEADER_EDDSA_SECRET = new byte[] { (byte)0x01, (byte)0x80, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, public, extension, extension
-    private static final byte[] HEADER_EDDSA = new byte[]        { (byte)0x01, (byte)0x80, (byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, private, extension, extension
-    private static final byte[] HEADER_HASH = new byte[]         { (byte)0x01, (byte)0xE0, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, Secure Hashing, Blake2b, 256-bit, extension, extension
-
     private static final int _NBR_EXPECTED_COMPONENTS = 2;
     private static final int _TAG_INDEX = 0;
     private static final int _CLAIMS_INDEX = 1;
@@ -214,13 +207,31 @@ public class Key extends Item {
     private KeyClaims _claims;
 
     private static byte[] headerFrom(KeyType type, KeyVariant variant) {
-        switch (type) {
-            case IDENTITY: return (variant == KeyVariant.SECRET) ? Key.HEADER_EDDSA_SECRET : Key.HEADER_EDDSA;
-            case EXCHANGE: return (variant == KeyVariant.SECRET) ? Key.HEADER_ECDH_SECRET : Key.HEADER_ECDH;
-            case ENCRYPTION: return HEADER_AEAD;
-            case AUTHENTICATION: return HEADER_HASH;
-            default: return null;
+        AlgorithmFamily algorithmFamily = AlgorithmFamily.keyTypeOf(type);
+        byte[] header = new byte[Key._HEADER_SIZE];
+        header[0] = (byte)Envelope.DIME_VERSION;
+        header[1] = algorithmFamily.value;
+        switch(algorithmFamily) {
+            case AEAD:
+                header[2] = (byte)0x01; // 0x01 == XChaCha20-Poly1305
+                header[3] = (byte)0x02; // 0x02 == 256-bit key size
+            break;
+            case ECDH:
+                header[2] = (byte)0x02; // 0x02 == X25519
+                header[3] = variant.value;
+            break;
+            case EDDSA:
+                header[2] = (byte)0x01; // 0x01 == Ed25519
+                header[3] = variant.value;
+            break;
+            case HASH:
+                header[2] = (byte)0x01; // 0x01 == Blake2b
+                header[3] =(byte)0x02; // 0x02 == 256-bit key size
+            break;
+            default:
+                return null;
         }
+        return header;
     }
 
     private static AlgorithmFamily getAlgorithmFamily(byte[] key) {

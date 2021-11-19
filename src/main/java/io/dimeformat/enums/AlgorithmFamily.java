@@ -57,4 +57,20 @@ public enum AlgorithmFamily {
             default: throw new IllegalStateException("Unexpected value: " + value);
         }
     }
+
+    /**
+     * Creates from a key type.
+     * @param type Key type to use.
+     * @return Enum instance.
+     */
+    public static AlgorithmFamily keyTypeOf(KeyType type) {
+        switch (type) {
+            case ENCRYPTION: return AlgorithmFamily.AEAD;
+            case EXCHANGE: return AlgorithmFamily.ECDH;
+            case IDENTITY: return AlgorithmFamily.EDDSA;
+            case AUTHENTICATION: return AlgorithmFamily.HASH;
+            default: throw new IllegalStateException("Unexpected value: " + type);
+        }
+    }
+    
 }
