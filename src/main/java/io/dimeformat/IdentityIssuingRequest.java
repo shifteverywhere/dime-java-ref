@@ -42,11 +42,11 @@ public class IdentityIssuingRequest extends Item {
 
     // public [String, Any] getPrinciples() {}
 
-    public static IdentityIssuingRequest generateIIR(Key key) throws DimeUnsupportedProfileException {
+    public static IdentityIssuingRequest generateIIR(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
         return generateIIR(key, null, null);
     }
 
-    public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeUnsupportedProfileException {
+    public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeUnsupportedProfileException, DimeCryptographicException {
         if (!Crypto.isSupportedProfile(key.getProfile())) { throw new IllegalArgumentException("Unsupported profile version."); }
         if (key.getKeyType() != KeyType.IDENTITY) { throw new IllegalArgumentException("Key of invalid type."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
@@ -78,12 +78,12 @@ public class IdentityIssuingRequest extends Item {
         return this._claims.cap.contains(capability);
     }
 
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeUnsupportedProfileException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeUnsupportedProfileException, DimeCryptographicException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambit);
     }
 
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeUnsupportedProfileException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeUnsupportedProfileException, DimeCryptographicException {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
         return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambit);
 
@@ -181,7 +181,7 @@ public class IdentityIssuingRequest extends Item {
 
     private IdentityIssuingRequestClaims _claims;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeUnsupportedProfileException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeUnsupportedProfileException, DimeCryptographicException {
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey() == issuerKey.getPublic());
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))

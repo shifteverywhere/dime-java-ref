@@ -27,16 +27,30 @@ class CryptoTest {
     }
 
     @Test
+    void generateGenerateSharedSecretTest1() {
+        try {
+            Key clientKey = Key.generateKey(KeyType.EXCHANGE);
+            Key serverKey = Key.generateKey(KeyType.EXCHANGE);
+            Key shared1 = Crypto.generateSharedSecret(clientKey, serverKey.publicCopy(), null, null);
+            Key shared2 = Crypto.generateSharedSecret(clientKey.publicCopy(), serverKey, null, null);
+            assertEquals(KeyType.ENCRYPTION, shared1.getKeyType());
+            assertEquals(KeyType.ENCRYPTION, shared2.getKeyType());
+            assertEquals(shared1.getSecret(), shared2.getSecret());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
+        }
+    }
+
+    @Test
     void encrypt() {
         try {
-            byte[] data = "Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8);
+            String data = "Racecar is racecar backwards.";
             Key key = Key.generateKey(KeyType.ENCRYPTION);
-            byte[] cipherText = Crypto.encrypt(data, key);
+            byte[] cipherText = Crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
             byte[] plainText = Crypto.decrypt(cipherText, key);
             assertNotNull(plainText);
-            String d = new String(plainText);
-            assertEquals(data, plainText);
+            assertEquals(data, new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }

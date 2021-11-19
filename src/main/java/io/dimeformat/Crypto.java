@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import io.dimeformat.exceptions.DimeKeyMismatchException;
 import io.dimeformat.exceptions.DimeUnsupportedProfileException;
@@ -27,17 +28,17 @@ public class Crypto {
         return profile == Crypto.DEFAULT_PROFILE;
     }
 
-    public static String generateSignature(String data, Key key) throws DimeUnsupportedProfileException {
+    public static String generateSignature(String data, Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
         if (key == null || key.getRawSecret() == null) { throw new IllegalArgumentException("Unable to sign, key must not be null."); }
         if (!Crypto.isSupportedProfile(key.getProfile())) { throw new DimeUnsupportedProfileException(); }
         if (key.getKeyType() != IDENTITY) { throw new IllegalArgumentException("Unable to sign, wrong key type provided, got: " + key.getKeyType() + ", expected: " + IDENTITY + "."); }
         byte[] signature = new byte[Crypto._NBR_SIGNATURE_BYTES];
         byte[] message = data.getBytes(StandardCharsets.UTF_8);
         byte[] secret = key.getRawSecret();
-        if (Crypto.sodium.crypto_sign_detached(signature, null, message, message.length, secret) == 0) {
-            return Utility.toBase64(signature);
+        if (Crypto.sodium.crypto_sign_detached(signature, null, message, message.length, secret) != 0) {
+            throw new DimeCryptographicException("Cryptographic operation failed (C1001).");
         }
-        throw new RuntimeException("Cryptographic operation failed (C1001).");
+        return Utility.toBase64(signature);
     }
 
     public static void verifySignature(String data, String signature, Key key) throws DimeIntegrityException, DimeUnsupportedProfileException {
@@ -50,7 +51,7 @@ public class Crypto {
         byte[] rawSignature = Utility.fromBase64(signature);
         byte[] message = data.getBytes(StandardCharsets.UTF_8);
         byte[] publicKey = key.getRawPublic();
-        if (Crypto.sodium.crypto_sign_verify_detached(rawSignature, message, message.length, publicKey) == -1) {
+        if (Crypto.sodium.crypto_sign_verify_detached(rawSignature, message, message.length, publicKey) != 0) {
             throw new DimeIntegrityException("Unable to verify signature (C1002).");
         }
     }
@@ -78,48 +79,58 @@ public class Crypto {
         }
     }
 
-    public static Key generateSharedSecret(Key localKey, Key remoteKey, byte[] salt, byte[] info) throws DimeKeyMismatchException, DimeUnsupportedProfileException {
-        if (localKey.getProfile() != remoteKey.getProfile()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from diffrent profiles."); }
-        if (!Crypto.isSupportedProfile(localKey.getProfile())) { throw new DimeUnsupportedProfileException(); }
-        if (localKey.getKeyType() != EXCHANGE || remoteKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
-
-        return null;
-
-        /*NSec.Cryptography.Key privateKey = NSec.Cryptography.Key.Import(KeyAgreementAlgorithm.X25519, localKeybox.RawKey, KeyBlobFormat.RawPrivateKey);
-        PublicKey publicKey = PublicKey.Import(KeyAgreementAlgorithm.X25519, remoteKeybox.RawPublicKey, KeyBlobFormat.RawPublicKey);
-        SharedSecret shared = KeyAgreementAlgorithm.X25519.Agree(privateKey, publicKey);
-        return KeyDerivationAlgorithm.HkdfSha256.DeriveKey(shared, salt, info, AeadAlgorithm.ChaCha20Poly1305);*/
+    public static Key generateSharedSecret(Key clientKey, Key serverKey, byte[] salt, byte[] info) throws DimeKeyMismatchException, DimeUnsupportedProfileException, DimeCryptographicException {
+        if (clientKey.getProfile() != serverKey.getProfile()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from diffrent profiles."); }
+        if (!Crypto.isSupportedProfile(clientKey.getProfile())) { throw new DimeUnsupportedProfileException(); }
+        if (clientKey.getKeyType() != EXCHANGE || serverKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
+        byte[] shared = new byte[Crypto._NBR_X_KEY_BYTES];
+        if (clientKey.getRawSecret() != null) {
+            if (sodium.crypto_kx_client_session_keys(shared, null, clientKey.getRawPublic(), clientKey.getRawSecret(), serverKey.getRawPublic()) != 0) {
+                throw new DimeCryptographicException("Cryptographic operation failed. C1003)");
+            }
+        } else if (serverKey.getRawSecret() != null) {
+            if (sodium.crypto_kx_server_session_keys(null, shared, serverKey.getRawPublic(), serverKey.getRawSecret(), clientKey.getRawPublic()) != 0) {
+                throw new DimeCryptographicException("Cryptographic operation failed. C1004)");
+            }
+        } else {
+            throw new DimeKeyMismatchException("Invalid keys provided.");
+        }
+        System.out.println("shared: " + Utility.toHex(shared));
+        System.out.println("---");
+        return new Key(UUID.randomUUID(), KeyType.ENCRYPTION, shared, null, Profile.UNO);
     }
 
-    public static byte[] encrypt(byte[] plainText, Key key) {
+    public static byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
         if (plainText == null || plainText.length == 0) { throw new IllegalArgumentException("Plain text to encrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         byte[] nonce = Utility.randomBytes(Crypto._NBR_NONCE_BYTES);
         byte[] cipherText = new byte[Crypto._NBR_MAC_BYTES + plainText.length];
-        if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) == 0) {
-            return Utility.prefix((byte)Crypto.DEFAULT_PROFILE.value, Utility.combine(nonce, cipherText));
+        if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) != 0) {
+            throw new DimeCryptographicException("Cryptographic operation failed. C1005)"); 
         }
-        return null;
+        return Utility.prefix((byte)Crypto.DEFAULT_PROFILE.value, Utility.combine(nonce, cipherText));
     }
 
-    public static byte[] decrypt(byte[] cipherText, Key key) throws DimeUnsupportedProfileException {
+    public static byte[] decrypt(byte[] cipherText, Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
         if (cipherText == null ||cipherText.length == 0) { throw new IllegalArgumentException("Cipher text to decrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (!Crypto.isSupportedProfile(Profile.valueOf(cipherText[0]))) { throw new DimeUnsupportedProfileException(); }
         byte[] nonce = Utility.subArray(cipherText, 1, Crypto._NBR_NONCE_BYTES);
         byte[] bytes = Utility.subArray(cipherText, Crypto._NBR_NONCE_BYTES + 1);
-        byte[] m = new byte[bytes.length - Crypto._NBR_MAC_BYTES];
-        int res = Crypto.sodium.crypto_secretbox_open_easy(m, bytes, bytes.length, nonce, key.getRawSecret());
-        return  (res == 0) ? m : null;
+        byte[] plainText = new byte[bytes.length - Crypto._NBR_MAC_BYTES];
+        if (Crypto.sodium.crypto_secretbox_open_easy(plainText, bytes, bytes.length, nonce, key.getRawSecret()) != 0) {
+            throw new DimeCryptographicException("Cryptographic operation failed. C1006)");
+        }
+        return plainText;
     }
 
-    public static byte[] generateHash(Profile profile, byte[] data) throws DimeUnsupportedProfileException {
+    public static byte[] generateHash(Profile profile, byte[] data) throws DimeUnsupportedProfileException, DimeCryptographicException {
         if (!Crypto.isSupportedProfile(profile)) { throw new DimeUnsupportedProfileException(); }
         byte[] hash = new byte[Crypto._NBR_HASH_BYTES];
-        if (Crypto.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) == 0) {
-            return hash;
+        if (Crypto.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
+            throw new DimeCryptographicException("Cryptographic operation failed. C1007)");
         }
-        return null;
+        return hash;
     }
 
     /// PRIVATE ///
@@ -129,7 +140,8 @@ public class Crypto {
     private static final int _NBR_HASH_BYTES = 32;
     private static final int _NBR_A_KEY_BYTES = 32;
     private static final int _NBR_S_KEY_BYTES = 32;
-    private static final int _NBR_NONCE_BYTES = 12;
+    private static final int _NBR_X_KEY_BYTES = 32;
+    private static final int _NBR_NONCE_BYTES = 24;
     private static final SodiumJava sodium = new SodiumJava();
 
 }

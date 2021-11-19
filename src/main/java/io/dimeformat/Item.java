@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
@@ -52,17 +53,17 @@ public abstract class Item {
         return item;
     }
 
-    public void sign(Key key) throws DimeUnsupportedProfileException {
+    public void sign(Key key) throws DimeUnsupportedProfileException, DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null."); }
         this._signature = Crypto.generateSignature(encode(), key);
     }
 
-    public String thumbprint() {
+    public String thumbprint() throws DimeCryptographicException {
         return Item.thumbprint(this.toEncoded());
     }
 
-    public static String thumbprint(String encoded) {
+    public static String thumbprint(String encoded) throws DimeCryptographicException {
         try {
             return Utility.toHex(Crypto.generateHash(Profile.UNO, encoded.getBytes(StandardCharsets.UTF_8)));
         } catch (DimeUnsupportedProfileException e) {
