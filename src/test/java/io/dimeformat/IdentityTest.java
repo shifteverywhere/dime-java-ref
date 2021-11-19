@@ -9,6 +9,9 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
+
+import io.dimeformat.enums.Capability;
+import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeUntrustedIdentityException;
 import java.time.Instant;
 import java.util.Arrays;

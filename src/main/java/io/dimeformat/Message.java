@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;

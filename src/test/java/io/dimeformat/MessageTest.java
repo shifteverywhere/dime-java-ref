@@ -9,6 +9,8 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
+
+import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;

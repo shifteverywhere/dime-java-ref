@@ -6,10 +6,11 @@
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright © 2021 Shift Everywhere AB. All rights reserved.
 //
-package io.dimeformat;
+package io.dimeformat.enums;
 
 /**
  * Defines different types of cryptographic keys.
+ * Used for header information in keys and when generating new keys.
  */
 public enum KeyType {
 
@@ -25,7 +26,13 @@ public enum KeyType {
      * Key type for asymmetric keys used for key exchange (agreement).
      */
     EXCHANGE(0x20),
+    /**
+     * Key type for symmetric keys used for encryption.
+     */
     ENCRYPTION(0xE0),
+    /**
+     * Key type for symmetric keys used for message authentication.
+     */
     AUTHENTICATION(0xF0);
 
     KeyType(int value) {
@@ -34,6 +41,12 @@ public enum KeyType {
 
     public final int value;
 
+    /**
+     * Create from a byte value. Will throw IllegalStateException if an 
+     * invalid value is provided.
+     * @param value Byte value to use.
+     * @return Enum instance.
+     */
     public static KeyType valueOf(int value) {
         switch (value) {
             case 0x00: return KeyType.UNDEFINED;
@@ -45,30 +58,4 @@ public enum KeyType {
         }
     }
 
-}
-
-enum AlgorithmFamily {
-
-    UNDEFINED(0x00),
-    AEAD(0x10),
-    ECDH(0x40),
-    EDDSA(0x80),
-    HASH(0xE0);
-
-    AlgorithmFamily(int value) {
-        this.value = (byte)value;
-    }
-
-    public final byte value;
-
-    public static AlgorithmFamily valueOf(byte value) {
-        switch (value) {
-            case 0x00: return AlgorithmFamily.UNDEFINED;
-            case 0x10: return AlgorithmFamily.AEAD;
-            case 0x40: return AlgorithmFamily.ECDH;
-            case (byte)0x80: return AlgorithmFamily.EDDSA;
-            case (byte)0xE0: return AlgorithmFamily.HASH;
-            default: throw new IllegalStateException("Unexpected value: " + value);
-        }
-    }
 }

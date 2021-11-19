@@ -6,8 +6,11 @@
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright © 2021 Shift Everywhere AB. All rights reserved.
 //
-package io.dimeformat;
+package io.dimeformat.enums;
 
+/**
+ * Defines the capability or capabilities of an identity. This usually relates to what an identity may be used for.
+ */
 public enum Capability {
 
     /**

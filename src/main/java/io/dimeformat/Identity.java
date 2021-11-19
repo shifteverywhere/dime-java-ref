@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Capability;
 import io.dimeformat.exceptions.*;
 import org.json.JSONArray;
 import org.json.JSONObject;

@@ -8,6 +8,9 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.AlgorithmFamily;
+import io.dimeformat.enums.KeyType;
+import io.dimeformat.enums.KeyVariant;
 import io.dimeformat.exceptions.DimeFormatException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

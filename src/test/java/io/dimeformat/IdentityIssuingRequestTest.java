@@ -9,6 +9,10 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
+
+import io.dimeformat.enums.Capability;
+import io.dimeformat.enums.KeyType;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;

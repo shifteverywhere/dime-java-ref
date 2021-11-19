@@ -9,6 +9,9 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
+
+import io.dimeformat.enums.KeyType;
+
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 

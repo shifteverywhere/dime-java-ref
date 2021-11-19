@@ -8,14 +8,16 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import io.dimeformat.exceptions.DimeKeyMismatchException;
 import com.goterl.lazysodium.SodiumJava;
+
+import static io.dimeformat.enums.KeyType.*;
+
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-
-import static io.dimeformat.KeyType.*;
 
 public class Crypto {
 
@@ -48,7 +50,7 @@ public class Crypto {
     }
 
     public static io.dimeformat.Key generateKey(KeyType type) {
-        if (type == ENCRYPTION) {
+        if (type == ENCRYPTION || type == AUTHENTICATION) {
             byte[] secretKey = new byte[Crypto._NBR_S_KEY_BYTES];
             Crypto.sodium.crypto_secretbox_keygen(secretKey);
             return new Key(UUID.randomUUID(), type, secretKey, null);
