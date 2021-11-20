@@ -13,9 +13,7 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import io.dimeformat.exceptions.DimeKeyMismatchException;
 import com.goterl.lazysodium.SodiumJava;
-
 import static io.dimeformat.enums.KeyType.*;
-
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 

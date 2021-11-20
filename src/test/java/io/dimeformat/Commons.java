@@ -8,7 +8,11 @@
 //
 package io.dimeformat;
 
+import static org.junit.jupiter.api.Assertions.fail;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import io.dimeformat.enums.Capability;
+import io.dimeformat.enums.KeyType;
 
 public class Commons {
 
@@ -60,47 +64,55 @@ public class Commons {
 
     @Test
     public void generateCommons() {
+        Identity.setTrustedIdentity(null);
+        Key trustedKey = Key.generateKey(KeyType.IDENTITY);
+        Identity trustedIdentity = Commons.generateIdentity(trustedKey, trustedKey, null, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, new Capability[] { Capability.GENERIC, Capability.ISSUE });
         System.out.println("// -- TRUSTED IDENTITY ---");
-        System.out.println("private static final String _encodedTrustedKey = \"Di:KEY\";");
-        System.out.println("private static final String _encodedTrustedIdentity = \"Di:ID\";\n");
+        System.out.println("private static final String _encodedTrustedKey = \"" + trustedKey.exportToEncoded() + "\";");
+        System.out.println("private static final String _encodedTrustedIdentity = \"" + trustedIdentity.exportToEncoded() + "\";\n");
 
+        Identity.setTrustedIdentity(trustedIdentity);
+        Key intermediateKey = Key.generateKey(KeyType.IDENTITY);
+        Identity intermediateIdentity = Commons.generateIdentity(intermediateKey, trustedKey, trustedIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR * 5, new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE });
         System.out.println("// -- INTERMEDIATE IDENTITY --");
-        System.out.println("private static final String _encodedIntermediateKey = \"Di:KEY\";");
-        System.out.println("private static final String _encodedIntermediateIdentity = \"Di:ID\";\n");
+        System.out.println("private static final String _encodedIntermediateKey = \"" + intermediateKey.exportToEncoded() + "\";");
+        System.out.println("private static final String _encodedIntermediateIdentity = \""+ intermediateIdentity.exportToEncoded() + "\";\n");
 
+        Key issuerKey = Key.generateKey(KeyType.IDENTITY);
+        Identity issuerIdentity = Commons.generateIdentity(issuerKey, intermediateKey, intermediateIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR, new Capability[] { Capability.GENERIC, Capability.IDENTIFY });
         System.out.println("// -- ISSUER IDENTITY (SENDER) --");
-        System.out.println("private static final String _encodedIssuerKey = \"Di:KEY\";");
-        System.out.println("private static String _encodedIssuerIdentity = \"Di:ID\";\n");
+        System.out.println("private static final String _encodedIssuerKey = \"" + issuerKey.exportToEncoded() + "\";");
+        System.out.println("public static String _encodedIssuerIdentity = \""+ issuerIdentity.exportToEncoded() +"\";\n");
+
+        Key audienceKey = Key.generateKey(KeyType.IDENTITY);
+        Identity audienceIdentity = Commons.generateIdentity(audienceKey, intermediateKey, intermediateIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR, new Capability[] { Capability.GENERIC, Capability.IDENTIFY });
 
         System.out.println("// -- AUDIENCE IDENTITY (RECEIVER) --");
-        System.out.println("private static final String _encodedAudienceKey = \"Di:KEY\";");
-        System.out.println("private static String _encodedAudienceIdentity = \"Di:ID\";\n");
+        System.out.println("private static final String _encodedAudienceKey = \"" + audienceKey.exportToEncoded() + "\";");
+        System.out.println("private static String _encodedAudienceIdentity = \""+ audienceIdentity.exportToEncoded() +"\";\n");
     }
 
     /// PRIVATE ///
 
     // -- TRUSTED IDENTITY ---
-    private static final String _encodedTrustedKey = "Di:KEY.eyJ1aWQiOiIwMmQwNDk0OS1mOTc5LTQ0ZTMtYWZmZi1iNmIxYzIwMGI5YmMiLCJwdWIiOiIyVERYZG9OdWNRRTJZM2tXY2hhNEJ1YUxVdWg4YW1UYmV2djZhNUVlZlltc1pNbjJYSFRQcFBFNlYiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjQ2OjU3LjAxNTgwOVoiLCJrZXkiOiJTMjFUWlNMOTJFQWZWajVjY0NQYmdUSnNVdTdEY21vSEdKQjRkb0s2ckJyNjJZVnJKaGZUNVBGUzh0S3Y2aEJkY1ZLZ3hwZFZWZ01SYjd2dThESlBuRlBWYlRUbU5lNWlSWVhmIn0";
-    private static final String _encodedTrustedIdentity = "Di:ID.eyJ1aWQiOiIxOTczYWVjYy03MTkwLTQyZDgtODQ1OC1jYmE4NDdhMjY5MDgiLCJzdWIiOiJkMzllMGIwMS0xZmU4LTRiNjYtYjIwOC1iYTEzOGI1ZTM4ZDAiLCJjYXAiOlsiZ2VuZXJpYyIsImlzc3VlIiwic2VsZiJdLCJpc3MiOiJkMzllMGIwMS0xZmU4LTRiNjYtYjIwOC1iYTEzOGI1ZTM4ZDAiLCJzeXMiOiJkaW1lLWphdmEtcmVmIiwiZXhwIjoiMjAzMS0xMS0xNlQxNDo0Njo1Ny4wMzQyMTJaIiwicHViIjoiMlREWGRvTnVjUUUyWTNrV2NoYTRCdWFMVXVoOGFtVGJldnY2YTVFZWZZbXNaTW4yWEhUUHBQRTZWIiwiaWF0IjoiMjAyMS0xMS0xOFQxNDo0Njo1Ny4wMzQyMTJaIn0.N1FjS4FQr82ozhYNVz+U6Dk0wL0la06YGV5AtmY2xOgrQdyQki1eQY/zKb09m95OCKsegS915Sq+qM71WqK/DA";
-    private static Key _trustedKey;
+    private static final String _encodedTrustedKey = "Di:KEY.eyJ1aWQiOiJmZDdkODdhMy0xZDVmLTRkZDUtOGVmMS0wMGZlMjNmMzk0NzMiLCJwdWIiOiIyVERYZG9OdlpSV2hVRlh6ZVBqbmdqeWltWUxRc0VZWXd6RXpkMmU2Mmp4d0Y0cmR1NDN2aXhtREoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc0NDk1MVoiLCJrZXkiOiJTMjFUWlNMRFR5TFdXaHRNYllkWUNjNXFWOVg0UnpVWXFQMTJIR29nVnpSWHJ0dGc3cFlKekwxbXh6THpTV2puU1Z6RzJ4YzJmcDJad0FKWFc0NzhtY0JHcEdnQ2ZGaTl4YXViIn0";
+    private static final String _encodedTrustedIdentity = "Di:ID.eyJ1aWQiOiI0MDViZDZhOC0wM2JmLTRjNDctOWNiYS0xNmNhODM5OGI1YzgiLCJzdWIiOiIxZmNkNWY4OC00YTc1LTQ3OTktYmQ0OC0yNWI2ZWEwNjQwNTMiLCJjYXAiOlsiZ2VuZXJpYyIsImlzc3VlIiwic2VsZiJdLCJpc3MiOiIxZmNkNWY4OC00YTc1LTQ3OTktYmQ0OC0yNWI2ZWEwNjQwNTMiLCJzeXMiOiJkaW1lLWphdmEtcmVmIiwiZXhwIjoiMjAzMS0xMS0xOFQxMjoxMTowMi43NjEwMDdaIiwicHViIjoiMlREWGRvTnZaUldoVUZYemVQam5nanlpbVlMUXNFWVl3ekV6ZDJlNjJqeHdGNHJkdTQzdml4bURKIiwiaWF0IjoiMjAyMS0xMS0yMFQxMjoxMTowMi43NjEwMDdaIn0.KE3hbTLB7+BzzEeGSFyauy2PMgXBIYpGqRFZ2n+xQQsAOxC45xYgeFvILtqLeVYKA8T5lcQvZdyuiHBPVMpxBw";    private static Key _trustedKey;
     private static Identity _trustedIdentity;
 
     // -- INTERMEDIATE IDENTITY --
-    private static final String _encodedIntermediateKey = "Di:KEY.eyJ1aWQiOiI3NDUxYzhiYi1kYzUxLTRlYTYtOTRlMy1lMTc5ZjQ3YzQwMDQiLCJwdWIiOiIyVERYZG9OdXVIZzJ1NjJmemRHeTR4RkRCS3BnY014TmJLUEM0YUtudG5UclFwR29peWpNTUFEUmYiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjQ4OjA4LjA3NTM5OVoiLCJrZXkiOiJTMjFUWlNMVEMyY2FNRzk4S2p3SkJUWW84Vk1UNWYzUGZVU24xcFdzVHppNFBDZzdYb2JEUjhuV3JQR0d2YlNaeUEzNTM3WUtYOGVxemR1NWs2SzFOemNuR3Q3dHl0WE5DdnpaIn0";
-    private static final String _encodedIntermediateIdentity = "Di:ID.eyJ1aWQiOiI5NzNjMzVhMC0wYmUwLTRjNTEtOGM0Zi01ZjY3ZmMwMDc4MjQiLCJzdWIiOiI2ODg4MGZmMy1mZTk0LTRmZjAtOTE0OC0wMGI5ODA4Mzg4NzciLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5IiwiaXNzdWUiXSwiaXNzIjoiZDM5ZTBiMDEtMWZlOC00YjY2LWIyMDgtYmExMzhiNWUzOGQwIiwic3lzIjoiZGltZS1qYXZhLXJlZiIsImV4cCI6IjIwMjYtMTEtMTdUMTQ6NDg6MTYuNTk0Njg4WiIsInB1YiI6IjJURFhkb051dUhnMnU2MmZ6ZEd5NHhGREJLcGdjTXhOYktQQzRhS250blRyUXBHb2l5ak1NQURSZiIsImlhdCI6IjIwMjEtMTEtMThUMTQ6NDg6MTYuNTk0Njg4WiJ9.DYQPu6StKgii80boEx+npHmxhran4pff0VxE5eNlOwOTi8S48QlaA3oTNwo1SJWBqOOUE+VFt+1WD5pYBnHOAg";
-    private static Key _intermediateKey;
+    private static final String _encodedIntermediateKey = "Di:KEY.eyJ1aWQiOiI1Y2FiMzA0Yi0wMzI1LTQ0NWQtODM3ZS1mNzA3ZDBjYmNkMTUiLCJwdWIiOiIyVERYZG9OdkQ4Y0M5dXhTYjRKRkhyazFmUEhXd3FxU0NVSkdlOFZnVkZzYVc1S3FGMndrWGJVUE4iLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2Mjk0OVoiLCJrZXkiOiJTMjFUWlNMOHBQeEVVaVRad2NQVEVuR2tjZjF1UEx3ckRmeDRYTHNSazZWZmZkYTNqVkhQOHBGRlNITlZBQkNwOWl0SDhHMXRvcDl3b1BGYm5ONXlqYmZSODZrRFBRU1VEUERlIn0";
+    private static final String _encodedIntermediateIdentity = "Di:ID.eyJ1aWQiOiIyM2Q5ZWRkZi1mYzhkLTRjMzctYmM5Mi03MTQzNDU0YTI0ZDUiLCJzdWIiOiJiZDI4ZGI4Zi0xMzYyLTRhZmQtYWVkNy00Y2EzOWY2NTk3NWUiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5IiwiaXNzdWUiXSwiaXNzIjoiMWZjZDVmODgtNGE3NS00Nzk5LWJkNDgtMjViNmVhMDY0MDUzIiwic3lzIjoiZGltZS1qYXZhLXJlZiIsImV4cCI6IjIwMjYtMTEtMTlUMTI6MTE6MDIuNzYzNjUyWiIsInB1YiI6IjJURFhkb052RDhjQzl1eFNiNEpGSHJrMWZQSFd3cXFTQ1VKR2U4VmdWRnNhVzVLcUYyd2tYYlVQTiIsImlhdCI6IjIwMjEtMTEtMjBUMTI6MTE6MDIuNzYzNjUyWiJ9.56v5LyX8jtKCsty7gm6Ns2cY+bMIX4pq44g80SEpu61vBIsRVzQ1NdV9CPWhtStvD3ww7Ma8X7BVo1lk26c2Dg";    private static Key _intermediateKey;
     private static Identity _intermediateIdentity;
 
     // -- ISSUER IDENTITY (SENDER) --
-    private static final String _encodedIssuerKey = "Di:KEY.eyJ1aWQiOiI4ZjEyNDgzMS01NzBlLTQyMmUtYjNiMS00NzlhNzI3ZTY2ZGEiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg1NzI2M1oiLCJrZXkiOiJTMjFUWlNMS1B2MVhDajdNVGN6V3ZkQVRUU3M5ek4xc3VKNUFEWnlZaldFcnZBaG1WZEduUDYxYm1HRlVodUFmcUg0UkQ1eGdTTjZaY2RhR1prMno4aXhSRnJVU05ZQmhzQnZyIn0";
-    private static String _encodedIssuerIdentity = "Di:ID.eyJ1aWQiOiI2YWU2OGE3MC0xN2Y2LTQ1MDQtOWFlMy1jNWJhOWUyZDQ4ZmIiLCJzdWIiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6IjY4ODgwZmYzLWZlOTQtNGZmMC05MTQ4LTAwYjk4MDgzODg3NyIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloifQ.SUQuZXlKMWFXUWlPaUk1TnpOak16VmhNQzB3WW1Vd0xUUmpOVEV0T0dNMFppMDFaalkzWm1Nd01EYzRNalFpTENKemRXSWlPaUkyT0RnNE1HWm1NeTFtWlRrMExUUm1aakF0T1RFME9DMHdNR0k1T0RBNE16ZzROemNpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWkRNNVpUQmlNREV0TVdabE9DMDBZalkyTFdJeU1EZ3RZbUV4TXpoaU5XVXpPR1F3SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UZFVNVFE2TkRnNk1UWXVOVGswTmpnNFdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MWRVaG5NblUyTW1aNlpFZDVOSGhHUkVKTGNHZGpUWGhPWWt0UVF6UmhTMjUwYmxSeVVYQkhiMmw1YWsxTlFVUlNaaUlzSW1saGRDSTZJakl3TWpFdE1URXRNVGhVTVRRNk5EZzZNVFl1TlRrME5qZzRXaUo5LkRZUVB1NlN0S2dpaTgwYm9FeCtucEhteGhyYW40cGZmMFZ4RTVlTmxPd09UaThTNDhRbGFBM29UTndvMVNKV0JxT09VRStWRnQrMVdENXBZQm5IT0Fn.yoSmBKB/YAWQ68gh//utH8G2szGr1VkRlyvR7kdY5Iy2fHtuL5ynA+0ZsehLv/fk6H8poA0yj/qNFIKLOohtAw";
+    private static final String _encodedIssuerKey = "Di:KEY.eyJ1aWQiOiJiMTZjYTg3My0yYmQ4LTQ4ZWItOTQyNC1iMGEwODkzY2NhNjUiLCJwdWIiOiIyVERYZG9OdzF3WlF0ZVU1MzI1czZSbVJYVnBUa1lXdlR1RXpSMWpOZFZ2WWpFUjZiNmJZYUR6dEYiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NDI3MloiLCJrZXkiOiJTMjFUWlNMMUttZVl6VlkxdzViWXJxa1lMaXoxRkx1Z2UyRllVcGZLUVg2M2R0V1E4YUxaNVhza0hZVE5vV3NWN3p6UWJkUFFlZ29RU0xoVzV0aEp1czZZWlhGTjhLUzVnNGdXIn0";
+    public static String _encodedIssuerIdentity = "Di:ID.eyJ1aWQiOiIyYTdkNDJhMy02YjQ1LTRhNGEtYmIzZC1lYzk0ZWMzNzlmMWYiLCJzdWIiOiJiZTRhZjVmMy1lODM4LTQ3MzItYTBmYy1mZmEyYzMyOGVhMTAiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2NTI1OVoiLCJwdWIiOiIyVERYZG9OdzF3WlF0ZVU1MzI1czZSbVJYVnBUa1lXdlR1RXpSMWpOZFZ2WWpFUjZiNmJZYUR6dEYiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NTI1OVoifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.7H3RwTTeDcI3pGMIWMPbAjpDnCN2O91JG4lKu3JJbxlLNwTbgTB/03xrwi28wl0iMReJ4zUPc3cCqbymAlxwAw";
     private static Key _issuerKey;
     private static Identity _issuerIdentity;
 
     // -- AUDIENCE IDENTITY (RECEIVER) --
-    private static final String _encodedAudienceKey = "Di:KEY.eyJ1aWQiOiIxYzEwZjM5ZC0yY2RjLTQ0ODEtYmY1ZS0wNTBlMzA2ZWY0YWQiLCJwdWIiOiIyVERYZG9OdmZ2QjVrVThhR1RUMlNpdmtSN05EbnJtVlZNTmYzU1A0QXpYOVFiOXVBQmhHRWhMUWkiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjU0OjI3LjUwODI0MFoiLCJrZXkiOiJTMjFUWlNMODE3SHluaEs3YUJ6U3hnWW91NDltSmlxUDREazR4OVpjaVE1WEcxdERLQkxCcWZxcGZqTnRhZk13a3VLM0FhYnBuR0t0Z2M5OHZIWnVnSEJuTjlOcHl6c1UxcGtyIn0";
-    private static final String _encodedAudienceIdentity = "Di:ID.eyJ1aWQiOiJhMDE4ZDQ4Yi0wYjcwLTRlMjQtOWIyMC0wYzQ0ZjQ3NGMyNDgiLCJzdWIiOiJhNjkwMjE4NC0yYmEwLTRiYTAtYWI5MS1jYTc3ZGE3ZDA1ZDMiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6IjY4ODgwZmYzLWZlOTQtNGZmMC05MTQ4LTAwYjk4MDgzODg3NyIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTE4VDE0OjU0OjI3LjUxMzI5MFoiLCJwdWIiOiIyVERYZG9OdmZ2QjVrVThhR1RUMlNpdmtSN05EbnJtVlZNTmYzU1A0QXpYOVFiOXVBQmhHRWhMUWkiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjU0OjI3LjUxMzI5MFoifQ.SUQuZXlKMWFXUWlPaUk1TnpOak16VmhNQzB3WW1Vd0xUUmpOVEV0T0dNMFppMDFaalkzWm1Nd01EYzRNalFpTENKemRXSWlPaUkyT0RnNE1HWm1NeTFtWlRrMExUUm1aakF0T1RFME9DMHdNR0k1T0RBNE16ZzROemNpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWkRNNVpUQmlNREV0TVdabE9DMDBZalkyTFdJeU1EZ3RZbUV4TXpoaU5XVXpPR1F3SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UZFVNVFE2TkRnNk1UWXVOVGswTmpnNFdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MWRVaG5NblUyTW1aNlpFZDVOSGhHUkVKTGNHZGpUWGhPWWt0UVF6UmhTMjUwYmxSeVVYQkhiMmw1YWsxTlFVUlNaaUlzSW1saGRDSTZJakl3TWpFdE1URXRNVGhVTVRRNk5EZzZNVFl1TlRrME5qZzRXaUo5LkRZUVB1NlN0S2dpaTgwYm9FeCtucEhteGhyYW40cGZmMFZ4RTVlTmxPd09UaThTNDhRbGFBM29UTndvMVNKV0JxT09VRStWRnQrMVdENXBZQm5IT0Fn.1k/T9SNUneSkHOfWKNoGm/7IYvuvcn1DiHh99TyJTARp8+XvMLI7tpQa8YAQwTd//JxSOAFjaknCc9HTHW3vDw";
-    private static Key _audienceKey;
+    private static final String _encodedAudienceKey = "Di:KEY.eyJ1aWQiOiJiNTMzZDcwNy1mZjg3LTRmMDItOTA5MC05OTgyZTZhYTAwMjEiLCJwdWIiOiIyVERYZG9OdW5qZGhyYVhTZXI5M3RuanZGR3lEbVNIRzFpQnd4MnNqWW9TUFpoeVlkcE02WVRuUVoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NjE5MloiLCJrZXkiOiJTMjFUWlNMQWYyVTh1RXlUTVphd0FoOHZMNG1Za3JBc050dGlUcG1DelVyajg2NkVrOURCckFtZWJYV0VtcEpwckplN1ZpcWN1Q3JXQ21wb252SE0zZ3c3YXRZbllZRXI5cDg2In0";
+    private static String _encodedAudienceIdentity = "Di:ID.eyJ1aWQiOiJmZDVkYWM2MC0zYjUwLTQ1ZWUtOGI0My1lMWM2YzRiY2NiZjciLCJzdWIiOiIxMjFmM2QzMi1mODU3LTQ5OWYtOTg4YS0wNzY0ODQ4YTdiNjMiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2Njc4NloiLCJwdWIiOiIyVERYZG9OdW5qZGhyYVhTZXI5M3RuanZGR3lEbVNIRzFpQnd4MnNqWW9TUFpoeVlkcE02WVRuUVoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2Njc4NloifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.kdtTRVPwUz1GVAFIZ7Qon261qh1IrpWVQnCZPztHU49g2PDgIC6nd8gbhBQVU1P8Wfq75PF7IpPEsGHPa1WdBA";    private static Key _audienceKey;
     private static Identity _audienceIdentity;
 
     private static <T extends Item> T importFromEncoded(String encoded) {
@@ -110,6 +122,23 @@ public class Commons {
         } catch (Exception e) {
             throw new RuntimeException(); // Should not happen
         }
+    }
+
+    private static Identity generateIdentity(Key subjectKey, Key issuerKey, Identity issuerIdentity, long validFor, Capability[] capabilities) {
+        try {
+            UUID subjectId = UUID.randomUUID();
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(subjectKey, capabilities);
+            Identity identity;
+            if (issuerIdentity == null) {
+                identity = iir.selfIssueIdentity(subjectId, validFor, issuerKey, Commons.SYSTEM_NAME);
+            } else {
+                identity = iir.issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, capabilities, null);
+            }
+            return identity;
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        return null;
     }
 
 }

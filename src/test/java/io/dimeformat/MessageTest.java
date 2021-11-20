@@ -9,7 +9,6 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
-
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
@@ -166,11 +165,10 @@ class MessageTest {
             Message message = Item.importFromEncoded(exported);
             assertEquals(UUID.fromString("0cef1d8f-54be-4ce0-a669-cd2897ac64e0"), message.getUniqueId());
             assertEquals(UUID.fromString("a6902184-2ba0-4ba0-ab91-ca77da7d05d3"), message.getAudienceId());
-            assertEquals(Commons.getIssuerIdentity().getSubjectId(), message.getIssuerId());
+            assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), message.getIssuerId());
             assertEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
             assertEquals(Instant.parse("2021-11-18T18:05:52.974395Z"), message.getIssuedAt());
             assertEquals(Instant.parse("2021-11-18T18:06:02.974395Z"), message.getExpiresAt());
-            assertEquals(message.getIssuerId(), Commons.getIssuerIdentity().getSubjectId());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

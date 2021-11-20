@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeUntrustedIdentityException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,7 @@ class IdentityTest {
             UUID subjectId = UUID.randomUUID();
             Key key = Key.generateKey(KeyType.IDENTITY);            
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME);
             //String k = key.exportToEncoded();
             //String i = identity.exportToEncoded();
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
@@ -62,7 +61,7 @@ class IdentityTest {
             Key key = Key.generateKey(KeyType.IDENTITY);
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
             //Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE };
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps, null);
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
             Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, null, null);
             //Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 5, Commons.getTrustedKey(), Commons.getTrustedIdentity(), null, caps, null);
             //String k = key.exportToEncoded();
@@ -194,16 +193,15 @@ class IdentityTest {
     void importTest1() {
         try { 
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-            String exported = "Di:ID.eyJ1aWQiOiI2YWU2OGE3MC0xN2Y2LTQ1MDQtOWFlMy1jNWJhOWUyZDQ4ZmIiLCJzdWIiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6IjY4ODgwZmYzLWZlOTQtNGZmMC05MTQ4LTAwYjk4MDgzODg3NyIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloifQ.SUQuZXlKMWFXUWlPaUk1TnpOak16VmhNQzB3WW1Vd0xUUmpOVEV0T0dNMFppMDFaalkzWm1Nd01EYzRNalFpTENKemRXSWlPaUkyT0RnNE1HWm1NeTFtWlRrMExUUm1aakF0T1RFME9DMHdNR0k1T0RBNE16ZzROemNpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWkRNNVpUQmlNREV0TVdabE9DMDBZalkyTFdJeU1EZ3RZbUV4TXpoaU5XVXpPR1F3SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UZFVNVFE2TkRnNk1UWXVOVGswTmpnNFdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MWRVaG5NblUyTW1aNlpFZDVOSGhHUkVKTGNHZGpUWGhPWWt0UVF6UmhTMjUwYmxSeVVYQkhiMmw1YWsxTlFVUlNaaUlzSW1saGRDSTZJakl3TWpFdE1URXRNVGhVTVRRNk5EZzZNVFl1TlRrME5qZzRXaUo5LkRZUVB1NlN0S2dpaTgwYm9FeCtucEhteGhyYW40cGZmMFZ4RTVlTmxPd09UaThTNDhRbGFBM29UTndvMVNKV0JxT09VRStWRnQrMVdENXBZQm5IT0Fn.yoSmBKB/YAWQ68gh//utH8G2szGr1VkRlyvR7kdY5Iy2fHtuL5ynA+0ZsehLv/fk6H8poA0yj/qNFIKLOohtAw";
-            Identity identity = Item.importFromEncoded(exported);
+            Identity identity = Item.importFromEncoded(Commons._encodedIssuerIdentity);
             assertNotNull(identity);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
-            assertEquals(UUID.fromString("6ae68a70-17f6-4504-9ae3-c5ba9e2d48fb"), identity.getUniqueId());
-            assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), identity.getSubjectId());
-            assertEquals(Instant.parse("2021-11-18T14:51:36.862376Z"), identity.getIssuedAt());
-            assertEquals(Instant.parse("2022-11-18T14:51:36.862376Z"), identity.getExpiresAt());
+            assertEquals(Commons.getIssuerIdentity().getUniqueId(), identity.getUniqueId());
+            assertEquals(Commons.getIssuerIdentity().getSubjectId(), identity.getSubjectId());
+            assertEquals(Commons.getIssuerIdentity().getIssuedAt(), identity.getIssuedAt());
+            assertEquals(Commons.getIssuerIdentity().getExpiresAt(), identity.getExpiresAt());
             assertEquals(Commons.getIntermediateIdentity().getSubjectId(), identity.getIssuerId());
-            assertEquals("2TDXdoNusvs2c8gGoR4oZc76Ux54sA83bwe7wyrrV6RRYrknZL93nQFfk", identity.getPublicKey());
+            assertEquals(Commons.getIssuerIdentity().getPublicKey(), identity.getPublicKey());
             assertTrue(identity.hasCapability(Capability.GENERIC));
             assertTrue(identity.hasCapability(Capability.IDENTIFY));
             assertNotNull(identity.getTrustChain());
