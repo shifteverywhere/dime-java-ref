@@ -72,15 +72,24 @@ public class Message extends Item {
         return null;
     }
 
+    public String getContext() {
+        return this._claims.ctx;
+    }
+
     public Message(UUID issuerId) {
-        this(null, issuerId, -1);
+        this(null, issuerId, -1, null);
     }
 
     public Message(UUID issuerId, long validFor) {
-        this(null, issuerId, validFor);
+        this(null, issuerId, validFor, null);
     }
 
     public Message(UUID audienceId, UUID issuerId, long validFor) {
+        this(audienceId, issuerId, validFor, null);
+    }
+
+    public Message(UUID audienceId, UUID issuerId, long validFor, String context) {
+        if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Instant.now();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
         this._claims = new MessageClaims(UUID.randomUUID(),
@@ -90,7 +99,8 @@ public class Message extends Item {
                 exp,
                 null,
                 null,
-                null);
+                null,
+                context);
     }
 
     @Override
@@ -244,8 +254,9 @@ public class Message extends Item {
         public UUID kid;
         public byte[] pub;
         public String lnk;
+        public String ctx;
 
-        public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, byte[] pub, String lnk) {
+        public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, byte[] pub, String lnk, String ctx) {
             this.uid = uid;
             this.aud = aud;
             this.iss = iss;
@@ -254,6 +265,7 @@ public class Message extends Item {
             this.kid = kid;
             this.pub = pub;
             this.lnk = lnk;
+            this.ctx = ctx;
         }
 
         public MessageClaims(String json) {
@@ -266,6 +278,7 @@ public class Message extends Item {
             this.kid = jsonObject.has("kid") ? UUID.fromString(jsonObject.getString("kid")) : null;
             this.pub = jsonObject.has("pub") ? Utility.fromBase64(jsonObject.getString("pub")) : null;
             this.lnk = jsonObject.has("lnk") ? jsonObject.getString("lnk") : null;
+            this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
         }
 
         public String toJSONString() {
@@ -278,6 +291,7 @@ public class Message extends Item {
             if (this.kid != null) { jsonObject.put("kid", this.iss.toString()); }
             if (this.pub != null) { jsonObject.put("pub", Base58.encode(this.pub, null)); }
             if (this.lnk != null) { jsonObject.put("lnk", this.lnk); }
+            if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
             return jsonObject.toString();
         }
 

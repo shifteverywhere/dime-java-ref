@@ -295,123 +295,154 @@ class MessageTest {
         }
     }
 
-        @Test
-        void setPayloadTest5() {
-            try {
-                Key issuerKey = Key.generateKey(KeyType.EXCHANGE);
-                Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
-                Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-                message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy(), audienceKey.getPublic().getBytes(StandardCharsets.UTF_8));
-                message1.sign(Commons.getIssuerKey());
-                Message message2 = Item.importFromEncoded(message1.exportToEncoded());
-                String plainText = new String(message2.getPayload(issuerKey.publicCopy(), audienceKey, audienceKey.getPublic().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
-                assertEquals("Racecar is racecar backwards.", plainText);
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
+    @Test
+    void setPayloadTest5() {
+        try {
+            Key issuerKey = Key.generateKey(KeyType.EXCHANGE);
+            Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
+            Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy(), audienceKey.getPublic().getBytes(StandardCharsets.UTF_8));
+            message1.sign(Commons.getIssuerKey());
+            Message message2 = Item.importFromEncoded(message1.exportToEncoded());
+            String plainText = new String(message2.getPayload(issuerKey.publicCopy(), audienceKey, audienceKey.getPublic().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+            assertEquals("Racecar is racecar backwards.", plainText);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+    }
 
-        @Test
-        void setPayloadTest6() {
-            try {
-                Key key = Key.generateKey(KeyType.IDENTITY);
-                Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-                message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
-            } catch (IllegalArgumentException e) { 
-                return; // All is well
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
-            fail("Should not happen.");
+    @Test
+    void setPayloadTest6() {
+        try {
+            Key key = Key.generateKey(KeyType.IDENTITY);
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
+        } catch (IllegalArgumentException e) { 
+            return; // All is well
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+        fail("Should not happen.");
+    }
 
-        @Test
-        void linkItemTest1() {
-            try {
-                Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-                Identity issuer = Commons.getIssuerIdentity();
-                Identity receiver = Commons.getAudienceIdentity();
-                Message issuerMessage = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-                issuerMessage.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                issuerMessage.sign(Commons.getIssuerKey());
-                Message responseMessage = new Message(issuer.getSubjectId(), receiver.getSubjectId(), 100);
-                responseMessage.setPayload("It is!".getBytes(StandardCharsets.UTF_8));
-                responseMessage.linkItem(issuerMessage);
-                responseMessage.sign(Commons.getAudienceKey());
-                String responseEncoded = responseMessage.exportToEncoded();
-                Message finalMessage = Item.importFromEncoded(responseEncoded);
-                finalMessage.verify(Commons.getAudienceKey(), issuerMessage);
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
+    @Test
+    void linkItemTest1() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Identity issuer = Commons.getIssuerIdentity();
+            Identity receiver = Commons.getAudienceIdentity();
+            Message issuerMessage = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
+            issuerMessage.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage.sign(Commons.getIssuerKey());
+            Message responseMessage = new Message(issuer.getSubjectId(), receiver.getSubjectId(), 100);
+            responseMessage.setPayload("It is!".getBytes(StandardCharsets.UTF_8));
+            responseMessage.linkItem(issuerMessage);
+            responseMessage.sign(Commons.getAudienceKey());
+            String responseEncoded = responseMessage.exportToEncoded();
+            Message finalMessage = Item.importFromEncoded(responseEncoded);
+            finalMessage.verify(Commons.getAudienceKey(), issuerMessage);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+    }
 
-        @Test
-        void linkItemTest2() {
-            try {
-                Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-                Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-                message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                message.linkItem(Key.generateKey(KeyType.EXCHANGE));
-                message.sign(Commons.getIssuerKey());
-                message.verify(Commons.getIssuerKey(), Commons.getIssuerKey());
-            } catch (DimeIntegrityException e) { 
-                return; // All is well
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
-            fail("Should not happen.");
+    @Test
+    void linkItemTest2() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.linkItem(Key.generateKey(KeyType.EXCHANGE));
+            message.sign(Commons.getIssuerKey());
+            message.verify(Commons.getIssuerKey(), Commons.getIssuerKey());
+        } catch (DimeIntegrityException e) { 
+            return; // All is well
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+        fail("Should not happen.");
+    }
 
-        @Test
-        void linkItemTest3() {
-            try {
-                Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-                Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-                message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                message.sign(Commons.getIssuerKey());
-                message.linkItem(Key.generateKey(KeyType.EXCHANGE));
-            } catch (IllegalStateException e) { 
-                return; // All is well
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
-            fail("Should not happen.");
+    @Test
+    void linkItemTest3() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            message.linkItem(Key.generateKey(KeyType.EXCHANGE));
+        } catch (IllegalStateException e) { 
+            return; // All is well
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+        fail("Should not happen.");
+    }
 
-        @Test
-        void thumbprintTest1() {
-            try {
-                Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-                Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-                message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                message1.sign(Commons.getIssuerKey());
-                String thumbprint1 = message1.thumbprint();
-                String encoded = message1.exportToEncoded();
-                Message message2 = Item.importFromEncoded(encoded);
-                String thumbprint2 = message2.thumbprint();
-                assertEquals(thumbprint1, thumbprint2);
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
+    @Test
+    void thumbprintTest1() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message1.sign(Commons.getIssuerKey());
+            String thumbprint1 = message1.thumbprint();
+            String encoded = message1.exportToEncoded();
+            Message message2 = Item.importFromEncoded(encoded);
+            String thumbprint2 = message2.thumbprint();
+            assertEquals(thumbprint1, thumbprint2);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+    }
 
-        @Test
-        void thumbprintTest2() {
-            try {
-                Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-                Identity issuer = Commons.getIssuerIdentity();
-                Identity receiver = Commons.getAudienceIdentity();
-                Message issuerMessage1 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-                issuerMessage1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                issuerMessage1.sign(Commons.getIssuerKey());
-                Message issuerMessage2 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-                issuerMessage2.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-                issuerMessage2.sign(Commons.getIssuerKey());
-                assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
-            } catch (Exception e) {
-                fail("Unexpected exception thrown: " + e);
-            }
+    @Test
+    void thumbprintTest2() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Identity issuer = Commons.getIssuerIdentity();
+            Identity receiver = Commons.getAudienceIdentity();
+            Message issuerMessage1 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
+            issuerMessage1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage1.sign(Commons.getIssuerKey());
+            Message issuerMessage2 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
+            issuerMessage2.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage2.sign(Commons.getIssuerKey());
+            assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
+    }
+
+    @Test
+    void contextTest1() {
+        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
+        Message message = new Message(null, Commons.getIssuerIdentity().getIssuerId(), -1, context);
+        assertEquals(context, message.getContext());
+    }
+
+    @Test
+    void contextTest2() {
+        try {
+            String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
+            Message message1 = new Message(null, Commons.getIssuerIdentity().getIssuerId(), -1, context);
+            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message1.sign(Commons.getIssuerKey());
+            String exported = message1.exportToEncoded();
+            Message message2 = Item.importFromEncoded(exported);
+            assertEquals(context, message2.getContext());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e); 
+        }
+    }
+
+    @Test
+    void contextTest3() {
+        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        try {
+            new Message(null, Commons.getIssuerIdentity().getIssuerId(), -1, context);
+        } catch (IllegalArgumentException e) { return; } // All is well
+        fail("Should not happen.");
+    }
 
 }
