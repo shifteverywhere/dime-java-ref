@@ -90,17 +90,29 @@ public class IdentityIssuingRequest extends Item {
     }
 
     public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
-        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, null);
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, null, null);
     }
 
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, null);
+    }
+
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
-        return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambit);
+        return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, methods);
     }
 
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
+        return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, null, null);
+    }
+
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
+        return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, ambits, null);
+    }
+
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambit);
+        return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambits, methods);
 
     }
 
@@ -196,7 +208,7 @@ public class IdentityIssuingRequest extends Item {
 
     private IdentityIssuingRequestClaims _claims;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException {
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey() == issuerKey.getPublic());
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))
@@ -204,8 +216,9 @@ public class IdentityIssuingRequest extends Item {
             Instant now = Instant.now();
             Instant expires = now.plusSeconds(validFor);
             UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
-            List<String> ambitList = (ambit != null) ? Arrays.asList(ambit) : null;
-            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, getCapabilities(), getPrinciples(), ambitList);
+            List<String> ambitList = (ambits != null) ? Arrays.asList(ambits) : null;
+            List<String> methodList = (method != null) ? Arrays.asList(method) : null;
+            Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, getCapabilities(), getPrinciples(), ambitList, methodList);
             if (Identity.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId() != Identity.getTrustedIdentity().getSubjectId()) {
                 issuerIdentity.verifyTrust();
                 // The chain will only be set if this is not the trusted identity (and as long as one is set)

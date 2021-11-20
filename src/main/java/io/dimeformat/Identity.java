@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +71,10 @@ public class Identity extends Item {
         return this._claims.amb;
     }
 
+    public List<String> getMethods() {
+        return this._claims.mtd;
+    }
+
     public Identity getTrustChain() {
         return this._trustChain;
     }
@@ -124,7 +127,7 @@ public class Identity extends Item {
 
     Identity() { }
 
-    Identity(String systemName, UUID subjectId, String publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, List<String> ambit) {
+    Identity(String systemName, UUID subjectId, String publicKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
         this._claims = new IdentityClaims(systemName,
                 UUID.randomUUID(),
@@ -133,11 +136,10 @@ public class Identity extends Item {
                 issuedAt,
                 expiresAt,
                 publicKey,
-                null,
+                capabilities,
                 principles,
-                null);
-        this._claims.cap = capabilities;
-        this._claims.amb = ambit;
+                ambits,
+                methods);
     }
 
     void setTrustChain(Identity trustChain) {
@@ -193,8 +195,9 @@ public class Identity extends Item {
         public List<Capability> cap;
         public Map<String, Object> pri;
         public List<String> amb;
+        public List<String> mtd;
 
-        public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, Capability[] cap, Map<String, Object> pri, String[] amb) {
+        public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, List<Capability> cap, Map<String, Object> pri, List<String> amb, List<String> mtd) {
             this.sys = sys;
             this.uid = uid;
             this.sub = sub;
@@ -202,9 +205,10 @@ public class Identity extends Item {
             this.iat = iat;
             this.exp = exp;
             this.pub = pub;
-            this.cap = (cap != null) ? Arrays.asList(cap) : null;
+            this.cap = cap;
             this.pri = pri;
-            this.amb = (amb != null) ? Arrays.asList(amb) : null;
+            this.amb = amb;
+            this.mtd = mtd;
         }
 
         public IdentityClaims(String json) {
@@ -225,6 +229,7 @@ public class Identity extends Item {
             }
             this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri").toMap() : null;
             this.amb = (jsonObject.has("amb")) ? (List<String>)(Object)jsonObject.getJSONArray("amb").toList() : null;
+            this.mtd = (jsonObject.has("mtd")) ? (List<String>)(Object)jsonObject.getJSONArray("mtd").toList() : null;
         }
 
         public String toJSONString() {
@@ -245,6 +250,7 @@ public class Identity extends Item {
             }
             if (this.pri != null) { jsonObject.put("pri", this.pri); }
             if (this.amb != null) { jsonObject.put("amb", this.amb); }
+            if (this.mtd != null) { jsonObject.put("mtd", this.mtd); }
             return jsonObject.toString();
         }
 

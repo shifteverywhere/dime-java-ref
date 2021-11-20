@@ -9,7 +9,6 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
-
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeUntrustedIdentityException;
@@ -36,7 +35,7 @@ class IdentityTest {
             UUID subjectId = UUID.randomUUID();
             Key key = Key.generateKey(KeyType.IDENTITY);            
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME);
             //String k = key.exportToEncoded();
             //String i = identity.exportToEncoded();
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
@@ -100,7 +99,7 @@ class IdentityTest {
         try {
             Identity.setTrustedIdentity(null);
             Key key = Key.generateKey(KeyType.IDENTITY);
-            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isSelfSigned());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -124,7 +123,7 @@ class IdentityTest {
         try {
             Identity.setTrustedIdentity(null);
             Key key = Key.generateKey(KeyType.IDENTITY);
-            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isSelfSigned());
             identity.verifyTrust();
         } catch (IllegalStateException e) { 
@@ -152,7 +151,7 @@ class IdentityTest {
         try {    
             Identity.setTrustedIdentity(null);
             Key key = Key.generateKey(KeyType.IDENTITY);
-            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
             identity.verifyTrust();
         } catch (DimeUntrustedIdentityException e) { 
@@ -216,12 +215,42 @@ class IdentityTest {
     @Test
     void ambitTest1() {
         try { 
-            String[] ambit = new String[] { "global", "administrator" };
+            String[] ambits = new String[] { "global", "administrator" };
             Key key = Key.generateKey(KeyType.IDENTITY);
-            Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambit);
-            assertEquals(2, identity.getAmbits().size());
-            assertTrue(identity.hasAmbit(ambit[0]));
-            assertTrue(identity.hasAmbit(ambit[1]));
+            
+            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambits, null);
+            assertEquals(2, identity1.getAmbits().size());
+            assertTrue(identity1.hasAmbit(ambits[0]));
+            assertTrue(identity1.hasAmbit(ambits[1]));
+
+            Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
+            assertEquals(2, identity2.getAmbits().size());
+            assertTrue(identity2.hasAmbit(ambits[0]));
+            assertTrue(identity2.hasAmbit(ambits[1]));
+        } catch (Exception e) { 
+            fail("Unexpected exception thrown: " + e); 
+        }
+    }
+
+    @Test
+    void methodsTest1() {
+        try { 
+            String[] methods = new String[] { "dime", "sov" };
+            Key key = Key.generateKey(KeyType.IDENTITY);
+
+            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null, methods);
+            List<String> methodList1 = identity1.getMethods();
+            assertNotNull(methodList1);
+            assertEquals(2, identity1.getMethods().size());
+            assertTrue(methodList1.contains(methods[0]));
+            assertTrue(methodList1.contains(methods[1]));
+
+            Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
+            List<String> methodList2 = identity1.getMethods();
+            assertNotNull(methodList2);
+            assertEquals(2, identity2.getMethods().size());
+            assertTrue(methodList2.contains(methods[0]));
+            assertTrue(methodList2.contains(methods[1]));
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 
         }
@@ -234,7 +263,7 @@ class IdentityTest {
             Map<String, Object> principles = new HashMap<String, Object>();
             principles.put("tag", "Racecar is racecar backwards.");
             principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
-            Identity identity =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Map<String, Object> pri = identity.getPrinciples();
             assertEquals("Racecar is racecar backwards.", pri.get("tag"));
             List<String> nbr = (List<String>)pri.get("nbr");
@@ -256,7 +285,7 @@ class IdentityTest {
             Map<String, Object> principles = new HashMap<String, Object>();
             principles.put("tag", "Racecar is racecar backwards.");
             principles.put("nbr", Arrays.asList(new String[] { "one" , "two", "three" }));
-            Identity identity1 =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null);
+            Identity identity1 =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
             Map<String, Object> pri = identity2.getPrinciples();
             assertEquals("Racecar is racecar backwards.", pri.get("tag"));
