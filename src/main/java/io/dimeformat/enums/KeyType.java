@@ -39,6 +39,7 @@ public enum KeyType {
         this.value = value;
     }
 
+    /** The byte value of the enum. */
     public final int value;
 
     /**

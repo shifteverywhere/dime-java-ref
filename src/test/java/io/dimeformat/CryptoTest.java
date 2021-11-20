@@ -32,8 +32,8 @@ class CryptoTest {
         try {
             Key clientKey = Key.generateKey(KeyType.EXCHANGE);
             Key serverKey = Key.generateKey(KeyType.EXCHANGE);
-            Key shared1 = Crypto.generateSharedSecret(clientKey, serverKey.publicCopy(), null, null);
-            Key shared2 = Crypto.generateSharedSecret(clientKey.publicCopy(), serverKey, null, null);
+            Key shared1 = Crypto.generateSharedSecret(clientKey, serverKey.publicCopy());
+            Key shared2 = Crypto.generateSharedSecret(clientKey.publicCopy(), serverKey);
             assertEquals(KeyType.ENCRYPTION, shared1.getKeyType());
             assertEquals(KeyType.ENCRYPTION, shared2.getKeyType());
             assertEquals(shared1.getSecret(), shared2.getSecret());

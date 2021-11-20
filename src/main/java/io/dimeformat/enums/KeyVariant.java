@@ -29,6 +29,7 @@ public enum KeyVariant {
         this.value = (byte)value;
     }
 
+    /** The byte value of the enum. */
     public final byte value;
 
     /**

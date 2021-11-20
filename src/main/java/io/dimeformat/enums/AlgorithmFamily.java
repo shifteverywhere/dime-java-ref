@@ -9,7 +9,7 @@
 package io.dimeformat.enums;
 
 /**
- * Defines the familty a particular algorithm belongs to. 
+ * Defines the family a particular algorithm belongs to.
  * Used for header information in keys.
  */
 public enum AlgorithmFamily {
@@ -19,15 +19,15 @@ public enum AlgorithmFamily {
     */
     UNDEFINED(0x00),
     /**
-     * Symmertic authentication encryption algorithm.
+     * Symmetric authentication encryption algorithm.
      */
     AEAD(0x10),
     /**
-     * Assymetric Elliptic Curve key agreement algorithm.
+     * Asymmetric Elliptic Curve key agreement algorithm.
      */
     ECDH(0x40),
     /**
-     * Assymetric Edwards-curve digital signature algorithm
+     * Asymmetric Edwards-curve digital signature algorithm
      */
     EDDSA(0x80),
     /**
@@ -39,6 +39,7 @@ public enum AlgorithmFamily {
         this.value = (byte)value;
     }
 
+    /** The byte value of the enum. */
     public final byte value;
 
     /**

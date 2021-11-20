@@ -8,12 +8,26 @@
 //
 package io.dimeformat.exceptions;
 
+/**
+ * Exception that is thrown if there is any problems with verifying the trust of
+ * an identity.
+ */
 public class DimeUntrustedIdentityException extends Exception {
 
+    /**
+     * Create a new exception with a description.
+     * @param message A short description of what happened.
+     */
     public DimeUntrustedIdentityException(String message) {
         super(message);
     }
-
+    
+    /**
+     * Create a new exception with a description and the underlaying
+     * causing exception.
+     * @param message A short description of what happened.
+     * @param exception The causing exception.
+     */
     public DimeUntrustedIdentityException(String message, Exception cause) {
         super(message, cause);
     }

@@ -8,8 +8,15 @@
 //
 package io.dimeformat.exceptions;
 
+/**
+ * Exception that is thrown if there is any problems with verifying signatures.
+ */
 public class DimeIntegrityException extends Exception {
 
+    /**
+     * Create a new exception with a description.
+     * @param message A short description of what happened.
+     */
     public DimeIntegrityException(String message) {
         super(message);
     }

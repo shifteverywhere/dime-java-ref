@@ -177,8 +177,7 @@ public class Message extends Item {
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, issuer key of invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, audience key invalid key type."); }
-        byte[] info = Crypto.generateHash((issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
-        Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey, salt, info);
+        Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey);
         setPayload(Crypto.encrypt(payload, shared));
     }
 
@@ -196,8 +195,7 @@ public class Message extends Item {
         if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to dectrypt payload."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, audience key invalid key type."); }
-        byte[] info = Crypto.generateHash((issuerKey.getPublic() + this.getUniqueId().toString() + this.getAudienceId().toString()).getBytes(StandardCharsets.UTF_8));
-        Key key = Crypto.generateSharedSecret(issuerKey, audienceKey, salt, info);
+        Key key = Crypto.generateSharedSecret(issuerKey, audienceKey);
         return Crypto.decrypt(getPayload(), key);
     }
 

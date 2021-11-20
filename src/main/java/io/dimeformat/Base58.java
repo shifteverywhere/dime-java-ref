@@ -12,10 +12,21 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+/**
+ * Encodes and decodes byte arrays and strings to and from base 58. This is mainly used
+ * to encode/decode keys. 
+ */
 public class Base58 {
 
     /// PUBLIC ///
 
+    /**
+     * Encodes a byte array and an optional prefix to base 58. The prefix will be added to
+     * the front of the data array.
+     * @param data The main byte array to encode.
+     * @param prefix A byte array that will be added to the front of data before encoding.
+     * @return
+     */
     public static String encode(byte[] data, byte[] prefix) {
         if (data != null && data.length > 0) {
             int length = (prefix != null) ? prefix.length + data.length : data.length;
@@ -53,6 +64,11 @@ public class Base58 {
         return null;
     }
 
+    /**
+     * Decodes a base 58 string to a byte array.
+     * @param encoded The base 58 string that should be decoded.
+     * @return A decoded byte array.
+     */
     public static byte[] decode(String encoded) {
         if (encoded.length() == 0) {
             return new byte[0];
