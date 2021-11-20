@@ -80,21 +80,9 @@ class IdentityTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
-/*
-    @Test
-    void issueTest3() {
-        Identity.SetTrustedIdentity(Commons.TrustedIdentity);
-        List<Capability> reqCaps = new List<Capability> { Capability.Issue };
-        List<Capability> allowCaps = new List<Capability> { Capability.Generic, Capability.Identify };
-        try {
-            Identity identity = IdentityIssuingRequest.Generate(Key.Generate(KeyType.Identity), reqCaps).Issue(Guid.NewGuid(), 100, Commons.TrustedKey, Commons.TrustedIdentity, allowCaps, null);
-        } catch (DimeCapabilityException e) { return; } // All is well
-        Assert.IsTrue(false, "Should not happen.");
-    }
-*/
 
     @Test
-    void issueTest4() {
+    void issueTest3() {
         try {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
             Key key = Key.generateKey(KeyType.IDENTITY);
@@ -106,17 +94,7 @@ class IdentityTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
-/*
-    @Test
-    void issueTest5() {
-        Identity.setTrustedIdentity(null);
-        Capability[] caps = new Capability[] { Capability.ISSUE };
-        try {
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), caps, null).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), null, caps, null);
-        } catch (IllegalArgumentException) { return; } // All is well
-        assertTrue(false, "Should not happen.");
-    }
-*/
+
     @Test
     void isSelfSignedTest1() {
         try {
@@ -154,7 +132,7 @@ class IdentityTest {
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 
         }
-        assertTrue(false, "This should not happen.");
+        fail("Should not happen.");
     }
 
     @Test
@@ -182,7 +160,7 @@ class IdentityTest {
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 
         }
-        assertTrue(false, "This should not happen.");
+        fail("Should not happen.");
     }
 
     @Test

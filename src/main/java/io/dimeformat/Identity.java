@@ -60,6 +60,10 @@ public class Identity extends Item {
         return this._claims.pub;
     }
 
+    public List<Capability> getCapabilities() {
+        return this._claims.cap;
+    }
+
     public Map<String, Object> getPrinciples() {
         return (this._claims != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
     }

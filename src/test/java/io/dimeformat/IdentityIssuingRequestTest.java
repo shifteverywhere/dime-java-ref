@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
+import io.dimeformat.exceptions.DimeCapabilityException;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -95,7 +96,7 @@ class IdentityIssuingRequestTest {
     @Test
     void exportTest1() {
         try {
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR( Key.generateKey(KeyType.IDENTITY));
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY));
             String exported = iir.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
@@ -121,63 +122,98 @@ class IdentityIssuingRequestTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
-/*
+
     @Test
     void capabilityTest1() {
-        Identity.SetTrustedIdentity(Commons.TrustedIdentity);
-        List<Capability> requestedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify };
-        IdentityIssuingRequest iir = IdentityIssuingRequest.Generate(Key.Generate(KeyType.Identity), requestedCapabilities);
-        try
-        {
-            Identity identity = iir.Issue(Guid.NewGuid(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.IntermediateKey, Commons.IntermediateIdentity, null);
-        } catch (ArgumentException) { return; } // All is well
-        Assert.IsTrue(false, "Should not happen.");
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), new Capability[] { Capability.GENERIC, Capability.IDENTIFY });
+            try {
+                iir.issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), null, null);
+            } catch (IllegalArgumentException e) { return; } // All is well
+            fail("Should not happen.");
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
-        [TestMethod]
-    public void CapabilityTest2()
-    {
-        Identity.SetTrustedIdentity(Commons.TrustedIdentity);
-        List<Capability> requestedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify, Capability.Issue };
-        List<Capability> allowedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify };
-        IdentityIssuingRequest iir = IdentityIssuingRequest.Generate(Key.Generate(KeyType.Identity), requestedCapabilities);
-        try
-        {
-            Identity identity = iir.Issue(Guid.NewGuid(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.IntermediateKey, Commons.IntermediateIdentity, allowedCapabilities);
-        } catch (IdentityCapabilityException) { return; } // All is well
-        Assert.IsTrue(false, "Should not happen.");
+    @Test
+    void capabilityTest2() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] requestedCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE };
+            Capability[] allowedCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), requestedCapabilities);
+            try {
+                iir.issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), allowedCapabilities, null);
+            } catch (DimeCapabilityException e) { return; } // All is well
+            fail("Should not happen.");
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+ 
+    @Test
+    void capabilityTest3() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] requestedCapabilities = new Capability[] { Capability.GENERIC };
+            Capability[] requiredCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), requestedCapabilities);
+            Identity identity = iir.issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), null, requiredCapabilities);
+            assertTrue(identity.hasCapability(requestedCapabilities[0]));
+            assertTrue(identity.hasCapability(requiredCapabilities[0]));
+            assertTrue(identity.getCapabilities().size() == 2);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
-        [TestMethod]
-    public void CapabilityTest3()
-    {
-        Identity.SetTrustedIdentity(Commons.TrustedIdentity);
-        List<Capability> requestedCapabilities = new List<Capability> { Capability.Generic };
-        List<Capability> allowedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify };
-        List<Capability> requiredCapabilities = new List<Capability> { Capability.Identify };
-        IdentityIssuingRequest iir = IdentityIssuingRequest.Generate(Key.Generate(KeyType.Identity), requestedCapabilities);
-        try
-        {
-            Identity identity = iir.Issue(Guid.NewGuid(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.IntermediateKey, Commons.IntermediateIdentity, allowedCapabilities, requiredCapabilities);
-        } catch (IdentityCapabilityException) { return; } // All is well
-        Assert.IsTrue(false, "Should not happen.");
+    @Test
+    void capabilityTest4() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] requestedCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            Capability[] allowedCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            Capability[] requiredCapabilities = new Capability[] { Capability.IDENTIFY };
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), requestedCapabilities);
+            Identity identity = iir.issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), allowedCapabilities, requiredCapabilities);
+            assertTrue(identity.hasCapability(requestedCapabilities[0]));
+            assertTrue(identity.hasCapability(requestedCapabilities[1]));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
-        [TestMethod]
-    public void CapabilityTest4()
-    {
-        Identity.SetTrustedIdentity(Commons.TrustedIdentity);
-        List<Capability> requestedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify };
-        List<Capability> allowedCapabilities = new List<Capability> { Capability.Generic, Capability.Identify };
-        List<Capability> requiredCapabilities = new List<Capability> { Capability.Identify };
-        IdentityIssuingRequest iir = IdentityIssuingRequest.Generate(Key.Generate(KeyType.Identity), requestedCapabilities);
-        Identity identity = iir.Issue(Guid.NewGuid(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.IntermediateKey, Commons.IntermediateIdentity, allowedCapabilities, requiredCapabilities);
-        Assert.IsTrue(identity.HasCapability(requestedCapabilities[0]));
-        Assert.IsTrue(identity.HasCapability(requestedCapabilities[1]));
+    @Test
+    void capabilityTest5() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] allowedCapabilities = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            Capability[] requiredCapabilities = new Capability[] { Capability.ISSUE };
+            try {
+                IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), requiredCapabilities).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), allowedCapabilities, null);
+            } catch (DimeCapabilityException e) { return; } // All is well
+            fail("Should not happen.");
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
-}
-*/
+    @Test
+    void capabilityTest6() {
+        try {
+            Identity.setTrustedIdentity(null);
+            Capability[] caps = new Capability[] { Capability.ISSUE };
+            try {
+                IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), caps).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), null, caps, null);
+            } catch (IllegalArgumentException e) { return; } // All is well
+            fail("Should not happen.");
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
     @Test
     void principlesTest1() {
         try {
