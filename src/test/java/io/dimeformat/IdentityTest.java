@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class IdentityTest {
@@ -86,7 +87,7 @@ class IdentityTest {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
             Key key = Key.generateKey(KeyType.IDENTITY);
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), caps, null, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), caps, null);
             assertTrue(identity.hasCapability(Capability.ISSUE));
             assertTrue(identity.hasCapability(Capability.GENERIC));
         } catch (Exception e) {

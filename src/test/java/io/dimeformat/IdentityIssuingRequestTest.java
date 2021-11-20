@@ -8,12 +8,13 @@
 //
 package io.dimeformat;
 
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeCapabilityException;
-
+import io.dimeformat.exceptions.DimeIntegrityException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,6 +59,27 @@ class IdentityIssuingRequestTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
+
+    @Test
+    void issueTest1() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Key key1 = Key.generateKey(KeyType.IDENTITY);
+            Capability[] caps = new Capability[] { Capability.GENERIC};
+            IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(key1, caps, null);
+            String[] components = iir1.exportToEncoded().split("\\.");
+            JSONObject json = new JSONObject(new String(Utility.fromBase64(components[1]), StandardCharsets.UTF_8));
+            Key key2 = Key.generateKey(KeyType.IDENTITY);
+            json.put("pub", key2.getPublic());
+            IdentityIssuingRequest iir2 = Item.importFromEncoded(components[0] + "." + Utility.toBase64(json.toString()) + "." + components[2]);
+            try {
+                iir2.issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, caps);
+            } catch (DimeIntegrityException e) { return; } // All is well 
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 
     @Test
     void verifyTest1() {
