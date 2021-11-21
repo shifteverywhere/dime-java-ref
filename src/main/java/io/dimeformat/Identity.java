@@ -168,15 +168,15 @@ public class Identity extends Item {
     @Override
     protected String encode()  {
         if (this._encoded == null) {
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(Identity.TAG);
-            buffer.append(Envelope._COMPONENT_DELIMITER);
-            buffer.append(Utility.toBase64(this._claims.toJSONString()));
+            StringBuilder builder = new StringBuilder();
+            builder.append(Identity.TAG);
+            builder.append(Envelope._COMPONENT_DELIMITER);
+            builder.append(Utility.toBase64(this._claims.toJSONString()));
             if (this._trustChain != null) {
-                buffer.append(Envelope._COMPONENT_DELIMITER);
-                buffer.append(Utility.toBase64(this._trustChain.encode() + Envelope._COMPONENT_DELIMITER + this._trustChain._signature));
+                builder.append(Envelope._COMPONENT_DELIMITER);
+                builder.append(Utility.toBase64(this._trustChain.encode() + Envelope._COMPONENT_DELIMITER + this._trustChain._signature));
             }
-            this._encoded = buffer.toString();
+            this._encoded = builder.toString();
         }
         return this._encoded;
     }

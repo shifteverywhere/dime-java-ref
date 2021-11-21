@@ -147,11 +147,11 @@ public class Key extends Item {
     @Override
     protected String encode() {
         if (this._encoded == null) {
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(Key.TAG);
-            buffer.append(Envelope._COMPONENT_DELIMITER);
-            buffer.append(Utility.toBase64(this._claims.toJSONString()));
-            this._encoded = buffer.toString();
+            StringBuilder builder = new StringBuilder();
+            builder.append(Key.TAG);
+            builder.append(Envelope._COMPONENT_DELIMITER);
+            builder.append(Utility.toBase64(this._claims.toJSONString()));
+            this._encoded = builder.toString();
         }
         return this._encoded;
     }

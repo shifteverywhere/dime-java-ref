@@ -140,7 +140,7 @@ public class IdentityIssuingRequest extends Item {
     @Override
     protected String encode() {
         if (this._encoded == null) {
-            StringBuffer builder = new StringBuffer();
+            StringBuilder builder = new StringBuilder();
             builder.append(IdentityIssuingRequest.TAG);
             builder.append(Envelope._COMPONENT_DELIMITER);
             builder.append(Utility.toBase64(this._claims.toJSONString()));

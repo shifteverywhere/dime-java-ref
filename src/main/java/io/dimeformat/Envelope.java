@@ -69,7 +69,7 @@ public class Envelope {
 
     /**
      * Returns any attached Di:ME items. This will be an array of Item instances
-     * and may be casted by looking at the tag of the item (getTag).
+     * and may be cast by looking at the tag of the item (getTag).
      * @return An array of Item instance
      */
     public Item[] getItems() {
@@ -78,7 +78,7 @@ public class Envelope {
 
     /**
      * Indicates if the envelope has a signature attached to it. This does not indicate
-     * if the envelope is signed or anonymous, as a tobe signed envelope will return back
+     * if the envelope is signed or anonymous, as a tobe signed envelope will return
      * false here before it is signed.
      * @return true or false
      */
@@ -88,7 +88,7 @@ public class Envelope {
 
     /**
      * Indicates if the envelope is anonymous (true) or if it is signed (false).
-     * @return
+     * @return true or false
      */
     public boolean isAnonymous() {
         return (this._claims == null);
@@ -183,7 +183,7 @@ public class Envelope {
     }
 
     /**
-     * Signs the evelope using the provided key. The key must be of type IDENTITY. It is not possible to sign an
+     * Signs the envelope using the provided key. The key must be of type IDENTITY. It is not possible to sign an
      * anonymous envelope. It is also not possible to sign an envelope if it already has been signed or does not
      * contain any Di:ME items.
      * @param key The key to use when signing.
@@ -253,7 +253,7 @@ public class Envelope {
     }
 
     /**
-     * Returns the thumbprint of an Di:ME encoded envelope string. This may be used to easily identify an envelope
+     * Returns the thumbprint of a Di:ME encoded envelope string. This may be used to easily identify an envelope
      * or detect if an envelope has been changed. This is created by securely hashing the envelope and will be unique
      * and change as soon as any content changes. This will generate the same value as the instance method thumbprint
      * for the same (and unchanged) envelope.
@@ -312,17 +312,17 @@ public class Envelope {
 
     private String encode() {
         if (this._encoded == null) {
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(Envelope.HEADER);
+            StringBuilder builder = new StringBuilder();
+            builder.append(Envelope.HEADER);
             if (!this.isAnonymous()) {
-                buffer.append(Envelope._COMPONENT_DELIMITER);
-                buffer.append(Utility.toBase64(this._claims.toJSONString()));
+                builder.append(Envelope._COMPONENT_DELIMITER);
+                builder.append(Utility.toBase64(this._claims.toJSONString()));
             }
             for (Item item : this._items) {
-                buffer.append(Envelope._SECTION_DELIMITER);
-                buffer.append(item.toEncoded());
+                builder.append(Envelope._SECTION_DELIMITER);
+                builder.append(item.toEncoded());
             }
-            this._encoded = buffer.toString();
+            this._encoded = builder.toString();
         }
         return this._encoded;
     }

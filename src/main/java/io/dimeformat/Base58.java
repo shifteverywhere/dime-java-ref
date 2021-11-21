@@ -25,7 +25,7 @@ public class Base58 {
      * the front of the data array.
      * @param data The main byte array to encode.
      * @param prefix A byte array that will be added to the front of data before encoding.
-     * @return
+     * @return Base 58 encoded string
      */
     public static String encode(byte[] data, byte[] prefix) {
         if (data != null && data.length > 0) {
@@ -41,25 +41,25 @@ public class Base58 {
             System.arraycopy(checksum, 0, bytes, length, Base58.NBR_CHECKSUM_BYTES);
             // Count leading zeros, to know where to start
             int start = 0;
-            for (int index = 0; index < bytes.length; index++) {
-                if (bytes[index] != 0) {
+            for (byte aByte : bytes) {
+                if (aByte != 0) {
                     break;
                 }
                 start++;
             }
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder builder = new StringBuilder();
             bytes = Arrays.copyOf(bytes, bytes.length);
             for(int index = start; index < bytes.length;) {
-                buffer.insert(0, _indexTable[calculateIndex(bytes, index, 256, 58)]);
+                builder.insert(0, _indexTable[calculateIndex(bytes, index, 256, 58)]);
                 if (bytes[index] == 0) {
                     ++index;
                 }
             }
             while (start > 0) {
-                buffer.insert(0, '1');
+                builder.insert(0, '1');
                 start--;
             }
-            return buffer.toString();
+            return builder.toString();
         }
         return null;
     }
