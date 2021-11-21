@@ -17,18 +17,39 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/** Base class for any other type of Di:ME items that can be included inside an Envelope instance. */
 public abstract class Item {
 
     /// PUBLIC ///
 
+    /**
+     * Returns the tag of the Di:ME item. Must be overridden by any subclass.
+     * @return The tag of the item.
+     */
     public abstract String getTag();
 
+    /**
+     * Returns a unique identifier for the instance. This will be generated at instance creation.
+     * @return A unique identifier, as a UUID. Must be overridden by any subclass.
+     */
     public abstract UUID getUniqueId();
 
+    /**
+     * Checks if the item has been signed or not.
+     * @return true or false.
+     */
     public boolean isSigned() {
         return (this._signature != null);
     }
 
+    /**
+     * Will import an item from a DiME encoded string. Di:ME envelopes cannot be imported using this methid, for
+     * envelopes use Envelope.importFromEncoded(String) instead.
+     * @param encoded The Di:ME encoded string to import an item from.
+     * @param <T> The subclass of item of the imported Di:ME item.
+     * @return The imported Di:ME item.
+     * @throws DimeFormatException If the encoded string is of a Di:ME envelope.
+     */
     @SuppressWarnings("unchecked")
     public static <T extends Item> T importFromEncoded(String encoded) throws DimeFormatException {
         try {
@@ -41,47 +62,57 @@ public abstract class Item {
         }
     }
 
+    /**
+     * Exports the item to a Di:ME encoded string.
+     * @return The Di:ME encoded representation of the item.
+     */
     public String exportToEncoded() {
         Envelope envelope = new Envelope();
         envelope.addItem(this);
         return envelope.exportToEncoded();
     }
 
+    /**
+     * Will sign an item with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
+     * @param key The key to sign the item with, must be of type IDENTITY.
+     * @throws DimeCryptographicException
+     */
     public void sign(Key key) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
         this._signature = Crypto.generateSignature(encode(), key);
     }
 
+    /**
+     * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
+     * changed. This is created by securely hashing the item and will be unique and change as soon as any content
+     * changes.
+     * @return The hash of the item as a hex string.
+     * @throws DimeCryptographicException If something goes wrong.
+     */
     public String thumbprint() throws DimeCryptographicException {
         return Item.thumbprint(this.toEncoded());
     }
 
+    /**
+     * Returns the thumbprint of a Di:ME encoded item string. This may be used to easily identify an item or detect if
+     * an item has been changed. This is created by securely hashing the item and will be unique and change as soon as
+     * any content changes. This will generate the same value as the instance method thumbprint for the same (and
+     * unchanged) item.
+     * @param encoded The Di:ME encoded item string.
+     * @return The hash of the item as a hex string.
+     * @throws DimeCryptographicException If something goes wrong.
+     */
     public static String thumbprint(String encoded) throws DimeCryptographicException {
         return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
     }
 
-    public String toEncoded() {
-        if (this.isSigned()) {
-            return encode() + Envelope._COMPONENT_DELIMITER + this._signature;
-        }
-        return encode();
-    }
-
-    private static Class<?> classFromTag(String tag) {
-        return switch (tag) {
-            case Identity.TAG -> Identity.class;
-            case IdentityIssuingRequest.TAG -> IdentityIssuingRequest.class;
-            case Message.TAG -> Message.class;
-            case Key.TAG -> Key.class;
-            default -> null;
-        };
-    }
-
-    public void verify(String publicKey) throws DimeDateException, DimeIntegrityException, DimeFormatException {
-        verify(new Key(publicKey));
-    }
-
+    /**
+     * Verifies the signature of the item using a provided key.
+     * @param key The key to used to verify the signature, must not be null.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeIntegrityException If the signature is invalid.
+     */
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         Crypto.verifySignature(encode(), this._signature, key);
@@ -111,6 +142,13 @@ public abstract class Item {
     protected String _encoded;
     protected String _signature;
 
+    protected String toEncoded() {
+        if (this.isSigned()) {
+            return encode() + Envelope._COMPONENT_DELIMITER + this._signature;
+        }
+        return encode();
+    }
+
     protected abstract void decode(String encoded) throws DimeFormatException;
 
     protected abstract String encode();
@@ -119,6 +157,18 @@ public abstract class Item {
         if (this.isSigned()) {
             throw new IllegalStateException("Unable to complete operation, Di:ME item already signed.");
         }
+    }
+
+    /// PRIVATE ///
+
+    private static Class<?> classFromTag(String tag) {
+        return switch (tag) {
+            case Identity.TAG -> Identity.class;
+            case IdentityIssuingRequest.TAG -> IdentityIssuingRequest.class;
+            case Message.TAG -> Message.class;
+            case Key.TAG -> Key.class;
+            default -> null;
+        };
     }
 
 }

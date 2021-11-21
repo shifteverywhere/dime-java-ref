@@ -42,7 +42,7 @@ class IdentityTest {
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
             assertTrue(identity.hasCapability(Capability.SELF));
-            assertEquals(key.getPublic(), identity.getPublicKey());
+            assertEquals(key.getPublic(), identity.getPublicKey().getPublic());
             assertNotNull(identity.getIssuedAt());
             assertNotNull(identity.getExpiresAt());
             assertTrue(identity.getIssuedAt().compareTo(identity.getExpiresAt()) < 0);
@@ -64,7 +64,7 @@ class IdentityTest {
             assertTrue(subjectId == identity.getSubjectId());
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
-            assertEquals(key.getPublic(), identity.getPublicKey());
+            assertEquals(key.getPublic(), identity.getPublicKey().getPublic());
             assertNotNull(identity.getIssuedAt());
             assertNotNull(identity.getExpiresAt());
             assertTrue(identity.getIssuedAt().compareTo(identity.getExpiresAt()) < 0);
@@ -94,7 +94,7 @@ class IdentityTest {
             Identity.setTrustedIdentity(null);
             Key key = Key.generateKey(KeyType.IDENTITY);
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
-            assertTrue(identity.isSelfSigned());
+            assertTrue(identity.isSelfIssued());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -106,7 +106,7 @@ class IdentityTest {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, null, null);
-            assertFalse(identity.isSelfSigned());
+            assertFalse(identity.isSelfIssued());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -118,7 +118,7 @@ class IdentityTest {
             Identity.setTrustedIdentity(null);
             Key key = Key.generateKey(KeyType.IDENTITY);
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
-            assertTrue(identity.isSelfSigned());
+            assertTrue(identity.isSelfIssued());
             identity.verifyTrust();
         } catch (IllegalStateException e) { 
             return; // All is well 
@@ -195,7 +195,7 @@ class IdentityTest {
             assertEquals(Commons.getIssuerIdentity().getIssuedAt(), identity.getIssuedAt());
             assertEquals(Commons.getIssuerIdentity().getExpiresAt(), identity.getExpiresAt());
             assertEquals(Commons.getIntermediateIdentity().getSubjectId(), identity.getIssuerId());
-            assertEquals(Commons.getIssuerIdentity().getPublicKey(), identity.getPublicKey());
+            assertEquals(Commons.getIssuerIdentity().getPublicKey().getPublic(), identity.getPublicKey().getPublic());
             assertTrue(identity.hasCapability(Capability.GENERIC));
             assertTrue(identity.hasCapability(Capability.IDENTIFY));
             assertNotNull(identity.getTrustChain());

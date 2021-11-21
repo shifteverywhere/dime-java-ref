@@ -17,47 +17,111 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Class used to create a request for the issuing of an identity to an entity. This will contain a locally generated
+ * public key (where the private key remains locally), capabilities requested and principles claimed. An issuing entity
+ * will used the Identity Issuing Request (IIR) to validate and then issue a new identity for the entity.
+ */
 public class IdentityIssuingRequest extends Item {
 
     /// PUBLIC ///
 
+    /** A constant holding the number of seconds for a year (based on 365 days). */
     public static final long VALID_FOR_1_YEAR = 365 * 24 * 60 * 60;
+
+    /** A tag identifying the Di:ME item type, part of the header. */
     public static final String TAG = "IIR";
 
+    /**
+     * Returns the tag of the Di:ME item.
+     * @return The tag of the item.
+     */
     @Override
     public String getTag() {
         return IdentityIssuingRequest.TAG;
     }
 
+    /**
+     * Returns a unique identifier for the instance. This will be generated at instance creation.
+     * @return A unique identifier, as a UUID.
+     */
     @Override
     public UUID getUniqueId() {
         return this._claims.uid;
     }
 
+    /**
+     * The date and time when this IIR was created.
+     * @return A UTC timestamp, as an Instant.
+     */
     public Instant getIssuedAt() {
         return this._claims.iat;
     }
 
-    public String getPublicKey() {
-        return this._claims.pub;
+    /**
+     * Returns the public key attached to the IIR. This is the key provied by the entity and will get included in any
+     * issued identity. The equvilant secret (private) key was used to sign the IIR, thus the public key can be used
+     * to verify the signature. This must be a key of type IDENTITY.
+     * @return A Key instance with a public key of type IDENTITY.
+     */
+    public Key getPublicKey() {
+        if (this._claims.pub != null && this._claims.pub.length() > 0) {
+            try {
+                return Key.fromBase58Key(this._claims.pub);
+            } catch (DimeFormatException e) { }
+        }
+        return null;
     }
 
+    /**
+     * Returns a list of any capabilities requested by this IIR. Capabilities are usually used to
+     * determine what an entity may do with its issued identity.
+     * @return An immutable list of Capability instances.
+     */
     public List<Capability> getCapabilities() {
         return (this._claims.cap != null) ? Collections.unmodifiableList(this._claims.cap) : null;
     }
 
+    /**
+     * Returns all principles provided in the IIR. These are key-value fields that further provide information about
+     * the entity. Using principles are optional.
+     * @return An immutable map of assigned principles (as <String, Object>).
+     */
     public Map<String, Object> getPrinciples() {
         return (this._claims.pri != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
     }
 
+    /**
+     * This will generate a new IIR from a Key instance. The Key instance must be of type IDENTITY.
+     * @param key The Key instance to use.
+     * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
+     * @throws DimeCryptographicException If something goes wrong.
+     */
     public static IdentityIssuingRequest generateIIR(Key key) throws DimeCryptographicException {
         return generateIIR(key, null, null);
     }
 
+    /**
+     * This will generate a new IIR from a Key instance and a list of wished for capabilities. The Key instance must be
+     * of type IDENTITY.
+     * @param key The Key instance to use.
+     * @param capabilities A list of capabilities that should be requested.
+     * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
+     * @throws DimeCryptographicException If something goes wrong.
+     */
     public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities) throws DimeCryptographicException {
         return generateIIR(key, capabilities, null);
     }
 
+    /**
+     * This will generate a new IIR from a Key instance together with a list of wished for capabilities and principles
+     * to include in any issued identity. The Key instance must be of type IDENTITY.
+     * @param key The Key instance to use.
+     * @param capabilities A list of capabilities that should be requested.
+     * @param principles A map of key-value fields that should be included in an issued identity.
+     * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
+     * @throws DimeCryptographicException If something goes wrong.
+     */
     public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
         if (key.getKeyType() != KeyType.IDENTITY) { throw new IllegalArgumentException("Key of invalid type."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
@@ -75,44 +139,173 @@ public class IdentityIssuingRequest extends Item {
         return iir;
     }
 
+    /**
+     * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
+     * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
+     * create the IIR and will also after issuing of an identity form the proof-of-ownership.
+     * @return Returns the IdentityIssuingRequest instance for convenience.
+     * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
+     * @throws DimeIntegrityException If the signature can not be verified.
+     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
+     */
     public IdentityIssuingRequest verify() throws DimeDateException, DimeIntegrityException, DimeFormatException {
         verify(Key.fromBase58Key(this._claims.pub));
         return this;
     }
 
+    /**
+     * Verifies that the IIR has been signed by a secret (private) key that is associated with the provided public key.
+     * If this passes then it can be assumed that the sender is in possession of the private key associated with the
+     * public key used to verify. This method may be used when verifying that an IIR has been signed by the same secret
+     * key that belongs to an already issued identity, this could be useful when re-issuing an identity.
+     * @param key The key that should be used to verify the IIR, must be of type IDENTITY.
+     * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
+     * @throws DimeIntegrityException If the signature can not be verified.
+     */
+    @Override
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (Instant.now().compareTo(this.getIssuedAt()) < 0) { throw new DimeDateException("An identity issuing request cannot have an issued at date in the future."); }
         super.verify(key);
     }
 
+    /**
+     * Checks if the IIR includes a request for a particular capability.
+     * @param capability The capability to check for.
+     * @return true or false.
+     */
     public boolean wantsCapability(Capability capability) {
         return this._claims.cap.contains(capability);
     }
 
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
+    /**
+     * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
+     * validated to meet context and application specific requirements. The only exception is the capabilities, that may
+     * be validated during the issuing, by providing allowed and required capabilities. The system name of the issued
+     * identity will be set to the same as the issuing identity.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
+     *                       attached to the newly issued Identity.
+     * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
+     * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
+     * @return An Identity instance that may be sent back to the entity that proved the IIR.
+     * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
+     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
+     * @throws DimeIntegrityException If the signature of the IIR could not be verified.
+     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, null, null);
     }
 
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
+    /**
+     * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
+     * validated to meet context and application specific requirements. The only exception is the capabilities, that may
+     * be validated during the issuing, by providing allowed and required capabilities. The system name of the issued
+     * identity will be set to the same as the issuing identity.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
+     *                       attached to the newly issued Identity.
+     * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
+     * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
+     * @param ambits A list of ambits that will apply to the issued identity.
+     * @return An Identity instance that may be sent back to the entity that proved the IIR.
+     * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
+     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
+     * @throws DimeIntegrityException If the signature of the IIR could not be verified.
+     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, null);
     }
-
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
+    /**
+     * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
+     * validated to meet context and application specific requirements. The only exception is the capabilities, that may
+     * be validated during the issuing, by providing allowed and required capabilities. The system name of the issued
+     * identity will be set to the same as the issuing identity.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
+     *                       attached to the newly issued Identity.
+     * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
+     * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
+     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param methods Al list of methods that will apply to the issued identity.
+     * @return An Identity instance that may be sent back to the entity that proved the IIR.
+     * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
+     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
+     * @throws DimeIntegrityException If the signature of the IIR could not be verified.
+     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, methods);
     }
 
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
+    /**
+     * Will issue a new Identity instance from the IIR. The issued identity will be self-issued as it will be signed by
+     * the same key that also created the IIR. This is normally used when creating a root identity for a trust chain.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param systemName The name of the system, or network, that the identity should be a part of.
+     * @return A self-issued Identity instance.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName) throws DimeCryptographicException {
         return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, null, null);
     }
 
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
+    /**
+     * Will issue a new Identity instance from the IIR. The issued identity will be self-issued as it will be signed by
+     * the same key that also created the IIR. This is normally used when creating a root identity for a trust chain.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param systemName The name of the system, or network, that the identity should be a part of.
+     * @param ambits A list of ambits that will apply to the issued identity.
+     * @return A self-issued Identity instance.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits) throws DimeCryptographicException {
         return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, ambits, null);
     }
 
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
-        if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambits, methods);
+    /**
+     * Will issue a new Identity instance from the IIR. The issued identity will be self-issued as it will be signed by
+     * the same key that also created the IIR. This is normally used when creating a root identity for a trust chain.
+     * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
+     *                  should be the same as subject identifier used previously.
+     * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
+     * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
+     * @param systemName The name of the system, or network, that the identity should be a part of.
+     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param methods Al list of methods that will apply to the issued identity.
+     * @return A self-issued Identity instance.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits, String[] methods) throws DimeCryptographicException {
+        try {
+            if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
+            return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambits, methods);
+        } catch (DimeDateException | DimeCapabilityException | DimeUntrustedIdentityException | DimeIntegrityException e) {
+            return null; // These exceptions will not be thrown when issuing a self-issued identity.
+        }
 
     }
 
@@ -200,8 +393,8 @@ public class IdentityIssuingRequest extends Item {
 
     private IdentityIssuingRequestClaims _claims;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
-        verify();
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
+        verify(this.getPublicKey());
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().equals(issuerKey.getPublic()));
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))

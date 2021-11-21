@@ -17,39 +17,73 @@ import java.time.Instant;
 import java.util.UUID;
 import org.json.JSONObject;
 
+/**
+ * Represents cryptographic keys. This may be keys for signing and verifying other Di:ME items and envelopes, used for
+ * encryption purposes, or when exchanging shared keys between entities.
+ */
 public class Key extends Item {
 
     /// PUBLIC ///
 
+    /** A tag identifying the Di:ME item type, part of the header. */
     public final static String TAG = "KEY";
 
+    /**
+     * Returns the tag of the Di:ME item.
+     * @return The tag of the item.
+     */
     @Override
     public String getTag() {
         return Key.TAG;
     }
 
+    /**
+     * Returns the version of the Di:ME specification for which this key was generated.
+     * @return The Di:ME specification version of the key.
+     */
     public int getVersion() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
         return key[0];
     }
 
+    /**
+     * Returns the identifier of the entity that generated the key (issuer). This is optional.
+     * @return The identifier of the issuer of the key.
+     */
     public UUID getIssuerId() {
         return this._claims.iss;
     }
 
+    /**
+     * Returns a unique identifier for the instance. This will be generated at instance creation.
+     * @return A unique identifier, as a UUID.
+     */
     @Override
     public UUID getUniqueId() {
         return this._claims.uid;
     }
 
+    /**
+     * The date and time when this key was created.
+     * @return A UTC timestamp, as an Instant.
+     */
     public Instant getIssuedAt() {
         return this._claims.iat;
     }
 
+    /**
+     * Returns the expiration date of the key. This is optional.
+     * @return
+     */
     public Instant getExpiresAt() {
         return this._claims.exp;
     }
 
+    /**
+     * Returns the type of the key. The type determines what the key may be used for, this since it is also closely
+     * associated with the cryptographic algorithm the key is generated for.
+     * @return The type of the key.
+     */
     public KeyType getKeyType() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
         return switch (Key.getAlgorithmFamily(key)) {
@@ -61,18 +95,39 @@ public class Key extends Item {
         };
     }
 
+    /**
+     * The secret part of the key. This part should never be stored or transmitted in plain text.
+     * @return A base 58 encoded string.
+     */
     public String getSecret() {
         return (this._claims.key != null) ? Base58.encode(this._claims.key, null) : null;
     }
 
+    /**
+     * The public part of the key. This part may be stored or transmitted in plain text.
+     * @return A base 58 encoded string.
+     */
     public String getPublic() {
         return (this._claims.pub != null) ? Base58.encode(this._claims.pub, null) : null;
     }
 
+    /**
+     * Will generate a new Key with a specified type.
+     * @param type The type of key to generate.
+     * @return A newly generated key.
+     */
     public static Key generateKey(KeyType type) {
         return Key.generateKey(type, -1);
     }
 
+    /**
+     * Will generate a new Key with a specified type and an expiration date. Abiding to the expiration date is
+     * application specific as the key will continue to function after the expiration date. Providing -1 as validFor
+     * will skip setting an expiration date.
+     * @param type The type of key to generate.
+     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
+     * @return A newly generated key.
+     */
     public static Key generateKey(KeyType type, long validFor) {
         Key key = Crypto.generateKey(type);
         if (validFor != -1) {
@@ -81,10 +136,39 @@ public class Key extends Item {
         return key;
     }
 
+    /**
+     * Will generate a new Key with a specified type, an expiration date, and the identifier of the issuer. Abiding to
+     * the expiration date is application specific as the key will continue to function after the expiration date.
+     * Providing -1 as validFor will skip setting an expiration date.
+     * @param type The type of key to generate.
+     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
+     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(KeyType type, long validFor, UUID issuerId) {
+        Key key = Crypto.generateKey(type);
+        if (validFor != -1) {
+            key._claims.exp = key._claims.iat.plusSeconds(validFor);
+        }
+        key._claims.iss = issuerId;
+        return key;
+    }
+
+    /**
+     * Will instantiate a Key instance from a base 58 encoded string.
+     * @param base58key A base 58 encoded key.
+     * @return A Key instance.
+     * @throws DimeFormatException If the format of the provided key string is invalid.
+     */
     public static Key fromBase58Key(String base58key) throws DimeFormatException {
         return new Key(base58key);
     }
 
+    /**
+     * Will create a copy of a key with only the public part left. This should be used when transmitting a key to
+     * another entity, when the receiving entity only needs the public part.
+     * @return A new instance of the key with only the public part.
+     */
     public Key publicCopy() {
         return new Key(this._claims.uid, this.getKeyType(), null, getRawPublic());
     }

@@ -138,7 +138,7 @@ class IdentityIssuingRequestTest {
             assertEquals(UUID.fromString("3e5bde4a-6277-4da5-8664-1d3f043a9028"), iir.getUniqueId());
             assertEquals(Instant.parse("2021-11-18T12:03:53.381661Z"), iir.getIssuedAt());
             assertTrue(iir.wantsCapability(Capability.GENERIC));
-            assertEquals("2TDXdoNvSUNyLDSUiMhpLCdEbDaz5zumD35tX1DAuA8CE41xoDGgSd3UE", iir.getPublicKey());
+            assertEquals("2TDXdoNvSUNyLDSUiMhpLCdEbDaz5zumD35tX1DAuA8CE41xoDGgSd3UE", iir.getPublicKey().getPublic());
             iir.verify();
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

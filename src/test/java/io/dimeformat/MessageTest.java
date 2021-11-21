@@ -284,10 +284,10 @@ class MessageTest {
             Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setKeyId(issuerKey.getUniqueId());
-            message.setPublicKey(audienceKey.getPublic());
+            message.setPublicKey(audienceKey);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey);
             assertEquals(issuerKey.getUniqueId(), message.getKeyId());
-            assertEquals(audienceKey.getPublic(), message.getPublicKey());
+            assertEquals(audienceKey.getPublic(), message.getPublicKey().getPublic());
             assertEquals("Racecar is racecar backwards.", new String(message.getPayload(audienceKey, issuerKey.publicCopy()), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

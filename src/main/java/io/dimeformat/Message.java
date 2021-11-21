@@ -15,55 +15,117 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * A class that can be used to create secure and integrity protected messages, that can be sent to entities, who may
+ * verify the integrity and trust of the message. Messages may also be end-to-end encrypted to protect the
+ * confidentiality of the message payload.
+ */
 public class Message extends Item {
 
     /// PUBLIC ///
+
+    /** A tag identifying the Di:ME item type, part of the header. */
     public final static String TAG = "MSG";
 
+    /**
+     * Returns the tag of the Di:ME item.
+     * @return The tag of the item.
+     */
     @Override
     public String getTag() {
         return Message.TAG;
     }
 
+    /**
+     * Returns a unique identifier for the instance. This will be generated at instance creation.
+     * @return A unique identifier, as a UUID.
+     */
     @Override
     public UUID getUniqueId() {
         return this._claims.uid;
     }
 
+    /**
+     * Returns the audience (receiver) identifier. This is optional, although required if encrypting the message
+     * payload.
+     * @return The audience identifier, as a UUID.
+     */
     public UUID getAudienceId() {
         return this._claims.aud;
     }
 
+    /**
+     * Returns the issuer (sender/creator) identifier of the message.
+     * @return The issuer identifier, as a UUID.
+     */
     public UUID getIssuerId() {
         return this._claims.iss;
     }
 
+    /**
+     * The date and time when this message was created.
+     * @return A UTC timestamp, as an Instant.
+     */
     public Instant getIssuedAt() {
         return this._claims.iat;
     }
 
+    /**
+     * The date and time when the message will expire.
+     * @return A UTC timestamp, as an Instant.
+     */
     public Instant getExpiresAt() {
         return this._claims.exp;
     }
 
+    /**
+     * The identifier of the key that was used when encryption the message payload. This is optional, and usage is
+     * application specific.
+     * @return A key identifier, as a UUID.
+     */
     public UUID getKeyId() {
         return this._claims.kid;
     }
 
+    /**
+     * Sets a key identifier, UUID. This is used to specify which particular key, most often in the position of the
+     * audience, was used for the encryption of the payload. This is optional.
+     * @param kid
+     */
     public void setKeyId(UUID kid) {
         throwIfSigned();
         this._claims.kid = kid;
     }
 
-    public String getPublicKey() {
-        return (this._claims.pub != null) ? Base58.encode(this._claims.pub, null) : null;
+    /**
+     * Returns a public key that was included in the message. Normally this public key was used for a key exchange where
+     * the shared key was used to encrypt the payload. This is optional.
+     * @return A public key.
+     */
+    public Key getPublicKey() {
+        if (this._claims.pub != null && this._claims.pub.length() > 0) {
+            try {
+                return Key.fromBase58Key(this._claims.pub);
+            } catch (DimeFormatException e) { }
+        }
+        return null;
     }
 
-    public void setPublicKey(String pub) {
+    /**
+     * Sets a public key that will be included in the message. This may be a public key that was used to derive a shared
+     * key used for encrypting the payload. This is optional.
+     * @param publicKey The public key to set.
+     */
+    public void setPublicKey(Key publicKey) {
         throwIfSigned();
-        this._claims.pub = (pub != null) ? Base58.decode(pub) : null;
+        this._claims.pub = publicKey.getPublic();
     }
 
+    /**
+     * If the message is linked to another Di:ME item, thus creating a cryptographic link between them, then this will
+     * return the identifier, as a UUID, of the linked item. This is optional.
+     * @return An identifier of a linked item, as a UUID.
+     */
     public UUID getLinkedId() {
         if (this._claims.lnk != null) {
             String uuid = this._claims.lnk.split("//" + Envelope._COMPONENT_DELIMITER)[Message._LINK_UID_INDEX];
@@ -72,22 +134,50 @@ public class Message extends Item {
         return null;
     }
 
+    /**
+     * Returns the context that is attached to the message.
+     * Only applicable for signed envelopes.
+     * @return A String instance.
+     */
     public String getContext() {
         return this._claims.ctx;
     }
 
+    /**
+     * Creates a message from a specified issuer (sender).
+     * @param issuerId The issuer identifier.
+     */
     public Message(UUID issuerId) {
         this(null, issuerId, -1, null);
     }
 
+    /**
+     * Creates a message from a specified issuer (sender) and an expiration date.
+     * @param issuerId The issuer identifier.
+     * @param validFor The number of seconds that the message should be valid for, from the time of issuing.
+     */
     public Message(UUID issuerId, long validFor) {
         this(null, issuerId, validFor, null);
     }
 
+    /**
+     * Creates a message to a specified audience (receiver) from a specified issuer (sender), with an expiration date.
+     * @param audienceId The audience identifier. Providing -1 as validFor will skip setting an expiration date.
+     * @param issuerId The issuer identifier.
+     * @param validFor The number of seconds that the message should be valid for, from the time of issuing.
+     */
     public Message(UUID audienceId, UUID issuerId, long validFor) {
         this(audienceId, issuerId, validFor, null);
     }
 
+    /**
+     * Creates a message to a specified audience (receiver) from a specified issuer (sender), with an expiration date
+     * and a context. The context may be anything and may be used for application specific purposes.
+     * @param audienceId The audience identifier. Providing -1 as validFor will skip setting an expiration date.
+     * @param issuerId The issuer identifier.
+     * @param validFor The number of seconds that the message should be valid for, from the time of issuing.
+     * @param context The context to attach to the message, may be null.
+     */
     public Message(UUID audienceId, UUID issuerId, long validFor, String context) {
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Instant.now();
@@ -103,18 +193,23 @@ public class Message extends Item {
                 context);
     }
 
+    /**
+     * Will sign the message with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
+     * @param key The key to sign the item with, must be of type IDENTITY.
+     * @throws DimeCryptographicException
+     */
     @Override
     public void sign(Key key) throws DimeCryptographicException {
         if (this._payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
         super.sign(key);
     }
 
-    @Override
-    public String toEncoded() {
-        if (this._signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
-        return super.toEncoded();
-    }
-
+    /**
+     * Verifies the signature of the message using a provided key.
+     * @param key The key to used to verify the signature, must not be null.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeIntegrityException If the signature is invalid.
+     */
     @Override
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (this._payload == null || this._payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
@@ -126,10 +221,16 @@ public class Message extends Item {
         super.verify(key);
     }
 
-    public void verify(String publicKey, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
-        verify(new Key(publicKey), linkedItem);
-    }
-
+    /**
+     * Verifies the signature of the message using a provided key and verifies a linked item from the proved item. To
+     * verify correctly the linkedItem must be the original item that the message was linked to.
+     * @param key The key to used to verify the signature, must not be null.
+     * @param linkedItem The item the message was linked to.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeFormatException If no item has been linked with the message.
+     * @throws DimeIntegrityException If the signature is invalid.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
     public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
         verify(key);
         if (linkedItem != null) {
@@ -145,6 +246,10 @@ public class Message extends Item {
         }
     }
 
+    /**
+     * Sets the plain text payload of the message.
+     * @param payload The payload to set.
+     */
     public void setPayload(byte[] payload) {
         throwIfSigned();
         this._payload = Utility.toBase64(payload);
@@ -152,7 +257,6 @@ public class Message extends Item {
 
     /**
      * Will encrypt and attach a payload using a shared encryption key between the issuer and audience of a message.
-     * The audience ID of the message must be set before attaching payloads that will be encrypted.
      * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
@@ -161,7 +265,6 @@ public class Message extends Item {
      */
     public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         throwIfSigned();
-        if (this.getAudienceId() == null) { throw new IllegalStateException("AudienceId must be set in the message for encrypted payloads."); }
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
         if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
@@ -169,20 +272,38 @@ public class Message extends Item {
         setPayload(Crypto.encrypt(payload, shared));
     }
 
+    /**
+     * Returns the plain text payload of the message. If an encrypted payload have been set, then this will return the
+     * encrypted payload.
+     * @return The message payload.
+     */
     public byte[] getPayload() {
         return Utility.fromBase64(this._payload);
     }
 
-    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeFormatException, DimeKeyMismatchException, DimeCryptographicException {
+    /**
+     * Returns the decrypted message payload, if it is able to decrypt it.
+     * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
+     * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
+     * @return The message payload.
+     * @throws DimeKeyMismatchException If provided keys are not of type EXCHANGE.
+     * @throws DimeCryptographicException If something goes wrong.
+     */
+    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
-        if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to decrypt payload."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, audience key invalid key type."); }
         Key key = Crypto.generateSharedSecret(issuerKey, audienceKey);
         return Crypto.decrypt(getPayload(), key);
     }
 
+    /**
+     * Will cryptographically link a message to another Di:ME item. This may be used to prove a relationship between one
+     * message and other item.
+     * @param item The item to link to the message.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
     public void linkItem(Item item) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to link item, message is already signed."); }
         if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
@@ -194,6 +315,12 @@ public class Message extends Item {
     Message() { }
 
     /// PROTECTED ///
+
+    @Override
+    protected String toEncoded() {
+        if (this._signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
+        return super.toEncoded();
+    }
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
@@ -230,11 +357,11 @@ public class Message extends Item {
         public Instant iat;
         public Instant exp;
         public UUID kid;
-        public byte[] pub;
+        public String pub;
         public String lnk;
         public String ctx;
 
-        public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, byte[] pub, String lnk, String ctx) {
+        public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, String pub, String lnk, String ctx) {
             this.uid = uid;
             this.aud = aud;
             this.iss = iss;
@@ -254,7 +381,7 @@ public class Message extends Item {
             this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
             this.exp = jsonObject.has("exp") ? Instant.parse(jsonObject.getString("exp")) : null;
             this.kid = jsonObject.has("kid") ? UUID.fromString(jsonObject.getString("kid")) : null;
-            this.pub = jsonObject.has("pub") ? Utility.fromBase64(jsonObject.getString("pub")) : null;
+            this.pub = (jsonObject.has("pub")) ? jsonObject.getString("pub") : null;
             this.lnk = jsonObject.has("lnk") ? jsonObject.getString("lnk") : null;
             this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
         }
@@ -267,7 +394,7 @@ public class Message extends Item {
             if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
             if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
             if (this.kid != null) { jsonObject.put("kid", this.iss.toString()); }
-            if (this.pub != null) { jsonObject.put("pub", Base58.encode(this.pub, null)); }
+            if (this.pub != null) { jsonObject.put("pub", this.pub); }
             if (this.lnk != null) { jsonObject.put("lnk", this.lnk); }
             if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
             return jsonObject.toString();

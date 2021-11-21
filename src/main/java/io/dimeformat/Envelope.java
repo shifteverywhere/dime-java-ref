@@ -200,18 +200,6 @@ public class Envelope {
     }
 
     /**
-     * Verifies the signature of the envelope using a base 58 encoded public key.
-     * @param publicKey The base 58 encoded public key to use, must not be null.
-     * @return Returns the Envelope instance for convenience.
-     * @throws DimeIntegrityException If the signature is invalid.
-     * @throws DimeFormatException If the format of the provided key is invalid.
-     */
-    public Envelope verify(String publicKey) throws DimeIntegrityException, DimeFormatException {
-        if (publicKey == null || publicKey.length() == 0) { throw new IllegalArgumentException("Key must not be null or of length zero."); }
-        return verify(new Key(publicKey));
-    }
-
-    /**
      * Verifies the signature of the envelope using a provided key.
      * @param key The key to used to verify the signature, must not be null.
      * @return Returns the Envelope instance for convenience.
