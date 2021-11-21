@@ -111,14 +111,8 @@ public class Message extends Item {
 
     @Override
     public String toEncoded() {
-        if (this._payload == null) { throw new IllegalStateException("Unable to encode message, no payload added."); }
+        if (this._signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
         return super.toEncoded();
-    }
-
-    public static Message fromEncoded(String encoded) throws DimeFormatException {
-        Message message = new Message();
-        message.decode(encoded);
-        return message;
     }
 
     @Override
@@ -141,7 +135,7 @@ public class Message extends Item {
         if (linkedItem != null) {
             if (this._claims.lnk == null || this._claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
             String[] components = this._claims.lnk.split("\\" + Envelope._COMPONENT_DELIMITER);
-            if (components == null || components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
+            if (components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
             if (components[Message._LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
                     || components[Message._LINK_UID_INDEX].compareTo(linkedItem.getUniqueId().toString()) != 0
@@ -156,27 +150,21 @@ public class Message extends Item {
         this._payload = Utility.toBase64(payload);
     }
 
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
-        setPayload(payload, issuerKey, audienceKey, null);
-    }
-
     /**
      * Will encrypt and attach a payload using a shared encryption key between the issuer and audience of a message.
      * The audience ID of the message must be set before attaching payloads that will be encrypted.
      * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
-     * @param salt An optional salt that will be used for the encryption, must be the same when at encryption/decryption, may be null.
-     * @throws DimeKeyMismatchException
+     * @throws DimeKeyMismatchException If provided keys are not of type EXCHANGE.
+     * @throws DimeCryptographicException If something goes wrong.
      */
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey, byte[] salt) throws DimeKeyMismatchException, DimeCryptographicException {
+    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         throwIfSigned();
         if (this.getAudienceId() == null) { throw new IllegalStateException("AudienceId must be set in the message for encrypted payloads."); }
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
         if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
-        if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, issuer key of invalid key type."); }
-        if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to encrypt, audience key invalid key type."); }
         Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey);
         setPayload(Crypto.encrypt(payload, shared));
     }
@@ -186,13 +174,9 @@ public class Message extends Item {
     }
 
     public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeFormatException, DimeKeyMismatchException, DimeCryptographicException {
-        return getPayload(issuerKey, audienceKey, null);
-    }
-
-    public byte[] getPayload(Key issuerKey, Key audienceKey, byte[] salt) throws DimeFormatException, DimeKeyMismatchException, DimeCryptographicException {
         if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
         if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
-        if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to dectrypt payload."); }
+        if (this.getAudienceId() == null) { throw new DimeFormatException("AudienceId (aud) missing in message, unable to decrypt payload."); }
         if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, invalid key type."); }
         if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, audience key invalid key type."); }
         Key key = Crypto.generateSharedSecret(issuerKey, audienceKey);
@@ -214,35 +198,31 @@ public class Message extends Item {
     @Override
     protected void decode(String encoded) throws DimeFormatException {
         String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
-        if (components.length != Message._NBR_EXPECTED_COMPONENTS_NO_SIGNATURE || components.length != Message._NBR_EXPECTED_COMPONENTS_SIGNATURE) {
-            throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message._NBR_EXPECTED_COMPONENTS_NO_SIGNATURE + " or " + Message._NBR_EXPECTED_COMPONENTS_SIGNATURE + ", got " + components.length +".");
+        if (components.length != Message._NBR_EXPECTED_COMPONENTS) {
+            throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message._NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
         }
         if (components[Message._TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message._TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Message._CLAIMS_INDEX]);
         this._claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
         this._payload = components[Message._PAYLOAD_INDEX];
-        if (components.length == Message._NBR_EXPECTED_COMPONENTS_SIGNATURE) {
-            this._signature = components[components.length - 1];
-        }
+        this._signature = components[components.length - 1];
     }
 
     @Override
     protected String encode() {
         if (this._encoded == null) {
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(Message.TAG);
-            buffer.append(Envelope._COMPONENT_DELIMITER);
-            buffer.append(Utility.toBase64(this._claims.toJSONString()));
-            buffer.append(Envelope._COMPONENT_DELIMITER);
-            buffer.append(this._payload);
-            this._encoded = buffer.toString();
+            this._encoded = Message.TAG +
+                    Envelope._COMPONENT_DELIMITER +
+                    Utility.toBase64(this._claims.toJSONString()) +
+                    Envelope._COMPONENT_DELIMITER +
+                    this._payload;
         }
         return this._encoded;
     }
 
     /// PRIVATE ///
 
-    private class MessageClaims {
+    private static final class MessageClaims {
 
         public UUID uid;
         public UUID aud;
@@ -295,8 +275,7 @@ public class Message extends Item {
 
     }
 
-    private static final int _NBR_EXPECTED_COMPONENTS_SIGNATURE = 4;
-    private static final int _NBR_EXPECTED_COMPONENTS_NO_SIGNATURE = 4;
+    private static final int _NBR_EXPECTED_COMPONENTS = 4;
     private static final int _TAG_INDEX = 0;
     private static final int _CLAIMS_INDEX = 1;
     private static final int _PAYLOAD_INDEX = 2;

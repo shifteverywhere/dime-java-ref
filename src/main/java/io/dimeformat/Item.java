@@ -13,6 +13,8 @@ import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public abstract class Item {
@@ -27,11 +29,16 @@ public abstract class Item {
         return (this._signature != null);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Item> T importFromEncoded(String encoded) throws DimeFormatException {
-        Envelope envelope = Envelope.importFromEncoded(encoded);
-        Item[] items = envelope.getItems();
-        if (items.length > 1) { throw new DimeFormatException("Multiple items found, import as 'Envelope' instead."); }
-        return (T)items[0];
+        try {
+            Envelope envelope = Envelope.importFromEncoded(encoded);
+            List<Item> items = envelope.getItems();
+            if (items.size() > 1) { throw new DimeFormatException("Multiple items found, import as 'Envelope' instead. (I1001)"); }
+            return (T)items.get(0);
+        } catch (ClassCastException e) {
+            return null; // This is unlikely to happen
+        }
     }
 
     public String exportToEncoded() {
@@ -40,21 +47,9 @@ public abstract class Item {
         return envelope.exportToEncoded();
     }
 
-    public static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
-        var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
-        T item = null;
-        try {
-            item = (T)t.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-           throw new DimeFormatException("Unexpected exception (I1001).", e);
-        }
-        item.decode(encoded);
-        return item;
-    }
-
     public void sign(Key key) throws DimeCryptographicException {
-        if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed."); }
-        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null."); }
+        if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
+        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
         this._signature = Crypto.generateSignature(encode(), key);
     }
 
@@ -73,14 +68,14 @@ public abstract class Item {
         return encode();
     }
 
-    private static Class classFromTag(String tag) {
-        switch (tag) {
-            case Identity.TAG: return Identity.class;
-            case IdentityIssuingRequest.TAG: return IdentityIssuingRequest.class;
-            case Message.TAG: return Message.class;
-            case Key.TAG: return Key.class;
-            default: return null;
-        }
+    private static Class<?> classFromTag(String tag) {
+        return switch (tag) {
+            case Identity.TAG -> Identity.class;
+            case IdentityIssuingRequest.TAG -> IdentityIssuingRequest.class;
+            case Message.TAG -> Message.class;
+            case Key.TAG -> Key.class;
+            default -> null;
+        };
     }
 
     public void verify(String publicKey) throws DimeDateException, DimeIntegrityException, DimeFormatException {
@@ -90,6 +85,25 @@ public abstract class Item {
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         Crypto.verifySignature(encode(), this._signature, key);
+    }
+
+    /// PACKAGE-PRIVATE ///
+
+    @SuppressWarnings("unchecked")
+    static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
+        try {
+            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
+            T item;
+            try {
+                item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new DimeFormatException("Unexpected exception (I1002).", e);
+            }
+            item.decode(encoded);
+            return item;
+        } catch (ClassCastException e) {
+            return null; // This is unlikely to happen
+        }
     }
 
     /// PROTECTED ///

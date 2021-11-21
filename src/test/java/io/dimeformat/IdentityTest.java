@@ -35,9 +35,7 @@ class IdentityTest {
             UUID subjectId = UUID.randomUUID();
             Key key = Key.generateKey(KeyType.IDENTITY);            
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME);
-            //String k = key.exportToEncoded();
-            //String i = identity.exportToEncoded();
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
             assertTrue(subjectId == identity.getSubjectId());
             assertTrue(subjectId == identity.getIssuerId());
@@ -60,12 +58,8 @@ class IdentityTest {
             UUID subjectId = UUID.randomUUID();
             Key key = Key.generateKey(KeyType.IDENTITY);
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
-            //Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE };
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
             Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, null, null);
-            //Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR * 5, Commons.getTrustedKey(), Commons.getTrustedIdentity(), null, caps, null);
-            //String k = key.exportToEncoded();
-            //String i = identity.exportToEncoded();
             assertEquals(Identity.getTrustedIdentity().getSystemName(), identity.getSystemName());
             assertTrue(subjectId == identity.getSubjectId());
             assertTrue(identity.hasCapability(caps[0]));

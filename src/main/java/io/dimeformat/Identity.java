@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static java.util.stream.Collectors.toList;
+
 public class Identity extends Item {
 
     /// PUBLIC ///
@@ -110,11 +112,11 @@ public class Identity extends Item {
     }
 
     public boolean hasCapability(Capability capability) {
-       return (this._claims.cap != null) ? this._claims.cap.contains(capability) : false;
+       return this._claims.cap != null && this._claims.cap.contains(capability);
     }
 
     public boolean hasAmbit(String ambit) {
-        return (this._claims.amb != null) ? this._claims.amb.contains(ambit) : false;
+        return this._claims.amb != null && this._claims.amb.contains(ambit);
     }
 
     public static Identity fromEncoded(String encoded) throws DimeFormatException {
@@ -183,7 +185,7 @@ public class Identity extends Item {
 
     /// PRIVATE ///
 
-    private class IdentityClaims {
+    private static final class IdentityClaims {
 
         public String sys;
         public UUID uid;
@@ -221,15 +223,15 @@ public class Identity extends Item {
             this.exp = (jsonObject.has("exp")) ? Instant.parse(jsonObject.getString("exp")) : null;
             this.pub = (jsonObject.has("pub")) ? jsonObject.getString("pub") : null;
             if (jsonObject.has("cap")) {
-                this.cap = new ArrayList<Capability>();
+                this.cap = new ArrayList<>();
                 JSONArray array = jsonObject.getJSONArray("cap");
                 for (int i = 0;  i < array.length(); i++) {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
                 }
             }
             this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri").toMap() : null;
-            this.amb = (jsonObject.has("amb")) ? (List<String>)(Object)jsonObject.getJSONArray("amb").toList() : null;
-            this.mtd = (jsonObject.has("mtd")) ? (List<String>)(Object)jsonObject.getJSONArray("mtd").toList() : null;
+            this.amb = (jsonObject.has("amb")) ? jsonObject.getJSONArray("amb").toList().stream().filter(String.class::isInstance).map(String.class::cast).collect(toList()) : null;
+            this.mtd = (jsonObject.has("mtd")) ? jsonObject.getJSONArray("mtd").toList().stream().filter(String.class::isInstance).map(String.class::cast).collect(toList()) : null;
         }
 
         public String toJSONString() {

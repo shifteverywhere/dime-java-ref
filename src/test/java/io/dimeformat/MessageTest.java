@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeKeyMismatchException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeDateException;
@@ -284,10 +285,10 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setKeyId(issuerKey.getUniqueId());
             message.setPublicKey(audienceKey.getPublic());
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey, issuerKey.getPublic().getBytes(StandardCharsets.UTF_8));
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey);
             assertEquals(issuerKey.getUniqueId(), message.getKeyId());
             assertEquals(audienceKey.getPublic(), message.getPublicKey());
-            assertEquals("Racecar is racecar backwards.", new String(message.getPayload(audienceKey, issuerKey.publicCopy(), issuerKey.getPublic().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
+            assertEquals("Racecar is racecar backwards.", new String(message.getPayload(audienceKey, issuerKey.publicCopy()), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -299,10 +300,10 @@ class MessageTest {
             Key issuerKey = Key.generateKey(KeyType.EXCHANGE);
             Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy(), audienceKey.getPublic().getBytes(StandardCharsets.UTF_8));
+            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
             message1.sign(Commons.getIssuerKey());
             Message message2 = Item.importFromEncoded(message1.exportToEncoded());
-            String plainText = new String(message2.getPayload(issuerKey.publicCopy(), audienceKey, audienceKey.getPublic().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+            String plainText = new String(message2.getPayload(issuerKey.publicCopy(), audienceKey), StandardCharsets.UTF_8);
             assertEquals("Racecar is racecar backwards.", plainText);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -315,7 +316,7 @@ class MessageTest {
             Key key = Key.generateKey(KeyType.IDENTITY);
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
-        } catch (IllegalArgumentException e) { 
+        } catch (DimeKeyMismatchException e) {
             return; // All is well
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

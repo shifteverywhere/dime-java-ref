@@ -30,7 +30,7 @@ public class Key extends Item {
 
     public int getVersion() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
-        return (int)(key[0]);
+        return key[0];
     }
 
     public UUID getIssuerId() {
@@ -52,13 +52,13 @@ public class Key extends Item {
 
     public KeyType getKeyType() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
-        switch (Key.getAlgorithmFamily(key)) {
-            case AEAD: return KeyType.ENCRYPTION;
-            case ECDH: return KeyType.EXCHANGE;
-            case EDDSA: return KeyType.IDENTITY;
-            case HASH: return KeyType.AUTHENTICATION;
-            default: return KeyType.UNDEFINED;
-        }
+        return switch (Key.getAlgorithmFamily(key)) {
+            case AEAD -> KeyType.ENCRYPTION;
+            case ECDH -> KeyType.EXCHANGE;
+            case EDDSA -> KeyType.IDENTITY;
+            case HASH -> KeyType.AUTHENTICATION;
+            default -> KeyType.UNDEFINED;
+        };
     }
 
     public String getSecret() {
@@ -91,6 +91,8 @@ public class Key extends Item {
 
     /// PACKAGE-PRIVATE ///
 
+    Key() { }
+
     Key(UUID id, KeyType type, byte[] key, byte[] pub) {
         Instant iat = Instant.now();
         this._claims = new KeyClaims(null,
@@ -103,8 +105,6 @@ public class Key extends Item {
 
     /// PACKAGE-PRIVATE ///
 
-    Key() { }
-
     byte[] getRawSecret() {
         return (this._claims.key != null ) ? Utility.subArray(this._claims.key, Key._HEADER_SIZE, this._claims.key.length - Key._HEADER_SIZE) : null;
     }
@@ -113,7 +113,6 @@ public class Key extends Item {
         return (this._claims.pub != null ) ? Utility.subArray(this._claims.pub, Key._HEADER_SIZE, this._claims.pub.length - Key._HEADER_SIZE) : null;
     }
 
-
     /// PROTECTED ///
 
     protected Key(String base58key) throws DimeFormatException {
@@ -121,12 +120,8 @@ public class Key extends Item {
             byte[] bytes = Base58.decode(base58key);
             if (bytes != null && bytes.length > 0) {
                 switch (Key.getKeyVariant(bytes)) {
-                    case SECRET:
-                        this._claims = new KeyClaims(null, null, null, null, bytes, null);
-                        break;
-                    case PUBLIC:
-                        this._claims = new KeyClaims(null, null, null, null, null, bytes);
-                        break;
+                    case SECRET -> this._claims = new KeyClaims(null, null, null, null, bytes, null);
+                    case PUBLIC -> this._claims = new KeyClaims(null, null, null, null, null, bytes);
                 }
                 if (this._claims != null) { return; }
             }
@@ -147,18 +142,16 @@ public class Key extends Item {
     @Override
     protected String encode() {
         if (this._encoded == null) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(Key.TAG);
-            builder.append(Envelope._COMPONENT_DELIMITER);
-            builder.append(Utility.toBase64(this._claims.toJSONString()));
-            this._encoded = builder.toString();
+            this._encoded = Key.TAG +
+                    Envelope._COMPONENT_DELIMITER +
+                    Utility.toBase64(this._claims.toJSONString());
         }
         return this._encoded;
     }
 
     /// PRIVATE ///
 
-    private class KeyClaims {
+    private static final class KeyClaims {
 
         public UUID iss;
         public UUID uid;
@@ -211,25 +204,23 @@ public class Key extends Item {
         byte[] header = new byte[Key._HEADER_SIZE];
         header[0] = (byte)Envelope.DIME_VERSION;
         header[1] = algorithmFamily.value;
-        switch(algorithmFamily) {
-            case AEAD:
-                header[2] = (byte)0x01; // 0x01 == XChaCha20-Poly1305
-                header[3] = (byte)0x02; // 0x02 == 256-bit key size
-            break;
-            case ECDH:
-                header[2] = (byte)0x02; // 0x02 == X25519
+        switch (algorithmFamily) {
+            case AEAD -> {
+                header[2] = (byte) 0x01; // 0x01 == XChaCha20-Poly1305
+                header[3] = (byte) 0x02; // 0x02 == 256-bit key size
+            }
+            case ECDH -> {
+                header[2] = (byte) 0x02; // 0x02 == X25519
                 header[3] = variant.value;
-            break;
-            case EDDSA:
-                header[2] = (byte)0x01; // 0x01 == Ed25519
+            }
+            case EDDSA -> {
+                header[2] = (byte) 0x01; // 0x01 == Ed25519
                 header[3] = variant.value;
-            break;
-            case HASH:
-                header[2] = (byte)0x01; // 0x01 == Blake2b
-                header[3] =(byte)0x02; // 0x02 == 256-bit key size
-            break;
-            default:
-                return null;
+            }
+            case HASH -> {
+                header[2] = (byte) 0x01; // 0x01 == Blake2b
+                header[3] = (byte) 0x02; // 0x02 == 256-bit key size
+            }
         }
         return header;
     }

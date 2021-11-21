@@ -55,7 +55,7 @@ public class Crypto {
     public static void verifySignature(String data, String signature, Key key) throws DimeIntegrityException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
-        if (signature == null || data.length() == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
+        if (signature == null || signature.length() == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
         if (key.getRawPublic() == null) { throw new IllegalArgumentException("Unable to sign, public key in key must not be null."); }
         if (key.getKeyType() != IDENTITY) { throw new IllegalArgumentException("Unable to sign, wrong key type provided, got: " + key.getKeyType() + ", expected: " + IDENTITY + "."); }
         byte[] rawSignature = Utility.fromBase64(signature);
@@ -80,14 +80,9 @@ public class Crypto {
             byte[] publicKey = new byte[Crypto._NBR_A_KEY_BYTES];
             byte[] secretKey = new byte[Crypto._NBR_A_KEY_BYTES * 2];
             switch (type) {
-                case IDENTITY:
-                    Crypto.sodium.crypto_sign_keypair(publicKey, secretKey);
-                    break;
-                case EXCHANGE:
-                    Crypto.sodium.crypto_kx_keypair(publicKey, secretKey);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown or unsupported key type.");
+                case IDENTITY -> Crypto.sodium.crypto_sign_keypair(publicKey, secretKey);
+                case EXCHANGE -> Crypto.sodium.crypto_kx_keypair(publicKey, secretKey);
+                default -> throw new IllegalArgumentException("Unknown or unsupported key type.");
             }
             return new Key(UUID.randomUUID(), type, secretKey, publicKey);
         }
@@ -104,7 +99,7 @@ public class Crypto {
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public static Key generateSharedSecret(Key clientKey, Key serverKey) throws DimeKeyMismatchException, DimeCryptographicException {
-        if (clientKey.getVersion() != serverKey.getVersion()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from diffrent versions."); }
+        if (clientKey.getVersion() != serverKey.getVersion()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from different versions."); }
         if (clientKey.getKeyType() != EXCHANGE || serverKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
         byte[] shared = new byte[Crypto._NBR_X_KEY_BYTES];
         if (clientKey.getRawSecret() != null) {
@@ -134,11 +129,14 @@ public class Crypto {
         if (plainText == null || plainText.length == 0) { throw new IllegalArgumentException("Plain text to encrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         byte[] nonce = Utility.randomBytes(Crypto._NBR_NONCE_BYTES);
-        byte[] cipherText = new byte[Crypto._NBR_MAC_BYTES + plainText.length];
-        if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. C1005)"); 
+        if (nonce != null) {
+            byte[] cipherText = new byte[Crypto._NBR_MAC_BYTES + plainText.length];
+            if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) != 0) {
+                throw new DimeCryptographicException("Cryptographic operation failed. (C1005)");
+            }
+            return Utility.combine(nonce, cipherText);
         }
-        return Utility.combine(nonce, cipherText);
+        throw new DimeCryptographicException("Unable to generate sufficient nonce. (C1006)");
     }
 
     /**
@@ -155,7 +153,7 @@ public class Crypto {
         byte[] bytes = Utility.subArray(cipherText, Crypto._NBR_NONCE_BYTES);
         byte[] plainText = new byte[bytes.length - Crypto._NBR_MAC_BYTES];
         if (Crypto.sodium.crypto_secretbox_open_easy(plainText, bytes, bytes.length, nonce, key.getRawSecret()) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. C1007)");
+            throw new DimeCryptographicException("Cryptographic operation failed. (C1007)");
         }
         return plainText;
     }

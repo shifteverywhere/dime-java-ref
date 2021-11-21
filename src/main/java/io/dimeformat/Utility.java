@@ -11,7 +11,6 @@ package io.dimeformat;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Date;
 
 public final class Utility {
 
@@ -71,11 +70,4 @@ public final class Utility {
         return bytes;
     }
 
-    public static String toTimestamp(Date date) {
-        return null;
-    }
-
-    public static Date fromTimestamp(String timestamp) {
-        return null;
-    }
 }

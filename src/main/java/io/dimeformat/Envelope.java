@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,8 +73,8 @@ public class Envelope {
      * and may be cast by looking at the tag of the item (getTag).
      * @return An array of Item instance
      */
-    public Item[] getItems() {
-        return (this._items != null) ? this._items.toArray(new Item[this._items.size()]) : null;
+    public List<Item> getItems() {
+        return (this._items != null) ? Collections.unmodifiableList(this._items) : null;
     }
 
     /**
@@ -142,7 +143,7 @@ public class Envelope {
         }
         // 1 to LAST or LAST - 1
         int endIndex = (envelope.isAnonymous()) ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
-        ArrayList<Item> items = new ArrayList<Item>(endIndex - 1);
+        ArrayList<Item> items = new ArrayList<>(endIndex - 1);
         for (int index = 1; index < endIndex; index++)
             items.add(Item.fromEncoded(sections[index]));
         envelope._items = items;
@@ -164,7 +165,7 @@ public class Envelope {
     public Envelope addItem(Item item) {
         if (this._signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
         if (this._items == null) {
-            this._items = new ArrayList<Item>();
+            this._items = new ArrayList<>();
         }
         this._items.add(item);
         return this;
@@ -272,7 +273,7 @@ public class Envelope {
 
     /// PRIVATE ///
 
-    private class EnvelopeClaims {
+    private static final class EnvelopeClaims {
 
         public UUID iss;
         public Instant iat;

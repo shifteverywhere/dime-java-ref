@@ -116,12 +116,6 @@ public class IdentityIssuingRequest extends Item {
 
     }
 
-    public static IdentityIssuingRequest fromEncoded(String encoded) throws DimeFormatException {
-        IdentityIssuingRequest iir = new IdentityIssuingRequest();
-        iir.decode(encoded);
-        return iir;
-    }
-
     /// PROTECTED ///
 
     @Override
@@ -140,11 +134,9 @@ public class IdentityIssuingRequest extends Item {
     @Override
     protected String encode() {
         if (this._encoded == null) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(IdentityIssuingRequest.TAG);
-            builder.append(Envelope._COMPONENT_DELIMITER);
-            builder.append(Utility.toBase64(this._claims.toJSONString()));
-            this._encoded = builder.toString();
+            this._encoded = IdentityIssuingRequest.TAG +
+                    Envelope._COMPONENT_DELIMITER +
+                    Utility.toBase64(this._claims.toJSONString());
         }
         return this._encoded;
     }
@@ -173,7 +165,7 @@ public class IdentityIssuingRequest extends Item {
             this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
             this.pub = jsonObject.has("pub") ? jsonObject.getString("pub"): null;
             if (jsonObject.has("cap")) {
-                this.cap = new ArrayList<Capability>();
+                this.cap = new ArrayList<>();
                 JSONArray array = jsonObject.getJSONArray("cap");
                 for (int i = 0;  i < array.length(); i++) {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
@@ -210,7 +202,7 @@ public class IdentityIssuingRequest extends Item {
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeFormatException {
         verify();
-        boolean isSelfSign = (issuerIdentity == null || this.getPublicKey() == issuerKey.getPublic());
+        boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().equals(issuerKey.getPublic()));
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))
         {
@@ -237,7 +229,7 @@ public class IdentityIssuingRequest extends Item {
         }
         if (isSelfIssue) {
             if (!this.wantsCapability(Capability.SELF)) {
-                this._claims.cap = new ArrayList<Capability>(this._claims.cap);
+                this._claims.cap = new ArrayList<>(this._claims.cap);
                 this._claims.cap.add(Capability.SELF);
             }
         } else {
@@ -246,16 +238,16 @@ public class IdentityIssuingRequest extends Item {
             }
             // First check include any missing required capabilities to the iir
             if (requiredCapabilities != null && requiredCapabilities.length > 0) {
-                List<Capability> tmp_requiredCapabilities = new ArrayList<Capability>(Arrays.asList(requiredCapabilities));
+                List<Capability> tmp_requiredCapabilities = new ArrayList<>(Arrays.asList(requiredCapabilities));
                 tmp_requiredCapabilities.removeAll(this._claims.cap);
                 if (tmp_requiredCapabilities.size() != 0) {
-                    this._claims.cap = new ArrayList<Capability>(this._claims.cap);
+                    this._claims.cap = new ArrayList<>(this._claims.cap);
                     this._claims.cap.addAll(tmp_requiredCapabilities);
                 }
             }
             // Then check so there are no capabilities included that are not allowed
             if (allowedCapabilities != null && allowedCapabilities.length > 0) {
-                List<Capability> tmp_cap = new ArrayList<Capability>(this._claims.cap);
+                List<Capability> tmp_cap = new ArrayList<>(this._claims.cap);
                 tmp_cap.removeAll(Arrays.asList(allowedCapabilities));
                 if (tmp_cap.size() > 0) { throw new DimeCapabilityException("Identity issuing request contains one or more disallowed capabilities."); }
             }

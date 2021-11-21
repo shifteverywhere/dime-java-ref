@@ -187,8 +187,8 @@ class EnvelopeTest {
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
-            assertEquals(1, envelope.getItems().length);
-            assertEquals(IdentityIssuingRequest.class, envelope.getItems()[0].getClass());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(IdentityIssuingRequest.class, envelope.getItems().get(0).getClass());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -230,8 +230,8 @@ class EnvelopeTest {
             assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), envelope.getIssuerId());
             assertEquals(Instant.parse("2021-11-18T19:44:52.750012Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
-            assertEquals(1, envelope.getItems().length);
-            assertEquals(Identity.class, envelope.getItems()[0].getClass());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(Identity.class, envelope.getItems().get(0).getClass());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -244,8 +244,8 @@ class EnvelopeTest {
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
-            assertEquals(1, envelope.getItems().length);
-            assertEquals(Identity.class, envelope.getItems()[0].getClass());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(Identity.class, envelope.getItems().get(0).getClass());
             try {
                 envelope.verify(Commons.getIssuerKey());
             } catch (IllegalStateException e) { return; } // All is well
@@ -280,8 +280,8 @@ class EnvelopeTest {
             assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), envelope.getIssuerId());
             assertEquals(Instant.parse("2021-11-18T19:55:43.696960Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
-            assertEquals(1, envelope.getItems().length);
-            assertEquals(Key.class, envelope.getItems()[0].getClass());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(Key.class, envelope.getItems().get(0).getClass());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -315,8 +315,8 @@ class EnvelopeTest {
             assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), envelope.getIssuerId());
             assertEquals(Instant.parse("2021-11-18T20:03:18.176028Z"), envelope.getIssuedAt());
             assertEquals("Di:ME", envelope.getContext());
-            assertEquals(1, envelope.getItems().length);
-            assertEquals(Message.class, envelope.getItems()[0].getClass());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(Message.class, envelope.getItems().get(0).getClass());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -333,11 +333,11 @@ class EnvelopeTest {
 
             Envelope envelope2 = Envelope.importFromEncoded(exported);
             envelope2.verify(Commons.getIssuerKey());
-            assertEquals(2, envelope2.getItems().length);
+            assertEquals(2, envelope2.getItems().size());
 
-            Identity identity = (Identity)envelope2.getItems()[0];
+            Identity identity = (Identity)envelope2.getItems().get(0);
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), identity.getSubjectId());
-            Key key = (Key)envelope2.getItems()[1];
+            Key key = (Key)envelope2.getItems().get(1);
             assertEquals(Commons.getIssuerKey().getUniqueId(), key.getUniqueId());
             assertNull(key.getSecret());
         } catch (Exception e) {
