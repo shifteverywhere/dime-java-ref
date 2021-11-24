@@ -159,6 +159,19 @@ class MessageTest {
     }
 
     @Test
+    void verifyTest4() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId());
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            message.verify(Commons.getIssuerIdentity().getPublicKey());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void importTest1() { 
         try {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());

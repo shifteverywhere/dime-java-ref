@@ -113,8 +113,6 @@ public class Crypto {
         } else {
             throw new DimeKeyMismatchException("Invalid keys provided.");
         }
-        System.out.println("shared: " + Utility.toHex(shared));
-        System.out.println("---");
         return new Key(UUID.randomUUID(), KeyType.ENCRYPTION, shared, null);
     }
 

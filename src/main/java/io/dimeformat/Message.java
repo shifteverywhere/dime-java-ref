@@ -161,6 +161,15 @@ public class Message extends Item {
     }
 
     /**
+     * Creates a message to a specified audience (receiver) from a specified issuer (sender).
+     * @param audienceId The audience identifier. Providing -1 as validFor will skip setting an expiration date.
+     * @param issuerId The issuer identifier.
+     */
+    public Message(UUID audienceId, UUID issuerId) {
+        this(audienceId, issuerId, -1, null);
+    }
+
+    /**
      * Creates a message to a specified audience (receiver) from a specified issuer (sender), with an expiration date.
      * @param audienceId The audience identifier. Providing -1 as validFor will skip setting an expiration date.
      * @param issuerId The issuer identifier.
@@ -216,8 +225,10 @@ public class Message extends Item {
         // Verify IssuedAt and ExpiresAt
         Instant now = Instant.now();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Issuing date in the future."); }
-        if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
-        if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Passed expiration date."); }
+        if (this.getExpiresAt() != null) {
+            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
+            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Passed expiration date."); }
+        }
         super.verify(key);
     }
 
