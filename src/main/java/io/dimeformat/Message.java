@@ -343,6 +343,7 @@ public class Message extends Item {
         byte[] json = Utility.fromBase64(components[Message._CLAIMS_INDEX]);
         this._claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
         this._payload = components[Message._PAYLOAD_INDEX];
+        this._encoded = encoded.substring(0, encoded.lastIndexOf(Envelope._COMPONENT_DELIMITER));
         this._signature = components[components.length - 1];
     }
 
