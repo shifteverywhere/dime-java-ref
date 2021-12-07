@@ -86,13 +86,13 @@ public class Key extends Item {
      */
     public KeyType getKeyType() {
         byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
-        return switch (Key.getAlgorithmFamily(key)) {
-            case AEAD -> KeyType.ENCRYPTION;
-            case ECDH -> KeyType.EXCHANGE;
-            case EDDSA -> KeyType.IDENTITY;
-            case HASH -> KeyType.AUTHENTICATION;
-            default -> KeyType.UNDEFINED;
-        };
+        switch (Key.getAlgorithmFamily(key)) {
+            case AEAD: return KeyType.ENCRYPTION;
+            case ECDH: return KeyType.EXCHANGE;
+            case EDDSA: return KeyType.IDENTITY;
+            case HASH: return KeyType.AUTHENTICATION;
+            default: return KeyType.UNDEFINED;
+        }
     }
 
     /**
@@ -204,8 +204,12 @@ public class Key extends Item {
             byte[] bytes = Base58.decode(base58key);
             if (bytes != null && bytes.length > 0) {
                 switch (Key.getKeyVariant(bytes)) {
-                    case SECRET -> this._claims = new KeyClaims(null, null, null, null, bytes, null);
-                    case PUBLIC -> this._claims = new KeyClaims(null, null, null, null, null, bytes);
+                    case SECRET:
+                        this._claims = new KeyClaims(null, null, null, null, bytes, null);
+                        break;
+                    case PUBLIC:
+                        this._claims = new KeyClaims(null, null, null, null, null, bytes);
+                        break;
                 }
                 if (this._claims != null) { return; }
             }
@@ -289,22 +293,22 @@ public class Key extends Item {
         header[0] = (byte)Envelope.DIME_VERSION;
         header[1] = algorithmFamily.value;
         switch (algorithmFamily) {
-            case AEAD -> {
+            case AEAD:
                 header[2] = (byte) 0x01; // 0x01 == XChaCha20-Poly1305
                 header[3] = (byte) 0x02; // 0x02 == 256-bit key size
-            }
-            case ECDH -> {
+                break;
+            case ECDH:
                 header[2] = (byte) 0x02; // 0x02 == X25519
                 header[3] = variant.value;
-            }
-            case EDDSA -> {
+                break;
+            case EDDSA:
                 header[2] = (byte) 0x01; // 0x01 == Ed25519
                 header[3] = variant.value;
-            }
-            case HASH -> {
+                break;
+            case HASH:
                 header[2] = (byte) 0x01; // 0x01 == Blake2b
                 header[3] = (byte) 0x02; // 0x02 == 256-bit key size
-            }
+                break;
         }
         return header;
     }

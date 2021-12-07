@@ -78,11 +78,18 @@ public class Crypto {
             return new Key(UUID.randomUUID(), type, secretKey, null);
         } else {
             byte[] publicKey = new byte[Crypto._NBR_A_KEY_BYTES];
-            byte[] secretKey = new byte[Crypto._NBR_A_KEY_BYTES * 2];
+            byte[] secretKey;
             switch (type) {
-                case IDENTITY -> Crypto.sodium.crypto_sign_keypair(publicKey, secretKey);
-                case EXCHANGE -> Crypto.sodium.crypto_kx_keypair(publicKey, secretKey);
-                default -> throw new IllegalArgumentException("Unknown or unsupported key type.");
+                case IDENTITY:
+                    secretKey = new byte[Crypto._NBR_A_KEY_BYTES * 2];
+                    Crypto.sodium.crypto_sign_keypair(publicKey, secretKey);
+                    break;
+                case EXCHANGE:
+                    secretKey = new byte[Crypto._NBR_A_KEY_BYTES];
+                    Crypto.sodium.crypto_kx_keypair(publicKey, secretKey);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown or unsupported key type.");
             }
             return new Key(UUID.randomUUID(), type, secretKey, publicKey);
         }
@@ -103,7 +110,8 @@ public class Crypto {
         if (clientKey.getKeyType() != EXCHANGE || serverKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
         byte[] shared = new byte[Crypto._NBR_X_KEY_BYTES];
         if (clientKey.getRawSecret() != null) {
-            if (sodium.crypto_kx_client_session_keys(shared, null, clientKey.getRawPublic(), clientKey.getRawSecret(), serverKey.getRawPublic()) != 0) {
+            byte[] secret = Utility.combine(clientKey.getRawSecret(), clientKey.getRawPublic());
+            if (sodium.crypto_kx_client_session_keys(shared, null, clientKey.getRawPublic(), secret, serverKey.getRawPublic()) != 0) {
                 throw new DimeCryptographicException("Cryptographic operation failed. C1003)");
             }
         } else if (serverKey.getRawSecret() != null) {

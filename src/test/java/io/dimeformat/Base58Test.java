@@ -23,6 +23,13 @@ class Base58Test {
     }
 
     @Test
+    void encodeTest2() {
+        String ref = "Racecar is racecar backwards.";
+        String b58 = Base58.encode(ref.getBytes(StandardCharsets.UTF_8), new byte[]{ (byte)0x00 });
+        assertEquals("1RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDCQndpL", b58);
+    }
+
+    @Test
     void decodeTest1() {
         String base58 = "1RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDCQndpL"; //"4jummFx8watBhHhr7pW1u32g8JGPipX5qCJvMMxR";
         byte[] bytes = Base58.decode(base58);

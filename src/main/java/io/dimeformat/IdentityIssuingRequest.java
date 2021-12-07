@@ -241,7 +241,7 @@ public class IdentityIssuingRequest extends Item {
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @param ambits A list of ambits that will apply to the issued identity.
-     * @param methods Al list of methods that will apply to the issued identity.
+     * @param methods A list of methods that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.

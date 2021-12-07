@@ -162,13 +162,13 @@ public abstract class Item {
     /// PRIVATE ///
 
     private static Class<?> classFromTag(String tag) {
-        return switch (tag) {
-            case Identity.TAG -> Identity.class;
-            case IdentityIssuingRequest.TAG -> IdentityIssuingRequest.class;
-            case Message.TAG -> Message.class;
-            case Key.TAG -> Key.class;
-            default -> null;
-        };
+        switch (tag) {
+            case Identity.TAG: return Identity.class;
+            case IdentityIssuingRequest.TAG: return IdentityIssuingRequest.class;
+            case Message.TAG: return Message.class;
+            case Key.TAG: return Key.class;
+            default: return null;
+        }
     }
 
 }

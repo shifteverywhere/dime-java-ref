@@ -239,7 +239,7 @@ class IdentityTest {
             assertTrue(methodList1.contains(methods[1]));
 
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
-            List<String> methodList2 = identity1.getMethods();
+            List<String> methodList2 = identity2.getMethods();
             assertNotNull(methodList2);
             assertEquals(2, identity2.getMethods().size());
             assertTrue(methodList2.contains(methods[0]));

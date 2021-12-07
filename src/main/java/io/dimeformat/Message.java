@@ -277,8 +277,8 @@ public class Message extends Item {
     public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         throwIfSigned();
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
-        if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
-        if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
+        if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
+        if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
         Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey);
         setPayload(Crypto.encrypt(payload, shared));
     }
