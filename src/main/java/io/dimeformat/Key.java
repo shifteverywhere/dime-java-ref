@@ -112,12 +112,30 @@ public class Key extends Item {
     }
 
     /**
+     * Returns the context that is attached to the key.
+     * @return A String instance.
+     */
+    public String getContext() {
+        return this._claims.ctx;
+    }
+
+    /**
      * Will generate a new Key with a specified type.
      * @param type The type of key to generate.
      * @return A newly generated key.
      */
     public static Key generateKey(KeyType type) {
-        return Key.generateKey(type, -1);
+        return Key.generateKey(type, -1, null, null);
+    }
+
+    /**
+     * Will generate a new Key with a specified type.
+     * @param type The type of key to generate.
+     * @param context The context to attach to the message, may be null.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(KeyType type, String context) {
+        return Key.generateKey(type, -1, null, context);
     }
 
     /**
@@ -129,11 +147,7 @@ public class Key extends Item {
      * @return A newly generated key.
      */
     public static Key generateKey(KeyType type, long validFor) {
-        Key key = Crypto.generateKey(type);
-        if (validFor != -1) {
-            key._claims.exp = key._claims.iat.plusSeconds(validFor);
-        }
-        return key;
+        return Key.generateKey(type, validFor, null, null);
     }
 
     /**
@@ -146,11 +160,27 @@ public class Key extends Item {
      * @return A newly generated key.
      */
     public static Key generateKey(KeyType type, long validFor, UUID issuerId) {
+        return Key.generateKey(type, validFor, issuerId, null);
+    }
+
+    /**
+     * Will generate a new Key with a specified type, an expiration date, and the identifier of the issuer. Abiding to
+     * the expiration date is application specific as the key will continue to function after the expiration date.
+     * Providing -1 as validFor will skip setting an expiration date.
+     * @param type The type of key to generate.
+     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
+     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
+     * @param context The context to attach to the message, may be null.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(KeyType type, long validFor, UUID issuerId, String context) {
+        if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Key key = Crypto.generateKey(type);
         if (validFor != -1) {
             key._claims.exp = key._claims.iat.plusSeconds(validFor);
         }
         key._claims.iss = issuerId;
+        key._claims.ctx = context;
         return key;
     }
 
@@ -184,7 +214,8 @@ public class Key extends Item {
                 iat,
                 null,
                 (key != null) ? Utility.combine(Key.headerFrom(type, KeyVariant.SECRET), key) : null,
-                (pub != null) ? Utility.combine(Key.headerFrom(type, KeyVariant.PUBLIC), pub) : null);
+                (pub != null) ? Utility.combine(Key.headerFrom(type, KeyVariant.PUBLIC), pub) : null,
+                null);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -205,10 +236,10 @@ public class Key extends Item {
             if (bytes != null && bytes.length > 0) {
                 switch (Key.getKeyVariant(bytes)) {
                     case SECRET:
-                        this._claims = new KeyClaims(null, null, null, null, bytes, null);
+                        this._claims = new KeyClaims(null, null, null, null, bytes, null, null);
                         break;
                     case PUBLIC:
-                        this._claims = new KeyClaims(null, null, null, null, null, bytes);
+                        this._claims = new KeyClaims(null, null, null, null, null, bytes, null);
                         break;
                 }
                 if (this._claims != null) { return; }
@@ -247,14 +278,16 @@ public class Key extends Item {
         public Instant exp;
         public byte[] key;
         public byte[] pub;
+        public String ctx;
 
-        public KeyClaims(UUID iss, UUID uid, Instant iat, Instant exp, byte[] key, byte[] pub) {
+        public KeyClaims(UUID iss, UUID uid, Instant iat, Instant exp, byte[] key, byte[] pub, String ctx) {
             this.iss = iss;
             this.uid = uid;
             this.iat = iat;
             this.exp = exp;
             this.key = key;
             this.pub = pub;
+            this.ctx = ctx;
         }
 
         public KeyClaims(String json) {
@@ -265,6 +298,7 @@ public class Key extends Item {
             this.exp = jsonObject.has("exp") ? Instant.parse(jsonObject.getString("exp")) : null;
             this.key = jsonObject.has("key") ? Base58.decode(jsonObject.getString("key")) : null;
             this.pub = jsonObject.has("pub") ? Base58.decode(jsonObject.getString("pub")) : null;
+            this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
         }
 
         public String toJSONString() {
@@ -275,6 +309,7 @@ public class Key extends Item {
             if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
             if (this.key != null) { jsonObject.put("key", Base58.encode(this.key, null)); }
             if (this.pub != null) { jsonObject.put("pub",  Base58.encode(this.pub, null)); }
+            if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
             return jsonObject.toString();
         }
 

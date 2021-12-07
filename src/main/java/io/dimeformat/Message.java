@@ -136,7 +136,6 @@ public class Message extends Item {
 
     /**
      * Returns the context that is attached to the message.
-     * Only applicable for signed envelopes.
      * @return A String instance.
      */
     public String getContext() {

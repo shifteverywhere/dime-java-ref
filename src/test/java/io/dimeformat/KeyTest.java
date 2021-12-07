@@ -144,4 +144,33 @@ class KeyTest {
         assertTrue(Arrays.equals(hashHeader, header));
     }
 
+    @Test
+    void contextTest1() {
+        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
+        Key key = Key.generateKey(KeyType.IDENTITY, context);
+        assertEquals(context, key.getContext());
+    }
+
+    @Test
+    void contextTest2() {
+        try {
+            String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
+            Key key1 = Key.generateKey(KeyType.IDENTITY, context);
+            String exported = key1.exportToEncoded();
+            Key key2 = Item.importFromEncoded(exported);
+            assertEquals(context, key2.getContext());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void contextTest3() {
+        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        try {
+            Key.generateKey(KeyType.IDENTITY, context);
+        } catch (IllegalArgumentException e) { return; } // All is well
+        fail("Should not happen.");
+    }
+
 }
