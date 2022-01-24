@@ -20,14 +20,14 @@ import java.util.*;
 /**
  * Class used to create a request for the issuing of an identity to an entity. This will contain a locally generated
  * public key (where the private key remains locally), capabilities requested and principles claimed. An issuing entity
- * will used the Identity Issuing Request (IIR) to validate and then issue a new identity for the entity.
+ * uses the Identity Issuing Request (IIR) to validate and then issue a new identity for the entity.
  */
 public class IdentityIssuingRequest extends Item {
 
     /// PUBLIC ///
 
     /** A constant holding the number of seconds for a year (based on 365 days). */
-    public static final long VALID_FOR_1_YEAR = 365 * 24 * 60 * 60;
+    public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
 
     /** A tag identifying the Di:ME item type, part of the header. */
     public static final String TAG = "IIR";
@@ -47,7 +47,7 @@ public class IdentityIssuingRequest extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this._claims.uid;
+        return this.claims.uid;
     }
 
     /**
@@ -55,20 +55,20 @@ public class IdentityIssuingRequest extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this._claims.iat;
+        return this.claims.iat;
     }
 
     /**
-     * Returns the public key attached to the IIR. This is the key provied by the entity and will get included in any
-     * issued identity. The equvilant secret (private) key was used to sign the IIR, thus the public key can be used
+     * Returns the public key attached to the IIR. This is the public key attached by the entity and will get included in any
+     * issued identity. The equivalent secret (private) key was used to sign the IIR, thus the public key can be used
      * to verify the signature. This must be a key of type IDENTITY.
      * @return A Key instance with a public key of type IDENTITY.
      */
     public Key getPublicKey() {
-        if (this._claims.pub != null && this._claims.pub.length() > 0) {
+        if (this.claims.pub != null && this.claims.pub.length() > 0) {
             try {
-                return Key.fromBase58Key(this._claims.pub);
-            } catch (DimeFormatException e) { }
+                return Key.fromBase58Key(this.claims.pub);
+            } catch (DimeFormatException ignored) { /* ignored */ }
         }
         return null;
     }
@@ -79,7 +79,7 @@ public class IdentityIssuingRequest extends Item {
      * @return An immutable list of Capability instances.
      */
     public List<Capability> getCapabilities() {
-        return (this._claims.cap != null) ? Collections.unmodifiableList(this._claims.cap) : null;
+        return (this.claims.cap != null) ? Collections.unmodifiableList(this.claims.cap) : null;
     }
 
     /**
@@ -88,7 +88,7 @@ public class IdentityIssuingRequest extends Item {
      * @return An immutable map of assigned principles (as <String, Object>).
      */
     public Map<String, Object> getPrinciples() {
-        return (this._claims.pri != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
+        return (this.claims.pri != null) ? Collections.unmodifiableMap(this.claims.pri) : null;
     }
 
     /**
@@ -130,12 +130,12 @@ public class IdentityIssuingRequest extends Item {
         if (capabilities == null || capabilities.length == 0) {
             capabilities = new Capability[] { Capability.GENERIC };
         }
-        iir._claims = new IdentityIssuingRequestClaims(UUID.randomUUID(),
+        iir.claims = new IdentityIssuingRequestClaims(UUID.randomUUID(),
                 Instant.now(),
                 key.getPublic(),
                 capabilities,
                 principles);
-        iir._signature = Crypto.generateSignature(iir.encode(), key);
+        iir.signature = Crypto.generateSignature(iir.encode(), key);
         return iir;
     }
 
@@ -149,7 +149,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
     public IdentityIssuingRequest verify() throws DimeDateException, DimeIntegrityException, DimeFormatException {
-        verify(Key.fromBase58Key(this._claims.pub));
+        verify(Key.fromBase58Key(this.claims.pub));
         return this;
     }
 
@@ -174,7 +174,7 @@ public class IdentityIssuingRequest extends Item {
      * @return true or false.
      */
     public boolean wantsCapability(Capability capability) {
-        return this._claims.cap.contains(capability);
+        return this.claims.cap.contains(capability);
     }
 
     /**
@@ -195,7 +195,6 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
-     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
@@ -221,7 +220,6 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
-     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
@@ -247,7 +245,6 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
-     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
@@ -313,36 +310,36 @@ public class IdentityIssuingRequest extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
-        if (components.length != IdentityIssuingRequest._NBR_COMPONENTS_WITHOUT_SIGNATURE && components.length != IdentityIssuingRequest._NBR_COMPONENTS_WITH_SIGNATURE) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + IdentityIssuingRequest._NBR_COMPONENTS_WITHOUT_SIGNATURE + " or  " + IdentityIssuingRequest._NBR_COMPONENTS_WITH_SIGNATURE + ", got " + components.length + "."); }
-        if (components[IdentityIssuingRequest._TAG_INDEX].compareTo(IdentityIssuingRequest.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.TAG + ", got " + components[IdentityIssuingRequest._TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[IdentityIssuingRequest._CLAIMS_INDEX]);
-        this._claims = new IdentityIssuingRequestClaims(new String(json, StandardCharsets.UTF_8));
-        if (components.length == _NBR_COMPONENTS_WITH_SIGNATURE) {
-            this._encoded = encoded.substring(0, encoded.lastIndexOf(Envelope._COMPONENT_DELIMITER));
-            this._signature = components[IdentityIssuingRequest._SIGNATURE_INDEX];
+        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        if (components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE && components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE + " or  " + IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE + ", got " + components.length + "."); }
+        if (components[IdentityIssuingRequest.TAG_INDEX].compareTo(IdentityIssuingRequest.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.TAG + ", got " + components[IdentityIssuingRequest.TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[IdentityIssuingRequest.CLAIMS_INDEX]);
+        this.claims = new IdentityIssuingRequestClaims(new String(json, StandardCharsets.UTF_8));
+        if (components.length == NBR_COMPONENTS_WITH_SIGNATURE) {
+            this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+            this.signature = components[IdentityIssuingRequest.SIGNATURE_INDEX];
         }
     }
 
     @Override
     protected String encode() {
-        if (this._encoded == null) {
-            this._encoded = IdentityIssuingRequest.TAG +
-                    Envelope._COMPONENT_DELIMITER +
-                    Utility.toBase64(this._claims.toJSONString());
+        if (this.encoded == null) {
+            this.encoded = IdentityIssuingRequest.TAG +
+                    Envelope.COMPONENT_DELIMITER +
+                    Utility.toBase64(this.claims.toJSONString());
         }
-        return this._encoded;
+        return this.encoded;
     }
 
     /// PRIVATE ///
 
     private static class IdentityIssuingRequestClaims {
 
-        public UUID uid;
-        public Instant iat;
-        public String pub;
-        public List<Capability> cap;
-        public Map<String, Object> pri;
+        private final UUID uid;
+        private final Instant iat;
+        private final String pub;
+        private List<Capability> cap;
+        private final Map<String, Object> pri;
 
         public IdentityIssuingRequestClaims(UUID uid, Instant iat, String pub, Capability[] cap, Map<String, Object> pri) {
             this.uid = uid;
@@ -363,6 +360,8 @@ public class IdentityIssuingRequest extends Item {
                 for (int i = 0;  i < array.length(); i++) {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
                 }
+            } else {
+                this.cap = null;
             }
             this.pri = jsonObject.has("pri") ? jsonObject.getJSONObject("pri").toMap() : null;
         }
@@ -385,17 +384,17 @@ public class IdentityIssuingRequest extends Item {
 
     }
 
-    private static final int _NBR_COMPONENTS_WITHOUT_SIGNATURE = 2;
-    private static final int _NBR_COMPONENTS_WITH_SIGNATURE = 3;
-    private static final int _TAG_INDEX = 0;
-    private static final int _CLAIMS_INDEX = 1;
-    private static final int _SIGNATURE_INDEX = 2;
+    private static final int NBR_COMPONENTS_WITHOUT_SIGNATURE = 2;
+    private static final int NBR_COMPONENTS_WITH_SIGNATURE = 3;
+    private static final int TAG_INDEX = 0;
+    private static final int CLAIMS_INDEX = 1;
+    private static final int SIGNATURE_INDEX = 2;
 
-    private IdentityIssuingRequestClaims _claims;
+    private IdentityIssuingRequestClaims claims;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());
-        boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().equals(issuerKey.getPublic()));
+        boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))
         {
@@ -417,13 +416,13 @@ public class IdentityIssuingRequest extends Item {
     }
 
     private void completeCapabilities(Capability[] allowedCapabilities, Capability[] requiredCapabilities, boolean isSelfIssue) throws DimeCapabilityException {
-        if (this._claims.cap == null) {
-            this._claims.cap = new ArrayList<>();
+        if (this.claims.cap == null) {
+            this.claims.cap = new ArrayList<>();
         }
         if (isSelfIssue) {
             if (!this.wantsCapability(Capability.SELF)) {
-                this._claims.cap = new ArrayList<>(this._claims.cap);
-                this._claims.cap.add(Capability.SELF);
+                this.claims.cap = new ArrayList<>(this.claims.cap);
+                this.claims.cap.add(Capability.SELF);
             }
         } else {
             if ((allowedCapabilities == null || allowedCapabilities.length == 0) && (requiredCapabilities == null || requiredCapabilities.length == 0)) {
@@ -431,18 +430,18 @@ public class IdentityIssuingRequest extends Item {
             }
             // First check include any missing required capabilities to the iir
             if (requiredCapabilities != null && requiredCapabilities.length > 0) {
-                List<Capability> tmp_requiredCapabilities = new ArrayList<>(Arrays.asList(requiredCapabilities));
-                tmp_requiredCapabilities.removeAll(this._claims.cap);
-                if (tmp_requiredCapabilities.size() != 0) {
-                    this._claims.cap = new ArrayList<>(this._claims.cap);
-                    this._claims.cap.addAll(tmp_requiredCapabilities);
+                List<Capability> tempRequiredCapabilities = new ArrayList<>(Arrays.asList(requiredCapabilities));
+                tempRequiredCapabilities.removeAll(this.claims.cap);
+                if (!tempRequiredCapabilities.isEmpty()) {
+                    this.claims.cap = new ArrayList<>(this.claims.cap);
+                    this.claims.cap.addAll(tempRequiredCapabilities);
                 }
             }
             // Then check so there are no capabilities included that are not allowed
             if (allowedCapabilities != null && allowedCapabilities.length > 0) {
-                List<Capability> tmp_cap = new ArrayList<>(this._claims.cap);
-                tmp_cap.removeAll(Arrays.asList(allowedCapabilities));
-                if (tmp_cap.size() > 0) { throw new DimeCapabilityException("Identity issuing request contains one or more disallowed capabilities."); }
+                List<Capability> tempCap = new ArrayList<>(this.claims.cap);
+                tempCap.removeAll(Arrays.asList(allowedCapabilities));
+                if (!tempCap.isEmpty()) { throw new DimeCapabilityException("Identity issuing request contains one or more disallowed capabilities."); }
             }
         }
     }

@@ -47,7 +47,7 @@ public class Envelope {
      * @return A UUID instance.
      */
     public UUID getIssuerId() {
-        return (this._claims != null) ? this._claims.iss : null;
+        return (this.claims != null) ? this.claims.iss : null;
     }
 
     /**
@@ -56,7 +56,7 @@ public class Envelope {
      * @return An Instant instance.
      */
     public Instant getIssuedAt() {
-        return (this._claims != null) ? this._claims.iat : null;
+        return (this.claims != null) ? this.claims.iat : null;
     }
 
     /**
@@ -65,7 +65,7 @@ public class Envelope {
      * @return A String instance.
      */
     public String getContext() {
-        return (this._claims != null) ? this._claims.ctx : null;
+        return (this.claims != null) ? this.claims.ctx : null;
     }
 
     /**
@@ -74,7 +74,7 @@ public class Envelope {
      * @return An array of Item instance
      */
     public List<Item> getItems() {
-        return (this._items != null) ? Collections.unmodifiableList(this._items) : null;
+        return (this.items != null) ? Collections.unmodifiableList(this.items) : null;
     }
 
     /**
@@ -84,7 +84,7 @@ public class Envelope {
      * @return true or false
      */
     public boolean isSigned() {
-        return (this._signature != null);
+        return (this.signature != null);
     }
 
     /**
@@ -92,7 +92,7 @@ public class Envelope {
      * @return true or false
      */
     public boolean isAnonymous() {
-        return (this._claims == null);
+        return (this.claims == null);
     }
 
     /**
@@ -117,7 +117,7 @@ public class Envelope {
     public Envelope(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer id may not be null."); }
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
-        this._claims = new EnvelopeClaims(issuerId, Instant.now(), context);
+        this.claims = new EnvelopeClaims(issuerId, Instant.now(), context);
     }
 
     /**
@@ -129,9 +129,9 @@ public class Envelope {
      */
     public static Envelope importFromEncoded(String encoded) throws DimeFormatException {
         if (!encoded.startsWith(Envelope.HEADER)) { throw new DimeFormatException("Not a Dime envelope object, invalid header."); }
-        String[] sections = encoded.split("\\" + Envelope._SECTION_DELIMITER);
+        String[] sections = encoded.split("\\" + Envelope.SECTION_DELIMITER);
         // 0: HEADER
-        String[] components = sections[0].split("\\" + Envelope._COMPONENT_DELIMITER);
+        String[] components = sections[0].split("\\" + Envelope.COMPONENT_DELIMITER);
         Envelope envelope;
         if (components.length == 2) {
             byte[] json = Utility.fromBase64(components[1]);
@@ -146,12 +146,12 @@ public class Envelope {
         ArrayList<Item> items = new ArrayList<>(endIndex - 1);
         for (int index = 1; index < endIndex; index++)
             items.add(Item.fromEncoded(sections[index]));
-        envelope._items = items;
+        envelope.items = items;
         if (envelope.isAnonymous()) {
-            envelope._encoded = encoded;
+            envelope.encoded = encoded;
         } else {
-            envelope._encoded = encoded.substring(0, encoded.lastIndexOf(Envelope._SECTION_DELIMITER));
-            envelope._signature = sections[sections.length - 1];
+            envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.SECTION_DELIMITER));
+            envelope.signature = sections[sections.length - 1];
         }
         return envelope;
     }
@@ -163,11 +163,11 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      */
     public Envelope addItem(Item item) {
-        if (this._signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
-        if (this._items == null) {
-            this._items = new ArrayList<>();
+        if (this.signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (this.items == null) {
+            this.items = new ArrayList<>();
         }
-        this._items.add(item);
+        this.items.add(item);
         return this;
     }
 
@@ -178,8 +178,8 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      */
     public Envelope setItems(List<Item> items) {
-        if (this._signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
-        this._items = new ArrayList<>(items);
+        if (this.signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        this.items = new ArrayList<>(items);
         return this;
     }
 
@@ -193,9 +193,9 @@ public class Envelope {
      */
     public Envelope sign(Key key) throws DimeCryptographicException {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
-        if (this._signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
-        if (this._items == null || this._items.size() == 0) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
-        this._signature = Crypto.generateSignature(encode(), key);
+        if (this.signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
+        if (this.items == null || this.items.isEmpty()) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
+        this.signature = Crypto.generateSignature(encode(), key);
         return this;
     }
 
@@ -208,8 +208,8 @@ public class Envelope {
     public Envelope verify(Key key) throws DimeIntegrityException {
         if (key == null || key.getPublic() == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
-        if (this._signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
-        Crypto.verifySignature(encode(), this._signature, key);
+        if (this.signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
+        Crypto.verifySignature(encode(), this.signature, key);
         return this;
     }
 
@@ -219,8 +219,8 @@ public class Envelope {
      */
     public String exportToEncoded() {
         if (!this.isAnonymous()) {
-            if (this._signature == null) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
-            return encode() + Envelope._SECTION_DELIMITER + this._signature;
+            if (this.signature == null) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
+            return encode() + Envelope.SECTION_DELIMITER + this.signature;
         } else {
             return encode();
         }
@@ -234,11 +234,11 @@ public class Envelope {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public String thumbprint() throws DimeCryptographicException {
-        String encoded = encode();
+        String enc = encode();
         if (!this.isAnonymous()) {
-            encoded += Envelope._SECTION_DELIMITER + this._signature;
+            enc += Envelope.SECTION_DELIMITER + this.signature;
         }
-        return Envelope.thumbprint(encoded);
+        return Envelope.thumbprint(enc);
     }
 
     /**
@@ -256,16 +256,16 @@ public class Envelope {
 
     /// PACKAGE-PRIVATE ///
 
-    static final String _COMPONENT_DELIMITER = ".";
-    static final String _SECTION_DELIMITER = ":";
+    static final String COMPONENT_DELIMITER = ".";
+    static final String SECTION_DELIMITER = ":";
 
     /// PRIVATE ///
 
     private static final class EnvelopeClaims {
 
-        public UUID iss;
-        public Instant iat;
-        public String ctx;
+        private final UUID iss;
+        private final Instant iat;
+        private final String ctx;
 
         public EnvelopeClaims(UUID iss,Instant iat, String ctx) {
             this.iss = iss;
@@ -290,30 +290,30 @@ public class Envelope {
 
     }
 
-    private Envelope.EnvelopeClaims _claims;
-    private ArrayList<Item> _items;
-    private String _encoded;
-    private String _signature;
+    private Envelope.EnvelopeClaims claims;
+    private ArrayList<Item> items;
+    private String encoded;
+    private String signature;
 
     private Envelope(String json) {
-        this._claims = new EnvelopeClaims(json);
+        this.claims = new EnvelopeClaims(json);
     }
 
     private String encode() {
-        if (this._encoded == null) {
+        if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
             if (!this.isAnonymous()) {
-                builder.append(Envelope._COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(this._claims.toJSONString()));
+                builder.append(Envelope.COMPONENT_DELIMITER);
+                builder.append(Utility.toBase64(this.claims.toJSONString()));
             }
-            for (Item item : this._items) {
-                builder.append(Envelope._SECTION_DELIMITER);
+            for (Item item : this.items) {
+                builder.append(Envelope.SECTION_DELIMITER);
                 builder.append(item.toEncoded());
             }
-            this._encoded = builder.toString();
+            this.encoded = builder.toString();
         }
-        return this._encoded;
+        return this.encoded;
     }
 
 }

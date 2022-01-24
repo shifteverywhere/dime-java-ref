@@ -26,7 +26,7 @@ public class Key extends Item {
     /// PUBLIC ///
 
     /** A tag identifying the Di:ME item type, part of the header. */
-    public final static String TAG = "KEY";
+    public static final String TAG = "KEY";
 
     /**
      * Returns the tag of the Di:ME item.
@@ -42,7 +42,7 @@ public class Key extends Item {
      * @return The Di:ME specification version of the key.
      */
     public int getVersion() {
-        byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
+        byte[] key = (this.claims.key != null) ? this.claims.key : this.claims.pub;
         return key[0];
     }
 
@@ -51,7 +51,7 @@ public class Key extends Item {
      * @return The identifier of the issuer of the key.
      */
     public UUID getIssuerId() {
-        return this._claims.iss;
+        return this.claims.iss;
     }
 
     /**
@@ -60,7 +60,7 @@ public class Key extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this._claims.uid;
+        return this.claims.uid;
     }
 
     /**
@@ -68,15 +68,15 @@ public class Key extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this._claims.iat;
+        return this.claims.iat;
     }
 
     /**
      * Returns the expiration date of the key. This is optional.
-     * @return
+     * @return The expiration date of the key.
      */
     public Instant getExpiresAt() {
-        return this._claims.exp;
+        return this.claims.exp;
     }
 
     /**
@@ -85,7 +85,7 @@ public class Key extends Item {
      * @return The type of the key.
      */
     public KeyType getKeyType() {
-        byte[] key = (this._claims.key != null) ? this._claims.key : this._claims.pub;
+        byte[] key = (this.claims.key != null) ? this.claims.key : this.claims.pub;
         switch (Key.getAlgorithmFamily(key)) {
             case AEAD: return KeyType.ENCRYPTION;
             case ECDH: return KeyType.EXCHANGE;
@@ -100,7 +100,7 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getSecret() {
-        return (this._claims.key != null) ? Base58.encode(this._claims.key, null) : null;
+        return (this.claims.key != null) ? Base58.encode(this.claims.key, null) : null;
     }
 
     /**
@@ -108,7 +108,7 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getPublic() {
-        return (this._claims.pub != null) ? Base58.encode(this._claims.pub, null) : null;
+        return (this.claims.pub != null) ? Base58.encode(this.claims.pub, null) : null;
     }
 
     /**
@@ -116,7 +116,7 @@ public class Key extends Item {
      * @return A String instance.
      */
     public String getContext() {
-        return this._claims.ctx;
+        return this.claims.ctx;
     }
 
     /**
@@ -177,10 +177,10 @@ public class Key extends Item {
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Key key = Crypto.generateKey(type);
         if (validFor != -1) {
-            key._claims.exp = key._claims.iat.plusSeconds(validFor);
+            key.claims.exp = key.claims.iat.plusSeconds(validFor);
         }
-        key._claims.iss = issuerId;
-        key._claims.ctx = context;
+        key.claims.iss = issuerId;
+        key.claims.ctx = context;
         return key;
     }
 
@@ -200,7 +200,7 @@ public class Key extends Item {
      * @return A new instance of the key with only the public part.
      */
     public Key publicCopy() {
-        return new Key(this._claims.uid, this.getKeyType(), null, getRawPublic());
+        return new Key(this.claims.uid, this.getKeyType(), null, getRawPublic());
     }
 
     /// PACKAGE-PRIVATE ///
@@ -209,7 +209,7 @@ public class Key extends Item {
 
     Key(UUID id, KeyType type, byte[] key, byte[] pub) {
         Instant iat = Instant.now();
-        this._claims = new KeyClaims(null,
+        this.claims = new KeyClaims(null,
                 id,
                 iat,
                 null,
@@ -221,11 +221,11 @@ public class Key extends Item {
     /// PACKAGE-PRIVATE ///
 
     byte[] getRawSecret() {
-        return (this._claims.key != null ) ? Utility.subArray(this._claims.key, Key._HEADER_SIZE, this._claims.key.length - Key._HEADER_SIZE) : null;
+        return (this.claims.key != null ) ? Utility.subArray(this.claims.key, Key.HEADER_SIZE, this.claims.key.length - Key.HEADER_SIZE) : null;
     }
 
     byte[] getRawPublic() {
-        return (this._claims.pub != null ) ? Utility.subArray(this._claims.pub, Key._HEADER_SIZE, this._claims.pub.length - Key._HEADER_SIZE) : null;
+        return (this.claims.pub != null ) ? Utility.subArray(this.claims.pub, Key.HEADER_SIZE, this.claims.pub.length - Key.HEADER_SIZE) : null;
     }
 
     /// PROTECTED ///
@@ -233,16 +233,16 @@ public class Key extends Item {
     protected Key(String base58key) throws DimeFormatException {
         if (base58key != null && base58key.length() > 0) {
             byte[] bytes = Base58.decode(base58key);
-            if (bytes != null && bytes.length > 0) {
+            if (bytes.length > 0) {
                 switch (Key.getKeyVariant(bytes)) {
                     case SECRET:
-                        this._claims = new KeyClaims(null, null, null, null, bytes, null, null);
+                        this.claims = new KeyClaims(null, null, null, null, bytes, null, null);
                         break;
                     case PUBLIC:
-                        this._claims = new KeyClaims(null, null, null, null, null, bytes, null);
+                        this.claims = new KeyClaims(null, null, null, null, null, bytes, null);
                         break;
                 }
-                if (this._claims != null) { return; }
+                if (this.claims != null) { return; }
             }
         }
         throw new DimeFormatException("Invalid key. (K1010)");
@@ -250,35 +250,35 @@ public class Key extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
-        if (components.length != Key._NBR_EXPECTED_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + Key._NBR_EXPECTED_COMPONENTS + ", got " + components.length +"."); }
-        if (components[Key._TAG_INDEX].compareTo(Key.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.TAG + ", got " + components[Key._TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Key._CLAIMS_INDEX]);
-        this._claims = new KeyClaims(new String(json, StandardCharsets.UTF_8));
-        this._encoded = encoded;
+        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        if (components.length != Key.NBR_EXPECTED_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + Key.NBR_EXPECTED_COMPONENTS + ", got " + components.length +"."); }
+        if (components[Key.TAG_INDEX].compareTo(Key.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.TAG + ", got " + components[Key.TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Key.CLAIMS_INDEX]);
+        this.claims = new KeyClaims(new String(json, StandardCharsets.UTF_8));
+        this.encoded = encoded;
     }
 
     @Override
     protected String encode() {
-        if (this._encoded == null) {
-            this._encoded = Key.TAG +
-                    Envelope._COMPONENT_DELIMITER +
-                    Utility.toBase64(this._claims.toJSONString());
+        if (this.encoded == null) {
+            this.encoded = Key.TAG +
+                    Envelope.COMPONENT_DELIMITER +
+                    Utility.toBase64(this.claims.toJSONString());
         }
-        return this._encoded;
+        return this.encoded;
     }
 
     /// PRIVATE ///
 
     private static final class KeyClaims {
 
-        public UUID iss;
-        public UUID uid;
-        public Instant iat;
-        public Instant exp;
-        public byte[] key;
-        public byte[] pub;
-        public String ctx;
+        private UUID iss;
+        private final UUID uid;
+        private final Instant iat;
+        private Instant exp;
+        private final byte[] key;
+        private final byte[] pub;
+        private String ctx;
 
         public KeyClaims(UUID iss, UUID uid, Instant iat, Instant exp, byte[] key, byte[] pub, String ctx) {
             this.iss = iss;
@@ -315,16 +315,16 @@ public class Key extends Item {
 
     }
 
-    private static final int _NBR_EXPECTED_COMPONENTS = 2;
-    private static final int _TAG_INDEX = 0;
-    private static final int _CLAIMS_INDEX = 1;
-    private static final int _HEADER_SIZE = 6;
+    private static final int NBR_EXPECTED_COMPONENTS = 2;
+    private static final int TAG_INDEX = 0;
+    private static final int CLAIMS_INDEX = 1;
+    private static final int HEADER_SIZE = 6;
 
-    private KeyClaims _claims;
+    private KeyClaims claims;
 
     private static byte[] headerFrom(KeyType type, KeyVariant variant) {
         AlgorithmFamily algorithmFamily = AlgorithmFamily.keyTypeOf(type);
-        byte[] header = new byte[Key._HEADER_SIZE];
+        byte[] header = new byte[Key.HEADER_SIZE];
         header[0] = (byte)Envelope.DIME_VERSION;
         header[1] = algorithmFamily.value;
         switch (algorithmFamily) {
@@ -343,6 +343,8 @@ public class Key extends Item {
             case HASH:
                 header[2] = (byte) 0x01; // 0x01 == Blake2b
                 header[3] = (byte) 0x02; // 0x02 == 256-bit key size
+                break;
+            default:
                 break;
         }
         return header;

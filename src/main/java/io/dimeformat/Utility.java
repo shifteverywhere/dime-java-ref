@@ -23,7 +23,7 @@ public final class Utility {
      * @return
      */
     static byte[] randomBytes(final int length) {
-        if (length <= 0) { return null; }
+        if (length <= 0) { return new byte[0]; }
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[length];
         random.nextBytes(bytes);
@@ -110,6 +110,10 @@ public final class Utility {
 
     /// PRIVATE ///
 
-    private final static char[] HEX_CHAR_SET = "0123456789abcdef".toCharArray();
+    private static final char[] HEX_CHAR_SET = "0123456789abcdef".toCharArray();
+
+    private Utility() {
+        throw new IllegalStateException("Not intended to be instantiated.");
+    }
 
 }

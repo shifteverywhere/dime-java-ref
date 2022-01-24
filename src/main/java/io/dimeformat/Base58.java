@@ -16,7 +16,7 @@ import java.util.Arrays;
  * Encodes and decodes byte arrays and strings to and from base 58. This is mainly used
  * to encode/decode keys. 
  */
-public class Base58 {
+public final class Base58 {
 
     /// PUBLIC ///
 
@@ -38,28 +38,30 @@ public class Base58 {
                 System.arraycopy(data, 0, bytes, 0, data.length);
             }
             byte[] checksum = Base58.doubleHash(bytes, length);
-            System.arraycopy(checksum, 0, bytes, length, Base58.NBR_CHECKSUM_BYTES);
-            // Count leading zeros, to know where to start
-            int start = 0;
-            for (byte aByte : bytes) {
-                if (aByte != 0) {
-                    break;
+            if (checksum.length > 0) {
+                System.arraycopy(checksum, 0, bytes, length, Base58.NBR_CHECKSUM_BYTES);
+                // Count leading zeros, to know where to start
+                int start = 0;
+                for (byte aByte : bytes) {
+                    if (aByte != 0) {
+                        break;
+                    }
+                    start++;
                 }
-                start++;
-            }
-            StringBuilder builder = new StringBuilder();
-            bytes = Arrays.copyOf(bytes, bytes.length);
-            for(int index = start; index < bytes.length;) {
-                builder.insert(0, _indexTable[calculateIndex(bytes, index, 256, 58)]);
-                if (bytes[index] == 0) {
-                    ++index;
+                StringBuilder builder = new StringBuilder();
+                bytes = Arrays.copyOf(bytes, bytes.length);
+                for(int index = start; index < bytes.length;) {
+                    builder.insert(0, _indexTable[calculateIndex(bytes, index, 256, 58)]);
+                    if (bytes[index] == 0) {
+                        ++index;
+                    }
                 }
+                while (start > 0) {
+                    builder.insert(0, '1');
+                    start--;
+                }
+                return builder.toString();
             }
-            while (start > 0) {
-                builder.insert(0, '1');
-                start--;
-            }
-            return builder.toString();
         }
         return null;
     }
@@ -102,14 +104,13 @@ public class Base58 {
         if (Arrays.equals(checksum, actualChecksum)) {
             return data;
         }
-        return null;
+        return new byte[0];
     }
 
     /// PRIVATE //
 
     private static final int NBR_CHECKSUM_BYTES = 4;
-
-    public static final char[] _indexTable = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
+    private static final char[] _indexTable = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
     private static final int[] _reverseTable = new int[128];
     static {
         Arrays.fill(Base58._reverseTable, -1);
@@ -118,11 +119,15 @@ public class Base58 {
         }
     }
 
+    private Base58() {
+        throw new IllegalStateException("Not intended to be instantiated.");
+    }
+
     private static byte calculateIndex(byte[] bytes, int position, int base, int divisor) {
         // this is just long division which accounts for the base of the input digits
         int remainder = 0;
         for (int i = position; i < bytes.length; i++) {
-            int digit = (int)bytes[i] & 255;
+            int digit = bytes[i] & 255;
             int temp = remainder * base + digit;
             bytes[i] = (byte)(temp / divisor);
             remainder = temp % divisor;
@@ -130,13 +135,13 @@ public class Base58 {
         return (byte)remainder;
     }
 
-    public static byte[] doubleHash(byte[] message, int len) {
+    private static byte[] doubleHash(byte[] message, int len) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             digest.update(message, 0, len);
             return digest.digest(digest.digest());
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            return new byte[0];
         }
     }
 

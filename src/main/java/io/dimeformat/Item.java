@@ -39,11 +39,11 @@ public abstract class Item {
      * @return true or false.
      */
     public boolean isSigned() {
-        return (this._signature != null);
+        return (this.signature != null);
     }
 
     /**
-     * Will import an item from a DiME encoded string. Di:ME envelopes cannot be imported using this methid, for
+     * Will import an item from a DiME encoded string. Di:ME envelopes cannot be imported using this method, for
      * envelopes use Envelope.importFromEncoded(String) instead.
      * @param encoded The Di:ME encoded string to import an item from.
      * @param <T> The subclass of item of the imported Di:ME item.
@@ -75,12 +75,12 @@ public abstract class Item {
     /**
      * Will sign an item with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
      * @param key The key to sign the item with, must be of type IDENTITY.
-     * @throws DimeCryptographicException
+     * @throws DimeCryptographicException If something goes wrong.
      */
     public void sign(Key key) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        this._signature = Crypto.generateSignature(encode(), key);
+        this.signature = Crypto.generateSignature(encode(), key);
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class Item {
      */
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
         if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
-        Crypto.verifySignature(encode(), this._signature, key);
+        Crypto.verifySignature(encode(), this.signature, key);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -123,7 +123,7 @@ public abstract class Item {
     @SuppressWarnings("unchecked")
     static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
         try {
-            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope._COMPONENT_DELIMITER)));
+            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope.COMPONENT_DELIMITER)));
             T item;
             try {
                 item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
@@ -139,12 +139,12 @@ public abstract class Item {
 
     /// PROTECTED ///
 
-    protected String _encoded;
-    protected String _signature;
+    protected String encoded;
+    protected String signature;
 
     protected String toEncoded() {
         if (this.isSigned()) {
-            return encode() + Envelope._COMPONENT_DELIMITER + this._signature;
+            return encode() + Envelope.COMPONENT_DELIMITER + this.signature;
         }
         return encode();
     }

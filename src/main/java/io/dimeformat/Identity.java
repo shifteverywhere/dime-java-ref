@@ -31,7 +31,7 @@ public class Identity extends Item {
     /// PUBLIC ///
 
     /** A tag identifying the Di:ME item type, part of the header. */
-    public final static String TAG = "ID";
+    public static final String TAG = "ID";
 
     /**
      * Returns the tag of the Di:ME item.
@@ -48,7 +48,7 @@ public class Identity extends Item {
      * @return The system name
      */
     public String getSystemName() {
-        return this._claims.sys;
+        return this.claims.sys;
     }
 
     /**
@@ -58,7 +58,7 @@ public class Identity extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this._claims.uid;
+        return this.claims.uid;
     }
 
     /**
@@ -67,7 +67,7 @@ public class Identity extends Item {
      * @return The subject identifier assigned to an entity, as a UUID.
      */
     public UUID getSubjectId() {
-        return this._claims.sub;
+        return this.claims.sub;
     }
 
     /**
@@ -76,7 +76,7 @@ public class Identity extends Item {
      * @return The issuer identifier, as a UUID.
      */
     public UUID getIssuerId() {
-        return this._claims.iss;
+        return this.claims.iss;
     }
 
     /**
@@ -85,7 +85,7 @@ public class Identity extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this._claims.iat;
+        return this.claims.iat;
     }
 
     /**
@@ -93,7 +93,7 @@ public class Identity extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return this._claims.exp;
+        return this.claims.exp;
     }
 
     /**
@@ -102,10 +102,10 @@ public class Identity extends Item {
      * @return A Key instance with a public key of type IDENTITY.
      */
     public Key getPublicKey() {
-        if (this._claims.pub != null && this._claims.pub.length() > 0) {
+        if (this.claims.pub != null && this.claims.pub.length() > 0) {
             try {
-                return Key.fromBase58Key(this._claims.pub);
-            } catch (DimeFormatException e) { }
+                return Key.fromBase58Key(this.claims.pub);
+            } catch (DimeFormatException ignored) { /* ignored */ }
         }
         return null;
     }
@@ -117,7 +117,7 @@ public class Identity extends Item {
      * @return An immutable list of Capability instances.
      */
     public List<Capability> getCapabilities() {
-        return this._claims.cap;
+        return this.claims.cap;
     }
 
     /**
@@ -126,16 +126,16 @@ public class Identity extends Item {
      * @return An immutable map of assigned principles (as <String, Object>).
      */
     public Map<String, Object> getPrinciples() {
-        return (this._claims != null) ? Collections.unmodifiableMap(this._claims.pri) : null;
+        return (this.claims != null) ? Collections.unmodifiableMap(this.claims.pri) : null;
     }
 
     /**
-     * Returns a list of ambits assigned to an identity. An ambit defines the scope, region or role where an identity
+     * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
      * may be used.
-     * @return An immutable list of ambits (as String instances).
+     * @return An immutable ambit list (as String instances).
      */
     public List<String> getAmbits() {
-        return this._claims.amb;
+        return this.claims.amb;
     }
 
     /**
@@ -145,7 +145,7 @@ public class Identity extends Item {
      * @return An immutable list of methods (as String instances).
      */
     public List<String> getMethods() {
-        return this._claims.mtd;
+        return this.claims.mtd;
     }
 
     /**
@@ -153,7 +153,7 @@ public class Identity extends Item {
      * @return Parent identity in a trust chain.
      */
     public Identity getTrustChain() {
-        return this._trustChain;
+        return this.trustChain;
     }
 
     /**
@@ -161,15 +161,15 @@ public class Identity extends Item {
      * @return true or false
      */
     public boolean isSelfIssued() {
-       return (this._claims.sub == this._claims.iss && this.hasCapability(Capability.SELF));
+       return (this.claims.sub == this.claims.iss && this.hasCapability(Capability.SELF));
     }
 
     /**
      * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
      * @return An Identity instance.
      */
-    public synchronized static Identity getTrustedIdentity() {
-        return Identity._trustedIdentity;
+    public static synchronized Identity getTrustedIdentity() {
+        return Identity.trustedIdentity;
     }
 
     /**
@@ -177,8 +177,8 @@ public class Identity extends Item {
      * instances. This is normally the root identity of a trust chain.
      * @param trustedIdentity The Identity instance to set as a trusted identity.
      */
-    public synchronized static void setTrustedIdentity(Identity trustedIdentity) {
-        Identity._trustedIdentity = trustedIdentity;
+    public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
+        Identity.trustedIdentity = trustedIdentity;
     }
 
     /**
@@ -188,18 +188,18 @@ public class Identity extends Item {
      * @throws DimeUntrustedIdentityException If the trust of the identity could not be verified.
      */
     public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
-        if (Identity._trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no trusted identity set."); }
+        if (Identity.trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no trusted identity set."); }
         Instant now = Instant.now();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
         if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
         if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
-        if (Identity._trustedIdentity.getSystemName().compareTo(this.getSystemName()) != 0) { throw new DimeUntrustedIdentityException("Unable to trust identity, identity part of another system."); }
-        if (this._trustChain != null) {
-            this._trustChain.verifyTrust();
+        if (Identity.trustedIdentity.getSystemName().compareTo(this.getSystemName()) != 0) { throw new DimeUntrustedIdentityException("Unable to trust identity, identity part of another system."); }
+        if (this.trustChain != null) {
+            this.trustChain.verifyTrust();
         }
-        Key key = (this._trustChain != null) ? this._trustChain.getPublicKey() : Identity._trustedIdentity.getPublicKey();
+        Key key = (this.trustChain != null) ? this.trustChain.getPublicKey() : Identity.trustedIdentity.getPublicKey();
         try {
-            Crypto.verifySignature(this._encoded, this._signature, key);
+            Crypto.verifySignature(this.encoded, this.signature, key);
         } catch (DimeIntegrityException e) {
             throw new DimeUntrustedIdentityException("Unable to verify trust of entity. (I1003)", e);
         }
@@ -211,7 +211,7 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasCapability(Capability capability) {
-       return this._claims.cap != null && this._claims.cap.contains(capability);
+       return this.claims.cap != null && this.claims.cap.contains(capability);
     }
 
     /**
@@ -220,7 +220,7 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasAmbit(String ambit) {
-        return this._claims.amb != null && this._claims.amb.contains(ambit);
+        return this.claims.amb != null && this.claims.amb.contains(ambit);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -229,7 +229,7 @@ public class Identity extends Item {
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        this._claims = new IdentityClaims(systemName,
+        this.claims = new IdentityClaims(systemName,
                 UUID.randomUUID(),
                 subjectId,
                 issuerId,
@@ -243,59 +243,59 @@ public class Identity extends Item {
     }
 
     void setTrustChain(Identity trustChain) {
-        this._trustChain = trustChain;
+        this.trustChain = trustChain;
     }
 
     /// PROTECTED ///
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
-        if (components.length != Identity._NBR_EXPECTED_COMPONENTS_MIN &&
-                components.length != Identity._NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity._NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity._NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
-        if (components[Identity._TAG_INDEX].compareTo(Identity.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity._TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Identity._CLAIMS_INDEX]);
-        this._claims = new IdentityClaims(new String(json, StandardCharsets.UTF_8));
-        if (this._claims.sys == null || this._claims.sys.length() == 0) { throw new DimeFormatException("System name missing from identity."); }
-        if (components.length == Identity._NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
-            byte[] issIdentity = Utility.fromBase64(components[Identity._CHAIN_INDEX]);
-            this._trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
+        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
+                components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
+        if (components[Identity.TAG_INDEX].compareTo(Identity.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity.TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Identity.CLAIMS_INDEX]);
+        this.claims = new IdentityClaims(new String(json, StandardCharsets.UTF_8));
+        if (this.claims.sys == null || this.claims.sys.length() == 0) { throw new DimeFormatException("System name missing from identity."); }
+        if (components.length == Identity.NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
+            byte[] issIdentity = Utility.fromBase64(components[Identity.CHAIN_INDEX]);
+            this.trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
         }
-        this._encoded = encoded.substring(0, encoded.lastIndexOf(Envelope._COMPONENT_DELIMITER));
-        this._signature = components[components.length - 1];
+        this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+        this.signature = components[components.length - 1];
     }
 
     @Override
     protected String encode()  {
-        if (this._encoded == null) {
+        if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Identity.TAG);
-            builder.append(Envelope._COMPONENT_DELIMITER);
-            builder.append(Utility.toBase64(this._claims.toJSONString()));
-            if (this._trustChain != null) {
-                builder.append(Envelope._COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(this._trustChain.encode() + Envelope._COMPONENT_DELIMITER + this._trustChain._signature));
+            builder.append(Envelope.COMPONENT_DELIMITER);
+            builder.append(Utility.toBase64(this.claims.toJSONString()));
+            if (this.trustChain != null) {
+                builder.append(Envelope.COMPONENT_DELIMITER);
+                builder.append(Utility.toBase64(this.trustChain.encode() + Envelope.COMPONENT_DELIMITER + this.trustChain.signature));
             }
-            this._encoded = builder.toString();
+            this.encoded = builder.toString();
         }
-        return this._encoded;
+        return this.encoded;
     }
 
     /// PRIVATE ///
 
     private static final class IdentityClaims {
 
-        public String sys;
-        public UUID uid;
-        public UUID sub;
-        public UUID iss;
-        public Instant iat;
-        public Instant exp;
-        public String pub;
-        public List<Capability> cap;
-        public Map<String, Object> pri;
-        public List<String> amb;
-        public List<String> mtd;
+        private final String sys;
+        private final UUID uid;
+        private final UUID sub;
+        private final UUID iss;
+        private final Instant iat;
+        private final Instant exp;
+        private final String pub;
+        private final List<Capability> cap;
+        private final Map<String, Object> pri;
+        private final List<String> amb;
+        private final List<String> mtd;
 
         public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, List<Capability> cap, Map<String, Object> pri, List<String> amb, List<String> mtd) {
             this.sys = sys;
@@ -326,6 +326,8 @@ public class Identity extends Item {
                 for (int i = 0;  i < array.length(); i++) {
                     this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
                 }
+            } else {
+                this.cap = null;
             }
             this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri").toMap() : null;
             this.amb = (jsonObject.has("amb")) ? jsonObject.getJSONArray("amb").toList().stream().filter(String.class::isInstance).map(String.class::cast).collect(toList()) : null;
@@ -356,16 +358,15 @@ public class Identity extends Item {
 
     }
 
-    private static final int _NBR_EXPECTED_COMPONENTS_MIN = 3;
-    private static final int _NBR_EXPECTED_COMPONENTS_MAX = 4;
-    private static final int _TAG_INDEX = 0;
-    private static final int _CLAIMS_INDEX = 1;
-    private static final int _CHAIN_INDEX = 2;
+    private static final int NBR_EXPECTED_COMPONENTS_MIN = 3;
+    private static final int NBR_EXPECTED_COMPONENTS_MAX = 4;
+    private static final int TAG_INDEX = 0;
+    private static final int CLAIMS_INDEX = 1;
+    private static final int CHAIN_INDEX = 2;
 
-    private static Identity _trustedIdentity;
-
-    private IdentityClaims _claims;
-    private Identity _trustChain;
+    private static Identity trustedIdentity;
+    private IdentityClaims claims;
+    private Identity trustChain;
 
     private static Identity fromEncodedIdentity(String encoded) throws DimeFormatException {
         Identity identity = new Identity();

@@ -25,7 +25,7 @@ public class Message extends Item {
     /// PUBLIC ///
 
     /** A tag identifying the Di:ME item type, part of the header. */
-    public final static String TAG = "MSG";
+    public static final String TAG = "MSG";
 
     /**
      * Returns the tag of the Di:ME item.
@@ -42,7 +42,7 @@ public class Message extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this._claims.uid;
+        return this.claims.uid;
     }
 
     /**
@@ -51,7 +51,7 @@ public class Message extends Item {
      * @return The audience identifier, as a UUID.
      */
     public UUID getAudienceId() {
-        return this._claims.aud;
+        return this.claims.aud;
     }
 
     /**
@@ -59,7 +59,7 @@ public class Message extends Item {
      * @return The issuer identifier, as a UUID.
      */
     public UUID getIssuerId() {
-        return this._claims.iss;
+        return this.claims.iss;
     }
 
     /**
@@ -67,7 +67,7 @@ public class Message extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this._claims.iat;
+        return this.claims.iat;
     }
 
     /**
@@ -75,7 +75,7 @@ public class Message extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return this._claims.exp;
+        return this.claims.exp;
     }
 
     /**
@@ -84,17 +84,17 @@ public class Message extends Item {
      * @return A key identifier, as a UUID.
      */
     public UUID getKeyId() {
-        return this._claims.kid;
+        return this.claims.kid;
     }
 
     /**
      * Sets a key identifier, UUID. This is used to specify which particular key, most often in the position of the
      * audience, was used for the encryption of the payload. This is optional.
-     * @param kid
+     * @param kid The identifier of the key to set.
      */
     public void setKeyId(UUID kid) {
         throwIfSigned();
-        this._claims.kid = kid;
+        this.claims.kid = kid;
     }
 
     /**
@@ -103,10 +103,10 @@ public class Message extends Item {
      * @return A public key.
      */
     public Key getPublicKey() {
-        if (this._claims.pub != null && this._claims.pub.length() > 0) {
+        if (this.claims.pub != null && this.claims.pub.length() > 0) {
             try {
-                return Key.fromBase58Key(this._claims.pub);
-            } catch (DimeFormatException e) { }
+                return Key.fromBase58Key(this.claims.pub);
+            } catch (DimeFormatException ignored) { /* ignored */}
         }
         return null;
     }
@@ -118,7 +118,7 @@ public class Message extends Item {
      */
     public void setPublicKey(Key publicKey) {
         throwIfSigned();
-        this._claims.pub = publicKey.getPublic();
+        this.claims.pub = publicKey.getPublic();
     }
 
     /**
@@ -127,8 +127,8 @@ public class Message extends Item {
      * @return An identifier of a linked item, as a UUID.
      */
     public UUID getLinkedId() {
-        if (this._claims.lnk != null) {
-            String uuid = this._claims.lnk.split("//" + Envelope._COMPONENT_DELIMITER)[Message._LINK_UID_INDEX];
+        if (this.claims.lnk != null) {
+            String uuid = this.claims.lnk.split("//" + Envelope.COMPONENT_DELIMITER)[Message.LINK_UID_INDEX];
             return UUID.fromString(uuid);
         }
         return null;
@@ -139,7 +139,7 @@ public class Message extends Item {
      * @return A String instance.
      */
     public String getContext() {
-        return this._claims.ctx;
+        return this.claims.ctx;
     }
 
     /**
@@ -190,7 +190,7 @@ public class Message extends Item {
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Instant.now();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        this._claims = new MessageClaims(UUID.randomUUID(),
+        this.claims = new MessageClaims(UUID.randomUUID(),
                 audienceId,
                 issuerId,
                 iat,
@@ -204,11 +204,11 @@ public class Message extends Item {
     /**
      * Will sign the message with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
      * @param key The key to sign the item with, must be of type IDENTITY.
-     * @throws DimeCryptographicException
+     * @throws DimeCryptographicException If something goes wrong.
      */
     @Override
     public void sign(Key key) throws DimeCryptographicException {
-        if (this._payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
+        if (this.payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
         super.sign(key);
     }
 
@@ -220,7 +220,7 @@ public class Message extends Item {
      */
     @Override
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
-        if (this._payload == null || this._payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
+        if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
         // Verify IssuedAt and ExpiresAt
         Instant now = Instant.now();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Issuing date in the future."); }
@@ -244,13 +244,13 @@ public class Message extends Item {
     public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
         verify(key);
         if (linkedItem != null) {
-            if (this._claims.lnk == null || this._claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
-            String[] components = this._claims.lnk.split("\\" + Envelope._COMPONENT_DELIMITER);
+            if (this.claims.lnk == null || this.claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
+            String[] components = this.claims.lnk.split("\\" + Envelope.COMPONENT_DELIMITER);
             if (components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
-            if (components[Message._LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
-                    || components[Message._LINK_UID_INDEX].compareTo(linkedItem.getUniqueId().toString()) != 0
-                    || components[Message._LINK_THUMBPRINT_INDEX].compareTo(msgHash) != 0) {
+            if (components[Message.LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
+                    || components[Message.LINK_UID_INDEX].compareTo(linkedItem.getUniqueId().toString()) != 0
+                    || components[Message.LINK_THUMBPRINT_INDEX].compareTo(msgHash) != 0) {
                 throw new DimeIntegrityException("Failed to verify link Dime item (provided item did not match).");
             }
         }
@@ -262,7 +262,7 @@ public class Message extends Item {
      */
     public void setPayload(byte[] payload) {
         throwIfSigned();
-        this._payload = Utility.toBase64(payload);
+        this.payload = Utility.toBase64(payload);
     }
 
     /**
@@ -288,7 +288,7 @@ public class Message extends Item {
      * @return The message payload.
      */
     public byte[] getPayload() {
-        return Utility.fromBase64(this._payload);
+        return Utility.fromBase64(this.payload);
     }
 
     /**
@@ -317,7 +317,7 @@ public class Message extends Item {
     public void linkItem(Item item) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to link item, message is already signed."); }
         if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
-        this._claims.lnk = item.getTag() + Envelope._COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope._COMPONENT_DELIMITER + item.thumbprint();
+        this.claims.lnk = item.getTag() + Envelope.COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope.COMPONENT_DELIMITER + item.thumbprint();
     }
 
     /// PACKAGE-PRIVATE ///
@@ -328,49 +328,49 @@ public class Message extends Item {
 
     @Override
     protected String toEncoded() {
-        if (this._signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
+        if (this.signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
         return super.toEncoded();
     }
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope._COMPONENT_DELIMITER);
-        if (components.length != Message._NBR_EXPECTED_COMPONENTS) {
-            throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message._NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
+        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        if (components.length != Message.NBR_EXPECTED_COMPONENTS) {
+            throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
         }
-        if (components[Message._TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message._TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Message._CLAIMS_INDEX]);
-        this._claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
-        this._payload = components[Message._PAYLOAD_INDEX];
-        this._encoded = encoded.substring(0, encoded.lastIndexOf(Envelope._COMPONENT_DELIMITER));
-        this._signature = components[components.length - 1];
+        if (components[Message.TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message.TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Message.CLAIMS_INDEX]);
+        this.claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
+        this.payload = components[Message.PAYLOAD_INDEX];
+        this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+        this.signature = components[components.length - 1];
     }
 
     @Override
     protected String encode() {
-        if (this._encoded == null) {
-            this._encoded = Message.TAG +
-                    Envelope._COMPONENT_DELIMITER +
-                    Utility.toBase64(this._claims.toJSONString()) +
-                    Envelope._COMPONENT_DELIMITER +
-                    this._payload;
+        if (this.encoded == null) {
+            this.encoded = Message.TAG +
+                    Envelope.COMPONENT_DELIMITER +
+                    Utility.toBase64(this.claims.toJSONString()) +
+                    Envelope.COMPONENT_DELIMITER +
+                    this.payload;
         }
-        return this._encoded;
+        return this.encoded;
     }
 
     /// PRIVATE ///
 
     private static final class MessageClaims {
 
-        public UUID uid;
-        public UUID aud;
-        public UUID iss;
-        public Instant iat;
-        public Instant exp;
-        public UUID kid;
-        public String pub;
-        public String lnk;
-        public String ctx;
+        private final UUID uid;
+        private final UUID aud;
+        private final UUID iss;
+        private final Instant iat;
+        private final Instant exp;
+        private UUID kid;
+        private String pub;
+        private String lnk;
+        private final String ctx;
 
         public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, String pub, String lnk, String ctx) {
             this.uid = uid;
@@ -413,15 +413,15 @@ public class Message extends Item {
 
     }
 
-    private static final int _NBR_EXPECTED_COMPONENTS = 4;
-    private static final int _TAG_INDEX = 0;
-    private static final int _CLAIMS_INDEX = 1;
-    private static final int _PAYLOAD_INDEX = 2;
-    private static final int _LINK_ITEM_TYPE_INDEX = 0;
-    private static final int _LINK_UID_INDEX = 1;
-    private static final int _LINK_THUMBPRINT_INDEX = 2;
+    private static final int NBR_EXPECTED_COMPONENTS = 4;
+    private static final int TAG_INDEX = 0;
+    private static final int CLAIMS_INDEX = 1;
+    private static final int PAYLOAD_INDEX = 2;
+    private static final int LINK_ITEM_TYPE_INDEX = 0;
+    private static final int LINK_UID_INDEX = 1;
+    private static final int LINK_THUMBPRINT_INDEX = 2;
 
-    private MessageClaims _claims;
-    private String _payload;
+    private MessageClaims claims;
+    private String payload;
 
 }
