@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.DimeCapabilityException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
@@ -37,8 +38,8 @@ class IdentityTest {
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
-            assertTrue(subjectId == identity.getSubjectId());
-            assertTrue(subjectId == identity.getIssuerId());
+            assertEquals(0, subjectId.compareTo(identity.getSubjectId()));
+            assertEquals(0, subjectId.compareTo(identity.getIssuerId()));
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
             assertTrue(identity.hasCapability(Capability.SELF));
@@ -61,14 +62,14 @@ class IdentityTest {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
             Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, null, null);
             assertEquals(Identity.getTrustedIdentity().getSystemName(), identity.getSystemName());
-            assertTrue(subjectId == identity.getSubjectId());
+            assertEquals(0, subjectId.compareTo(identity.getSubjectId()));
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
             assertEquals(key.getPublic(), identity.getPublicKey().getPublic());
             assertNotNull(identity.getIssuedAt());
             assertNotNull(identity.getExpiresAt());
             assertTrue(identity.getIssuedAt().compareTo(identity.getExpiresAt()) < 0);
-            assertTrue(Commons.getIntermediateIdentity().getSubjectId() == identity.getIssuerId());
+            assertEquals(0, Commons.getIntermediateIdentity().getSubjectId().compareTo(identity.getIssuerId()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -76,6 +77,21 @@ class IdentityTest {
 
     @Test
     void issueTest3() {
+        try {
+            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] reqCaps = new Capability[] { Capability.ISSUE };
+            Capability[] allowedCaps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            try {
+                IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY), reqCaps).issueIdentity(UUID.randomUUID(), 100L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), allowedCaps, null);
+            } catch (DimeCapabilityException e) { return; } // All is well
+            fail("Should not happen.");
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void issueTest4() {
         try {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
             Key key = Key.generateKey(KeyType.IDENTITY);

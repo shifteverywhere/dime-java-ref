@@ -67,16 +67,16 @@ public class Commons {
         Identity.setTrustedIdentity(null);
         Key trustedKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity trustedIdentity = Commons.generateIdentity(trustedKey, trustedKey, null, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, new Capability[] { Capability.GENERIC, Capability.ISSUE });
-        //System.out.println("// -- TRUSTED IDENTITY ---");
-        //System.out.println("private static final String _encodedTrustedKey = \"" + trustedKey.exportToEncoded() + "\";");
-        //System.out.println("private static final String _encodedTrustedIdentity = \"" + trustedIdentity.exportToEncoded() + "\";\n");
+        System.out.println("// -- TRUSTED IDENTITY ---");
+        System.out.println("private static final String _encodedTrustedKey = \"" + trustedKey.exportToEncoded() + "\";");
+        System.out.println("private static final String _encodedTrustedIdentity = \"" + trustedIdentity.exportToEncoded() + "\";\n");
 
         Identity.setTrustedIdentity(trustedIdentity);
         Key intermediateKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity intermediateIdentity = Commons.generateIdentity(intermediateKey, trustedKey, trustedIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR * 5, new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE });
-        //System.out.println("// -- INTERMEDIATE IDENTITY --");
-        //System.out.println("private static final String _encodedIntermediateKey = \"" + intermediateKey.exportToEncoded() + "\";");
-        //System.out.println("private static final String _encodedIntermediateIdentity = \""+ intermediateIdentity.exportToEncoded() + "\";\n");
+        System.out.println("// -- INTERMEDIATE IDENTITY --");
+        System.out.println("private static final String _encodedIntermediateKey = \"" + intermediateKey.exportToEncoded() + "\";");
+        System.out.println("private static final String _encodedIntermediateIdentity = \""+ intermediateIdentity.exportToEncoded() + "\";\n");
 
         Key issuerKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity issuerIdentity = Commons.generateIdentity(issuerKey, intermediateKey, intermediateIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR, new Capability[] { Capability.GENERIC, Capability.IDENTIFY });

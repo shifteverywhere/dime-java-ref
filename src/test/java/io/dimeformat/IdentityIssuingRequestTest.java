@@ -74,7 +74,8 @@ class IdentityIssuingRequestTest {
             IdentityIssuingRequest iir2 = Item.importFromEncoded(components[0] + "." + Utility.toBase64(json.toString()) + "." + components[2]);
             try {
                 iir2.issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), caps, caps);
-            } catch (DimeIntegrityException e) { return; } // All is well 
+            } catch (DimeIntegrityException e) { return; } // All is well
+            fail("Should not happen.");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
