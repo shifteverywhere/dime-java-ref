@@ -23,10 +23,10 @@ public class DimeUntrustedIdentityException extends Exception {
     }
     
     /**
-     * Create a new exception with a description and the underlaying
+     * Create a new exception with a description and the underlying
      * causing exception.
      * @param message A short description of what happened.
-     * @param exception The causing exception.
+     * @param cause The causing exception.
      */
     public DimeUntrustedIdentityException(String message, Exception cause) {
         super(message, cause);

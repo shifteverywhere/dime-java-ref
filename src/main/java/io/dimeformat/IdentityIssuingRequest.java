@@ -188,7 +188,7 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
      *                       attached to the newly issued Identity.
-     * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
+     * @param allowedCapabilities A list of capabilities that may be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
@@ -292,7 +292,7 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
      * @param ambits A list of ambits that will apply to the issued identity.
-     * @param methods Al list of methods that will apply to the issued identity.
+     * @param methods A list of methods that will apply to the issued identity.
      * @return A self-issued Identity instance.
      * @throws DimeCryptographicException If anything goes wrong.
      */
