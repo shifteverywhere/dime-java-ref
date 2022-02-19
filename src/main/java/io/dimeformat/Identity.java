@@ -186,22 +186,46 @@ public class Identity extends Item {
      * at a trust chain (if present) and verify the signature with the attached public key.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      * @throws DimeUntrustedIdentityException If the trust of the identity could not be verified.
+     * @deprecated This method is deprecated since 1.0.1 and will be removed in a future version use
+     * {@link #isTrusted()} or {@link #isTrusted(Identity)} instead.
      */
+    @Deprecated
     public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
-        if (Identity.trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no trusted identity set."); }
-        Instant now = Instant.now();
-        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
-        if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
-        if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
-        if (Identity.trustedIdentity.getSystemName().compareTo(this.getSystemName()) != 0) { throw new DimeUntrustedIdentityException("Unable to trust identity, identity part of another system."); }
-        if (this.trustChain != null) {
-            this.trustChain.verifyTrust();
+        if (!isTrusted()) {
+            throw new DimeUntrustedIdentityException("Unable to verify trust of entity.");
         }
-        Key key = (this.trustChain != null) ? this.trustChain.getPublicKey() : Identity.trustedIdentity.getPublicKey();
-        try {
-            Crypto.verifySignature(this.encoded, this.signature, key);
-        } catch (DimeIntegrityException e) {
-            throw new DimeUntrustedIdentityException("Unable to verify trust of entity. (I1003)", e);
+    }
+
+    /**
+     * Will verify if an identity can be trusted using the globally set Trusted Identity
+     * ({@link #setTrustedIdentity(Identity)}). Once trust has been established it will also verify the issued at date
+     * and the expires at date to see if these are valid.
+     * @return True if the identity is trusted.
+     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
+     */
+    public boolean isTrusted() throws DimeDateException {
+        if (Identity.trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
+        return isTrusted(Identity.trustedIdentity);
+    }
+
+    /**
+     * Will verify if an identity can be trusted by a provided identity. An identity is trusted if it exists on the same
+     * branch and later in the branch as the provided identity. Once trust has been established it will also verify the
+     * issued at date and the expires at date to see if these are valid.
+     * @param trustedIdentity The identity to verify the trust from.
+     * @return True if the identity is trusted.
+     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
+     */
+    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
+        if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
+        if (verifyChain(trustedIdentity) != null) {
+            Instant now = Instant.now();
+            if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
+            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
+            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -372,6 +396,27 @@ public class Identity extends Item {
         Identity identity = new Identity();
         identity.decode(encoded);
         return identity;
+    }
+
+    private Identity verifyChain(Identity trustedIdentity) throws DimeDateException {
+
+        Identity verifyingIdentity;
+        if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
+            verifyingIdentity = trustChain.verifyChain(trustedIdentity);
+        } else {
+            verifyingIdentity = trustedIdentity;
+        }
+
+        if (verifyingIdentity != null) {
+            Key parentKey = verifyingIdentity.getPublicKey();
+            try {
+                super.verify(parentKey);
+                return this;
+            } catch (DimeIntegrityException e) {
+                // catch this and return null
+            }
+        }
+        return null;
     }
 
 }
