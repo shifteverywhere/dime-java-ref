@@ -140,7 +140,7 @@ public class Commons {
             if (issuerIdentity == null) {
                 identity = iir.selfIssueIdentity(subjectId, validFor, issuerKey, Commons.SYSTEM_NAME);
             } else {
-                identity = iir.issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, capabilities, null);
+                identity = iir.issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, true, capabilities, null);
             }
             return identity;
         } catch (Exception e) {

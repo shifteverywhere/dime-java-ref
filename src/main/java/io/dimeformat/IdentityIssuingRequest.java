@@ -188,6 +188,8 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
      *                       attached to the newly issued Identity.
+     * @param includeChain If set to true then the trust chain will be added to the newly issued identity. The chain
+     *                     will only the included if the issuing identity is not the root node.
      * @param allowedCapabilities A list of capabilities that may be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
@@ -197,8 +199,8 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
-        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, null, null);
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, null, null);
     }
 
     /**
@@ -212,6 +214,8 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
      *                       attached to the newly issued Identity.
+     * @param includeChain If set to true then the trust chain will be added to the newly issued identity. The chain
+     *                     will only the included if the issuing identity is not the root node.
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @param ambits A list of ambits that will apply to the issued identity.
@@ -222,8 +226,8 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
-        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, null);
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, null);
     }
     /**
      * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
@@ -236,6 +240,8 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param issuerIdentity The Identity instance of the issuing entity. If part of a trust chain, then this will be
      *                       attached to the newly issued Identity.
+     * @param includeChain If set to true then the trust chain will be added to the newly issued identity. The chain
+     *                     will only the included if the issuing identity is not the root node.
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @param ambits A list of ambits that will apply to the issued identity.
@@ -247,9 +253,9 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
-        return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, allowedCapabilities, requiredCapabilities, ambits, methods);
+        return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, methods);
     }
 
     /**
@@ -299,7 +305,7 @@ public class IdentityIssuingRequest extends Item {
     public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits, String[] methods) throws DimeCryptographicException {
         try {
             if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-            return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, null, null, ambits, methods);
+            return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, false, null, null, ambits, methods);
         } catch (DimeDateException | DimeCapabilityException | DimeUntrustedIdentityException | DimeIntegrityException e) {
             return null; // These exceptions will not be thrown when issuing a self-issued identity.
         }
@@ -392,7 +398,7 @@ public class IdentityIssuingRequest extends Item {
 
     private IdentityIssuingRequestClaims claims;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] method) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
@@ -405,9 +411,12 @@ public class IdentityIssuingRequest extends Item {
             List<String> methodList = (method != null) ? Arrays.asList(method) : null;
             Identity identity = new Identity(systemName, subjectId, this.getPublicKey(), now, expires, issuerId, getCapabilities(), getPrinciples(), ambitList, methodList);
             if (Identity.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId() != Identity.getTrustedIdentity().getSubjectId()) {
-                issuerIdentity.verifyTrust();
+                issuerIdentity.isTrusted();
                 // The chain will only be set if this is not the trusted identity (and as long as one is set)
-                identity.setTrustChain(issuerIdentity);
+                // and if it is a trusted issuer identity (from set trusted identity) and includeChain is set to true
+                if (includeChain) {
+                    identity.setTrustChain(issuerIdentity);
+                }
             }
             identity.sign(issuerKey);
             return identity;

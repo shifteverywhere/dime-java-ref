@@ -33,7 +33,7 @@ class Base58Test {
     void decodeTest1() {
         String base58 = "1RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDCQndpL"; //"4jummFx8watBhHhr7pW1u32g8JGPipX5qCJvMMxR";
         byte[] bytes = Base58.decode(base58);
-        assertTrue(bytes[0] == (byte)0x00);
+        assertEquals(bytes[0], (byte) 0x00);
         String decoded = new String(Utility.subArray(bytes, 1), StandardCharsets.UTF_8);
        assertEquals("Racecar is racecar backwards.", decoded);
     }
