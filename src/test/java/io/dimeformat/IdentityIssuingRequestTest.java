@@ -84,7 +84,7 @@ class IdentityIssuingRequestTest {
     @Test
     void issueTest2() {
          try {
-             Capability[] caps = new Capability[] { Capability.GENERIC};
+             Capability[] caps = new Capability[] { Capability.GENERIC };
              Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, caps, null);
              assertNull(identity.getTrustChain());
          } catch (Exception e) {
@@ -96,7 +96,7 @@ class IdentityIssuingRequestTest {
     void issueTest3() {
         try {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-            Capability[] caps = new Capability[] { Capability.GENERIC};
+            Capability[] caps = new Capability[] { Capability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null);
             assertNotNull(identity.getTrustChain());
         } catch (Exception e) {
@@ -108,7 +108,7 @@ class IdentityIssuingRequestTest {
     void issueTest4() {
         try {
             Identity.setTrustedIdentity(Commons.getTrustedIdentity());
-            Capability[] caps = new Capability[] { Capability.GENERIC};
+            Capability[] caps = new Capability[] { Capability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), false, caps, null);
             assertNull(identity.getTrustChain());
         } catch (Exception e) {
@@ -309,5 +309,30 @@ class IdentityIssuingRequestTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
+
+    @Test
+    void systemNameTest1() {
+        try {
+            Capability[] caps = new Capability[] { Capability.GENERIC };
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100L, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null);
+            assertEquals(Commons.getIntermediateIdentity().getSystemName(), identity.getSystemName());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void systemNameTest2() {
+        try {
+            String system = "racecar:is:racecar:backwards";
+            Capability[] caps = new Capability[] { Capability.GENERIC };
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyType.IDENTITY)).issueIdentity(UUID.randomUUID(), 100L, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, system, null);
+            assertNotEquals(Commons.getIntermediateIdentity().getSystemName(), identity.getSystemName());
+            assertEquals(system, identity.getSystemName());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 
 }

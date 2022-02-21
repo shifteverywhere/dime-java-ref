@@ -1,6 +1,7 @@
-# CHANGES: Di:ME JAVA REFERENCE
+# CHANGES
 
 ## Version 1.0.1 - 2022-xx-xx
+- Allows for systemName to be set when issuing a new identity. If none is provided, then the systemName from the issuing identity is used
 - Adds an option to exclude the trust chain from an issued identity, allows for more flexible usage and trust verification
 - Method Identity:isTrusted() and Identity:isTrusted(Identity) is added for more fine-grained verification of trust chains
 - Method Identity:verifyTrust() is deprecated and will be removed in future versions

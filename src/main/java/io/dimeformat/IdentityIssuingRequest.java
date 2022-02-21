@@ -206,8 +206,8 @@ public class IdentityIssuingRequest extends Item {
     /**
      * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
      * validated to meet context and application specific requirements. The only exception is the capabilities, that may
-     * be validated during the issuing, by providing allowed and required capabilities. The system name of the issued
-     * identity will be set to the same as the issuing identity.
+     * be validated during the issuing, by providing allowed and required capabilities. If system is omitted, then the
+     * issued identity will be set to the system same as the issuing identity.
      * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
      *                  should be the same as subject identifier used previously.
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
@@ -218,6 +218,7 @@ public class IdentityIssuingRequest extends Item {
      *                     will only the included if the issuing identity is not the root node.
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
+     * @param systemName The name of the system, or network, that the identity should be a part of.
      * @param ambits A list of ambits that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
@@ -226,14 +227,14 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
-        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, null);
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName,  String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambits, null);
     }
     /**
      * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
      * validated to meet context and application specific requirements. The only exception is the capabilities, that may
-     * be validated during the issuing, by providing allowed and required capabilities. The system name of the issued
-     * identity will be set to the same as the issuing identity.
+     * be validated during the issuing, by providing allowed and required capabilities. If system is omitted, then the
+     * issued identity will be set to the system same as the issuing identity.
      * @param subjectId The subject identifier of the entity. For a new identity this may be anything, for a re-issue it
      *                  should be the same as subject identifier used previously.
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
@@ -244,6 +245,7 @@ public class IdentityIssuingRequest extends Item {
      *                     will only the included if the issuing identity is not the root node.
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
+     * @param systemName The name of the system, or network, that the identity should be a part of.
      * @param ambits A list of ambits that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
@@ -253,9 +255,10 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
-        return issueNewIdentity(issuerIdentity.getSystemName(), subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, methods);
+        String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
+        return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, methods);
     }
 
     /**

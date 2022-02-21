@@ -217,16 +217,15 @@ public class Identity extends Item {
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
-        if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
-        if (verifyChain(trustedIdentity) != null) {
-            Instant now = Instant.now();
-            if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
-            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
-            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
-            return true;
-        } else {
+        if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
+        if (verifyChain(trustedIdentity) == null) {
             return false;
         }
+        Instant now = Instant.now();
+        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
+        if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
+        if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
+        return true;
     }
 
     /**
@@ -399,24 +398,19 @@ public class Identity extends Item {
     }
 
     private Identity verifyChain(Identity trustedIdentity) throws DimeDateException {
-
         Identity verifyingIdentity;
         if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
             verifyingIdentity = trustChain.verifyChain(trustedIdentity);
         } else {
             verifyingIdentity = trustedIdentity;
         }
-
-        if (verifyingIdentity != null) {
-            Key parentKey = verifyingIdentity.getPublicKey();
-            try {
-                super.verify(parentKey);
-                return this;
-            } catch (DimeIntegrityException e) {
-                // catch this and return null
-            }
+        if (verifyingIdentity == null) { return null; }
+        try {
+            super.verify(verifyingIdentity.getPublicKey());
+            return this;
+        } catch (DimeIntegrityException e) {
+            return null;
         }
-        return null;
     }
 
 }
