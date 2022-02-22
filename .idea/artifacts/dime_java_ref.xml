@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="dime-java-ref.1.0.0">
-    <output-path>$PROJECT_DIR$/out/artifacts/dime_java_ref_1_0_0</output-path>
+  <artifact type="jar" name="dime-java-ref">
+    <output-path>$PROJECT_DIR$/out/artifacts/dime_java_ref</output-path>
     <root id="archive" name="dime-java-ref.main.jar">
       <element id="module-output" name="dime-java-ref.main" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.goterl/lazysodium-java/5.1.1/a424f707d0469232b4bb4c1089a1fddda4b45b38/lazysodium-java-5.1.1.jar" path-in-jar="/" />

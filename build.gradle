@@ -4,14 +4,14 @@
 //  Compact messaging format for assertion and practical use of digital identities
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright © 2021 Shift Everywhere AB. All rights reserved.
+//  Copyright © 2022 Shift Everywhere AB. All rights reserved.
 //
 plugins {
     id 'java-library'
 }
 
 group 'io.dimeformat'
-version '1.0.0'
+version '1.0.1'
 
 repositories {
     mavenCentral()
@@ -21,8 +21,8 @@ dependencies {
     api 'com.goterl:lazysodium-java:5.1.1'
     api 'net.java.dev.jna:jna:5.10.0'
     api 'org.json:json:20211205'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 test {
