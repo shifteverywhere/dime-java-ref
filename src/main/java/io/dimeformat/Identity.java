@@ -9,12 +9,11 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class Identity extends Item {
      * @return The system name
      */
     public String getSystemName() {
-        return this.claims.sys;
+        return claims.get(Claim.SYS);
     }
 
     /**
@@ -58,7 +57,7 @@ public class Identity extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this.claims.uid;
+        return claims.getUUID(Claim.UID);
     }
 
     /**
@@ -67,7 +66,7 @@ public class Identity extends Item {
      * @return The subject identifier assigned to an entity, as a UUID.
      */
     public UUID getSubjectId() {
-        return this.claims.sub;
+        return claims.getUUID(Claim.SUB);
     }
 
     /**
@@ -76,7 +75,7 @@ public class Identity extends Item {
      * @return The issuer identifier, as a UUID.
      */
     public UUID getIssuerId() {
-        return this.claims.iss;
+        return claims.getUUID(Claim.ISS);
     }
 
     /**
@@ -85,7 +84,7 @@ public class Identity extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this.claims.iat;
+        return claims.getInstant(Claim.IAT);
     }
 
     /**
@@ -93,7 +92,7 @@ public class Identity extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return this.claims.exp;
+        return claims.getInstant(Claim.EXP);
     }
 
     /**
@@ -102,9 +101,10 @@ public class Identity extends Item {
      * @return A Key instance with a public key of type IDENTITY.
      */
     public Key getPublicKey() {
-        if (this.claims.pub != null && this.claims.pub.length() > 0) {
+        String pub = claims.get(Claim.PUB);
+        if (pub != null && pub.length() > 0) {
             try {
-                return Key.fromBase58Key(this.claims.pub);
+                return Key.fromBase58Key(pub);
             } catch (DimeFormatException ignored) { /* ignored */ }
         }
         return null;
@@ -117,7 +117,8 @@ public class Identity extends Item {
      * @return An immutable list of Capability instances.
      */
     public List<Capability> getCapabilities() {
-        return this.claims.cap;
+        List<String> caps = claims.get(Claim.CAP);
+        return caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
     }
 
     /**
@@ -126,7 +127,11 @@ public class Identity extends Item {
      * @return An immutable map of assigned principles (as <String, Object>).
      */
     public Map<String, Object> getPrinciples() {
-        return (this.claims != null) ? Collections.unmodifiableMap(this.claims.pri) : null;
+        Map<String, Object> principles = claims.get(Claim.PRI);
+        if (principles != null) {
+            return Collections.unmodifiableMap(principles);
+        }
+        return null;
     }
 
     /**
@@ -135,7 +140,7 @@ public class Identity extends Item {
      * @return An immutable ambit list (as String instances).
      */
     public List<String> getAmbits() {
-        return this.claims.amb;
+        return claims.get(Claim.AMB);
     }
 
     /**
@@ -145,7 +150,7 @@ public class Identity extends Item {
      * @return An immutable list of methods (as String instances).
      */
     public List<String> getMethods() {
-        return this.claims.mtd;
+        return claims.get(Claim.MTD);
     }
 
     /**
@@ -161,7 +166,7 @@ public class Identity extends Item {
      * @return true or false
      */
     public boolean isSelfIssued() {
-       return (this.claims.sub == this.claims.iss && this.hasCapability(Capability.SELF));
+        return getSubjectId().compareTo(getIssuerId()) == 0 && hasCapability(Capability.SELF);
     }
 
     /**
@@ -234,7 +239,7 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasCapability(Capability capability) {
-       return this.claims.cap != null && this.claims.cap.contains(capability);
+        return getCapabilities().contains(capability);
     }
 
     /**
@@ -243,26 +248,30 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasAmbit(String ambit) {
-        return this.claims.amb != null && this.claims.amb.contains(ambit);
+        List<String> ambits = getAmbits();
+        if (ambits != null) {
+            return ambits.contains(ambit);
+        }
+        return false;
     }
 
     /// PACKAGE-PRIVATE ///
 
     Identity() { }
 
-    Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<Capability> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
+    Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        this.claims = new IdentityClaims(systemName,
-                UUID.randomUUID(),
-                subjectId,
-                issuerId,
-                issuedAt,
-                expiresAt,
-                subjectKey.getPublic(),
-                capabilities,
-                principles,
-                ambits,
-                methods);
+        this.claims = new ClaimsMap();
+        this.claims.put(Claim.SYS, systemName);
+        this.claims.put(Claim.SUB, subjectId);
+        this.claims.put(Claim.ISS, issuerId);
+        this.claims.put(Claim.IAT, issuedAt);
+        this.claims.put(Claim.EXP, expiresAt);
+        this.claims.put(Claim.PUB, subjectKey.getPublic());
+        this.claims.put(Claim.CAP, capabilities);
+        this.claims.put(Claim.PRI, principles);
+        this.claims.put(Claim.AMB, ambits);
+        this.claims.put(Claim.MTD, methods);
     }
 
     void setTrustChain(Identity trustChain) {
@@ -278,8 +287,7 @@ public class Identity extends Item {
                 components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
         if (components[Identity.TAG_INDEX].compareTo(Identity.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Identity.CLAIMS_INDEX]);
-        this.claims = new IdentityClaims(new String(json, StandardCharsets.UTF_8));
-        if (this.claims.sys == null || this.claims.sys.length() == 0) { throw new DimeFormatException("System name missing from identity."); }
+        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         if (components.length == Identity.NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
             byte[] issIdentity = Utility.fromBase64(components[Identity.CHAIN_INDEX]);
             this.trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
@@ -294,7 +302,7 @@ public class Identity extends Item {
             StringBuilder builder = new StringBuilder();
             builder.append(Identity.TAG);
             builder.append(Envelope.COMPONENT_DELIMITER);
-            builder.append(Utility.toBase64(this.claims.toJSONString()));
+            builder.append(Utility.toBase64(claims.toJSON()));
             if (this.trustChain != null) {
                 builder.append(Envelope.COMPONENT_DELIMITER);
                 builder.append(Utility.toBase64(this.trustChain.encode() + Envelope.COMPONENT_DELIMITER + this.trustChain.signature));
@@ -306,81 +314,6 @@ public class Identity extends Item {
 
     /// PRIVATE ///
 
-    private static final class IdentityClaims {
-
-        private final String sys;
-        private final UUID uid;
-        private final UUID sub;
-        private final UUID iss;
-        private final Instant iat;
-        private final Instant exp;
-        private final String pub;
-        private final List<Capability> cap;
-        private final Map<String, Object> pri;
-        private final List<String> amb;
-        private final List<String> mtd;
-
-        public IdentityClaims(String sys, UUID uid, UUID sub, UUID iss, Instant iat, Instant exp, String pub, List<Capability> cap, Map<String, Object> pri, List<String> amb, List<String> mtd) {
-            this.sys = sys;
-            this.uid = uid;
-            this.sub = sub;
-            this.iss = iss;
-            this.iat = iat;
-            this.exp = exp;
-            this.pub = pub;
-            this.cap = cap;
-            this.pri = pri;
-            this.amb = amb;
-            this.mtd = mtd;
-        }
-
-        public IdentityClaims(String json) {
-            JSONObject jsonObject = new JSONObject(json);
-            this.sys = (jsonObject.has("sys")) ? jsonObject.getString("sys") : null;
-            this.uid = (jsonObject.has("uid")) ? UUID.fromString(jsonObject.getString("uid")) : null;
-            this.sub = (jsonObject.has("sub")) ? UUID.fromString(jsonObject.getString("sub")) : null;
-            this.iss = (jsonObject.has("iss")) ? UUID.fromString(jsonObject.getString("iss")) : null;
-            this.iat = (jsonObject.has("iat")) ? Instant.parse(jsonObject.getString("iat")) : null;
-            this.exp = (jsonObject.has("exp")) ? Instant.parse(jsonObject.getString("exp")) : null;
-            this.pub = (jsonObject.has("pub")) ? jsonObject.getString("pub") : null;
-            if (jsonObject.has("cap")) {
-                this.cap = new ArrayList<>();
-                JSONArray array = jsonObject.getJSONArray("cap");
-                for (int i = 0;  i < array.length(); i++) {
-                    this.cap.add(Capability.valueOf(((String)array.get(i)).toUpperCase()));
-                }
-            } else {
-                this.cap = null;
-            }
-            this.pri = (jsonObject.has("pri")) ? jsonObject.getJSONObject("pri").toMap() : null;
-            this.amb = (jsonObject.has("amb")) ? jsonObject.getJSONArray("amb").toList().stream().filter(String.class::isInstance).map(String.class::cast).collect(toList()) : null;
-            this.mtd = (jsonObject.has("mtd")) ? jsonObject.getJSONArray("mtd").toList().stream().filter(String.class::isInstance).map(String.class::cast).collect(toList()) : null;
-        }
-
-        public String toJSONString() {
-            JSONObject jsonObject = new JSONObject();
-            if (this.sys != null) { jsonObject.put("sys", this.sys); }
-            if (this.uid != null) { jsonObject.put("uid", this.uid.toString()); }
-            if (this.sub != null) { jsonObject.put("sub", this.sub.toString()); }
-            if (this.iss != null) { jsonObject.put("iss", this.iss.toString()); }
-            if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
-            if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
-            if (this.pub != null) { jsonObject.put("pub", this.pub); }
-            if (this.cap != null) {
-                String[] caps = new String[this.cap.size()];
-                for (int i = 0; i < this.cap.size(); i++) {
-                    caps[i] = this.cap.get(i).name().toLowerCase();
-                }
-                jsonObject.put("cap", caps);
-            }
-            if (this.pri != null) { jsonObject.put("pri", this.pri); }
-            if (this.amb != null) { jsonObject.put("amb", this.amb); }
-            if (this.mtd != null) { jsonObject.put("mtd", this.mtd); }
-            return jsonObject.toString();
-        }
-
-    }
-
     private static final int NBR_EXPECTED_COMPONENTS_MIN = 3;
     private static final int NBR_EXPECTED_COMPONENTS_MAX = 4;
     private static final int TAG_INDEX = 0;
@@ -388,7 +321,6 @@ public class Identity extends Item {
     private static final int CHAIN_INDEX = 2;
 
     private static Identity trustedIdentity;
-    private IdentityClaims claims;
     private Identity trustChain;
 
     private static Identity fromEncodedIdentity(String encoded) throws DimeFormatException {

@@ -8,10 +8,11 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-import org.json.JSONObject;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class Envelope {
      * @return A UUID instance.
      */
     public UUID getIssuerId() {
-        return (this.claims != null) ? this.claims.iss : null;
+        return (claims != null) ? claims.getUUID(Claim.ISS) : null;
     }
 
     /**
@@ -56,7 +57,7 @@ public class Envelope {
      * @return An Instant instance.
      */
     public Instant getIssuedAt() {
-        return (this.claims != null) ? this.claims.iat : null;
+        return (claims != null) ? claims.getInstant(Claim.IAT) : null;
     }
 
     /**
@@ -65,7 +66,7 @@ public class Envelope {
      * @return A String instance.
      */
     public String getContext() {
-        return (this.claims != null) ? this.claims.ctx : null;
+        return (claims != null) ? claims.get(Claim.CTX) : null;
     }
 
     /**
@@ -117,7 +118,10 @@ public class Envelope {
     public Envelope(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer id may not be null."); }
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
-        this.claims = new EnvelopeClaims(issuerId, Instant.now(), context);
+        this.claims = new ClaimsMap();
+        this.claims.put(Claim.ISS, issuerId);
+        this.claims.put(Claim.IAT, Instant.now());
+        this.claims.put(Claim.CTX, context);
     }
 
     /**
@@ -261,42 +265,13 @@ public class Envelope {
 
     /// PRIVATE ///
 
-    private static final class EnvelopeClaims {
-
-        private final UUID iss;
-        private final Instant iat;
-        private final String ctx;
-
-        public EnvelopeClaims(UUID iss,Instant iat, String ctx) {
-            this.iss = iss;
-            this.iat = iat;
-            this.ctx = ctx;
-        }
-
-        public EnvelopeClaims(String json) {
-            JSONObject jsonObject = new JSONObject(json);
-            this.iss = jsonObject.has("iss") ? UUID.fromString(jsonObject.getString("iss")) : null;
-            this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
-            this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
-        }
-
-        public String toJSONString() {
-            JSONObject jsonObject = new JSONObject();
-            if (this.iss != null) { jsonObject.put("iss", this.iss.toString()); }
-            if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
-            if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
-            return jsonObject.toString();
-        }
-
-    }
-
-    private Envelope.EnvelopeClaims claims;
+    private ClaimsMap claims;
     private ArrayList<Item> items;
     private String encoded;
     private String signature;
 
     private Envelope(String json) {
-        this.claims = new EnvelopeClaims(json);
+        this.claims = new ClaimsMap(json);
     }
 
     private String encode() {
@@ -305,7 +280,7 @@ public class Envelope {
             builder.append(Envelope.HEADER);
             if (!this.isAnonymous()) {
                 builder.append(Envelope.COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(this.claims.toJSONString()));
+                builder.append(Utility.toBase64(claims.toJSON()));
             }
             for (Item item : this.items) {
                 builder.append(Envelope.SECTION_DELIMITER);

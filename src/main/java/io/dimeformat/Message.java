@@ -8,9 +8,10 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
-import org.json.JSONObject;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
@@ -42,7 +43,7 @@ public class Message extends Item {
      */
     @Override
     public UUID getUniqueId() {
-        return this.claims.uid;
+        return claims.getUUID(Claim.UID);
     }
 
     /**
@@ -51,7 +52,7 @@ public class Message extends Item {
      * @return The audience identifier, as a UUID.
      */
     public UUID getAudienceId() {
-        return this.claims.aud;
+        return claims.getUUID(Claim.AUD);
     }
 
     /**
@@ -59,7 +60,7 @@ public class Message extends Item {
      * @return The issuer identifier, as a UUID.
      */
     public UUID getIssuerId() {
-        return this.claims.iss;
+        return claims.getUUID(Claim.ISS);
     }
 
     /**
@@ -67,7 +68,7 @@ public class Message extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return this.claims.iat;
+        return claims.getInstant(Claim.IAT);
     }
 
     /**
@@ -75,7 +76,7 @@ public class Message extends Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return this.claims.exp;
+        return claims.getInstant(Claim.EXP);
     }
 
     /**
@@ -84,7 +85,7 @@ public class Message extends Item {
      * @return A key identifier, as a UUID.
      */
     public UUID getKeyId() {
-        return this.claims.kid;
+        return claims.getUUID(Claim.KID);
     }
 
     /**
@@ -94,7 +95,11 @@ public class Message extends Item {
      */
     public void setKeyId(UUID kid) {
         throwIfSigned();
-        this.claims.kid = kid;
+        if (kid != null) {
+            claims.put(Claim.KID, kid);
+        } else {
+            claims.remove(Claim.KID);
+        }
     }
 
     /**
@@ -103,10 +108,11 @@ public class Message extends Item {
      * @return A public key.
      */
     public Key getPublicKey() {
-        if (this.claims.pub != null && this.claims.pub.length() > 0) {
+        String pub = claims.get(Claim.PUB);
+        if (pub != null && pub.length() > 0) {
             try {
-                return Key.fromBase58Key(this.claims.pub);
-            } catch (DimeFormatException ignored) { /* ignored */}
+                return Key.fromBase58Key(pub);
+            } catch (DimeFormatException ignored) { /* ignored */ }
         }
         return null;
     }
@@ -118,7 +124,11 @@ public class Message extends Item {
      */
     public void setPublicKey(Key publicKey) {
         throwIfSigned();
-        this.claims.pub = publicKey.getPublic();
+        if (publicKey != null) {
+            claims.put(Claim.PUB, publicKey.getPublic());
+        } else {
+            claims.remove(Claim.PUB);
+        }
     }
 
     /**
@@ -127,8 +137,9 @@ public class Message extends Item {
      * @return An identifier of a linked item, as a UUID.
      */
     public UUID getLinkedId() {
-        if (this.claims.lnk != null) {
-            String uuid = this.claims.lnk.split("//" + Envelope.COMPONENT_DELIMITER)[Message.LINK_UID_INDEX];
+        String lnk = claims.get(Claim.LNK);
+        if (lnk != null && !lnk.isEmpty()) {
+            String uuid = lnk.split("//" + Envelope.COMPONENT_DELIMITER)[Message.LINK_UID_INDEX];
             return UUID.fromString(uuid);
         }
         return null;
@@ -139,7 +150,7 @@ public class Message extends Item {
      * @return A String instance.
      */
     public String getContext() {
-        return this.claims.ctx;
+        return claims.get(Claim.CTX);
     }
 
     /**
@@ -190,15 +201,12 @@ public class Message extends Item {
         if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Instant.now();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        this.claims = new MessageClaims(UUID.randomUUID(),
-                audienceId,
-                issuerId,
-                iat,
-                exp,
-                null,
-                null,
-                null,
-                context);
+        this.claims = new ClaimsMap();
+        this.claims.put(Claim.AUD, audienceId);
+        this.claims.put(Claim.ISS, issuerId);
+        this.claims.put(Claim.IAT, iat);
+        this.claims.put(Claim.EXP, exp);
+        this.claims.put(Claim.CTX, context);
     }
 
     /**
@@ -244,8 +252,9 @@ public class Message extends Item {
     public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
         verify(key);
         if (linkedItem != null) {
-            if (this.claims.lnk == null || this.claims.lnk.length() == 0) { throw new IllegalStateException("No link to Dime item found, unable to verify."); }
-            String[] components = this.claims.lnk.split("\\" + Envelope.COMPONENT_DELIMITER);
+            String lnk = claims.get(Claim.LNK);
+            if (lnk == null || lnk.isEmpty()) { throw new IllegalStateException("No link to Di:ME item found, unable to verify."); }
+            String[] components = lnk.split("\\" + Envelope.COMPONENT_DELIMITER);
             if (components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
             if (components[Message.LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
@@ -317,7 +326,7 @@ public class Message extends Item {
     public void linkItem(Item item) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to link item, message is already signed."); }
         if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
-        this.claims.lnk = item.getTag() + Envelope.COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope.COMPONENT_DELIMITER + item.thumbprint();
+        claims.put(Claim.LNK, item.getTag() + Envelope.COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope.COMPONENT_DELIMITER + item.thumbprint());
     }
 
     /// PACKAGE-PRIVATE ///
@@ -340,10 +349,10 @@ public class Message extends Item {
         }
         if (components[Message.TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Message.CLAIMS_INDEX]);
-        this.claims = new MessageClaims(new String(json, StandardCharsets.UTF_8));
-        this.payload = components[Message.PAYLOAD_INDEX];
+        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
+        payload = components[Message.PAYLOAD_INDEX];
         this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
-        this.signature = components[components.length - 1];
+        signature = components[components.length - 1];
     }
 
     @Override
@@ -351,7 +360,7 @@ public class Message extends Item {
         if (this.encoded == null) {
             this.encoded = Message.TAG +
                     Envelope.COMPONENT_DELIMITER +
-                    Utility.toBase64(this.claims.toJSONString()) +
+                    Utility.toBase64(claims.toJSON()) +
                     Envelope.COMPONENT_DELIMITER +
                     this.payload;
         }
@@ -359,59 +368,6 @@ public class Message extends Item {
     }
 
     /// PRIVATE ///
-
-    private static final class MessageClaims {
-
-        private final UUID uid;
-        private final UUID aud;
-        private final UUID iss;
-        private final Instant iat;
-        private final Instant exp;
-        private UUID kid;
-        private String pub;
-        private String lnk;
-        private final String ctx;
-
-        public MessageClaims(UUID uid, UUID aud, UUID iss, Instant iat, Instant exp, UUID kid, String pub, String lnk, String ctx) {
-            this.uid = uid;
-            this.aud = aud;
-            this.iss = iss;
-            this.iat = iat;
-            this.exp = exp;
-            this.kid = kid;
-            this.pub = pub;
-            this.lnk = lnk;
-            this.ctx = ctx;
-        }
-
-        public MessageClaims(String json) {
-            JSONObject jsonObject = new JSONObject(json);
-            this.uid = jsonObject.has("uid") ? UUID.fromString(jsonObject.getString("uid")) : null;
-            this.aud = jsonObject.has("aud") ? UUID.fromString(jsonObject.getString("aud")) : null;
-            this.iss = jsonObject.has("iss") ? UUID.fromString(jsonObject.getString("iss")) : null;
-            this.iat = jsonObject.has("iat") ? Instant.parse(jsonObject.getString("iat")) : null;
-            this.exp = jsonObject.has("exp") ? Instant.parse(jsonObject.getString("exp")) : null;
-            this.kid = jsonObject.has("kid") ? UUID.fromString(jsonObject.getString("kid")) : null;
-            this.pub = (jsonObject.has("pub")) ? jsonObject.getString("pub") : null;
-            this.lnk = jsonObject.has("lnk") ? jsonObject.getString("lnk") : null;
-            this.ctx = jsonObject.has("ctx") ? jsonObject.getString("ctx") : null;
-        }
-
-        public String toJSONString() {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("uid", this.uid.toString());
-            if (this.aud != null) { jsonObject.put("aud", this.aud.toString()); }
-            jsonObject.put("iss", this.iss.toString());
-            if (this.iat != null) { jsonObject.put("iat", this.iat.toString()); }
-            if (this.exp != null) { jsonObject.put("exp", this.exp.toString()); }
-            if (this.kid != null) { jsonObject.put("kid", this.iss.toString()); }
-            if (this.pub != null) { jsonObject.put("pub", this.pub); }
-            if (this.lnk != null) { jsonObject.put("lnk", this.lnk); }
-            if (this.ctx != null) { jsonObject.put("ctx", this.ctx); }
-            return jsonObject.toString();
-        }
-
-    }
 
     private static final int NBR_EXPECTED_COMPONENTS = 4;
     private static final int TAG_INDEX = 0;
@@ -421,7 +377,6 @@ public class Message extends Item {
     private static final int LINK_UID_INDEX = 1;
     private static final int LINK_THUMBPRINT_INDEX = 2;
 
-    private MessageClaims claims;
     private String payload;
 
 }

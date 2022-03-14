@@ -141,6 +141,7 @@ public abstract class Item {
 
     protected String encoded;
     protected String signature;
+    protected ClaimsMap claims;
 
     protected String toEncoded() {
         if (this.isSigned()) {
