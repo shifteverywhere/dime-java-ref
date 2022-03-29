@@ -224,16 +224,24 @@ public class Key extends Item {
     /// PACKAGE-PRIVATE ///
 
     byte[] getRawSecret() {
-        byte[] key = claims.getBytes(Claim.KEY);
-        if (key == null) { return null; }
-        return Utility.subArray(key, Key.HEADER_SIZE, key.length - Key.HEADER_SIZE);
+        if (_rawSecret == null) {
+            _rawSecret = claims.getBytes(Claim.KEY);
+            if (_rawSecret == null) { return null; }
+            _rawSecret = Utility.subArray(_rawSecret, Key.HEADER_SIZE, _rawSecret.length - Key.HEADER_SIZE);
+        }
+        return _rawSecret;
     }
+    private byte[] _rawSecret;
 
     byte[] getRawPublic() {
-        byte[] pub = claims.getBytes(Claim.PUB);
-        if (pub == null) { return null; }
-        return Utility.subArray(pub, Key.HEADER_SIZE, pub.length - Key.HEADER_SIZE);
+        if (_rawPublic == null) {
+            _rawPublic = claims.getBytes(Claim.PUB);
+            if (_rawPublic == null) { return null; }
+            _rawPublic = Utility.subArray(_rawPublic, Key.HEADER_SIZE, _rawPublic.length - Key.HEADER_SIZE);
+        }
+        return _rawPublic;
     }
+    private byte[] _rawPublic;
 
     /// PROTECTED ///
 

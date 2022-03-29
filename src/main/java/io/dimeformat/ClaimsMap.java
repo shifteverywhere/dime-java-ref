@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Internal base class for holding item claims.
+ * Handles claims for Di:ME items.
  */
 class ClaimsMap {
 
@@ -48,7 +48,7 @@ class ClaimsMap {
             return (UUID) object;
         } else if (object instanceof String) {
             UUID uuid = UUID.fromString((String) object);
-            _claims.put(claim, uuid);
+            _claims.put(claim.toString(), uuid);
             return uuid;
         } else {
             throw new IllegalArgumentException("Claim with name " + claim + " is not a UUID object.");
@@ -62,7 +62,7 @@ class ClaimsMap {
             return (Instant) object;
         } else if (object instanceof String) {
             Instant instant =  Instant.parse((String) object);
-            _claims.put(claim, instant);
+            _claims.put(claim.toString(), instant);
             return instant;
         } else {
             throw new IllegalArgumentException("Claim with name " + claim + " is not an Instant object.");

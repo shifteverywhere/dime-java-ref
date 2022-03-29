@@ -35,7 +35,7 @@ public final class Base58 {
                 System.arraycopy(prefix, 0, bytes, 0, prefix.length);
                 System.arraycopy(data, 0, bytes, prefix.length, data.length);
             } else {
-                System.arraycopy(data, 0, bytes, 0, data.length);
+                System.arraycopy(data, 0, bytes, 0, length);
             }
             byte[] checksum = Base58.doubleHash(bytes, length);
             if (checksum.length > 0) {

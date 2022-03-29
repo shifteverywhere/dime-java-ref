@@ -101,14 +101,18 @@ public class Identity extends Item {
      * @return A Key instance with a public key of type IDENTITY.
      */
     public Key getPublicKey() {
-        String pub = claims.get(Claim.PUB);
-        if (pub != null && pub.length() > 0) {
-            try {
-                return Key.fromBase58Key(pub);
-            } catch (DimeFormatException ignored) { /* ignored */ }
+        if (_publicKey == null) {
+            String pub = claims.get(Claim.PUB);
+            if (pub != null && pub.length() > 0) {
+                try {
+                    _publicKey = Key.fromBase58Key(pub);
+                } catch (DimeFormatException ignored) { /* ignored */ }
+            }
         }
-        return null;
+        return _publicKey;
     }
+    private Key _publicKey;
+
 
     /**
      * Returns a list of any capabilities given to an identity. These are requested by an entity and approved (and
@@ -117,9 +121,13 @@ public class Identity extends Item {
      * @return An immutable list of Capability instances.
      */
     public List<Capability> getCapabilities() {
-        List<String> caps = claims.get(Claim.CAP);
-        return caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
+        if (_capabilities == null) {
+            List<String> caps = claims.get(Claim.CAP);
+            _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
+        }
+        return _capabilities;
     }
+    private List<Capability> _capabilities;
 
     /**
      * Returns all principles assigned to an identity. These are key-value fields that further provide information about
@@ -127,12 +135,15 @@ public class Identity extends Item {
      * @return An immutable map of assigned principles (as <String, Object>).
      */
     public Map<String, Object> getPrinciples() {
-        Map<String, Object> principles = claims.get(Claim.PRI);
-        if (principles != null) {
-            return Collections.unmodifiableMap(principles);
+        if (_principles == null) {
+            Map<String, Object> pri = claims.get(Claim.PRI);
+            if (pri != null) {
+                _principles = Collections.unmodifiableMap(pri);
+            }
         }
-        return null;
+        return _principles;
     }
+    private Map<String, Object> _principles;
 
     /**
      * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
