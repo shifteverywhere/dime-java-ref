@@ -203,7 +203,12 @@ public class Key extends Item {
      * @return A new instance of the key with only the public part.
      */
     public Key publicCopy() {
-        return new Key(getUniqueId(), this.getKeyType(), null, getRawPublic());
+        Key copy = new Key(getUniqueId(), this.getKeyType(), null, getRawPublic());
+        copy.claims.put(Claim.IAT, this.claims.getInstant(Claim.IAT));
+        copy.claims.put(Claim.EXP, this.claims.getInstant(Claim.EXP));
+        copy.claims.put(Claim.ISS, this.claims.getUUID(Claim.ISS));
+        copy.claims.put(Claim.CTX, this.claims.get(Claim.CTX));
+        return copy;
     }
 
     /// PACKAGE-PRIVATE ///

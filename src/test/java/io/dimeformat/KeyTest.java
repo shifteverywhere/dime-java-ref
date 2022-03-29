@@ -69,11 +69,16 @@ class KeyTest {
     @Test
     void publicOnlyTest1() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY, -1);
+            Key key = Key.generateKey(KeyType.IDENTITY, 120, UUID.randomUUID(), "Racecar is racecar backwards.");
             assertNotNull(key.getSecret());
             Key pubOnly = key.publicCopy();
             assertNull(pubOnly.getSecret());
+            assertEquals(key.getPublic(), pubOnly.getPublic());
             assertEquals(key.getUniqueId(), pubOnly.getUniqueId());
+            assertEquals(key.getIssuedAt(), pubOnly.getIssuedAt());
+            assertEquals(key.getExpiresAt(), pubOnly.getExpiresAt());
+            assertEquals(key.getIssuerId(), pubOnly.getIssuerId());
+            assertEquals(key.getContext(), pubOnly.getContext());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
