@@ -1,5 +1,9 @@
 # CHANGES
 
+## Version 1.0.2 - 2022-02-30
+- Includes a fix where the public copy of a key did not receive the claims from the source key
+- Updates org.json dependency to version 20220320
+
 ## Version 1.0.1 - 2022-02-22
 - Allows for systemName to be set when issuing a new identity. If none is provided, then the systemName from the issuing identity is used
 - Adds an option to exclude the trust chain from an issued identity, allows for more flexible usage and trust verification
