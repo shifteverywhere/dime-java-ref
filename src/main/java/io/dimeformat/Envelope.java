@@ -35,12 +35,18 @@ public class Envelope {
     /**
      * The maximum length that the context claim may hold.
      * This is also used for the context claim in messages.
+     * @deprecated Will be removed in the future, use {#{@link Dime#MAX_CONTEXT_LENGTH}} instead.
      * */
-    public static final int MAX_CONTEXT_LENGTH = 84;
+    @Deprecated
+    public static final int MAX_CONTEXT_LENGTH = Dime.MAX_CONTEXT_LENGTH;
     /** The standard envelope header. */
     public static final String HEADER = "Di";
-    /** The current version of the implemented Di:ME specification. */
-    public static final int DIME_VERSION = 0x01;
+    /**
+     * The current version of the implemented Di:ME specification.
+     * @deprecated Will be removed in the future, use {#{@link Dime#VERSION} instead
+     */
+    @Deprecated
+    public static final int DIME_VERSION = Dime.VERSION;
 
     /**
      * Returns the identifier of the issuer of the envelope.
@@ -117,10 +123,10 @@ public class Envelope {
      */
     public Envelope(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer id may not be null."); }
-        if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
+        if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         this.claims = new ClaimsMap();
         this.claims.put(Claim.ISS, issuerId);
-        this.claims.put(Claim.IAT, Instant.now());
+        this.claims.put(Claim.IAT, Utility.createTimestamp());
         this.claims.put(Claim.CTX, context);
     }
 

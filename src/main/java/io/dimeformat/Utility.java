@@ -10,10 +10,11 @@ package io.dimeformat;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.Base64;
 
 /** Utility support methods. */
-public final class Utility {
+final class Utility {
 
     /// PUBLIC ///
 
@@ -106,6 +107,18 @@ public final class Utility {
      */
     static byte[] subArray(byte[] array, int start) {
         return Utility.subArray(array, start, array.length - start);
+    }
+
+    /**
+     * Creates a timestamp that, if the global time modifier is set, will modify the timestamp accordingly. If no
+     * modifier is set, then the current local time, in UTC, will be captured.
+     * @return An Instant timestamp
+     */
+    static Instant createTimestamp() {
+        Instant now = Instant.now();
+        long modifier = Dime.getTimeModifier();
+        if (modifier == 0) { return now; }
+        return now.plusSeconds(modifier);
     }
 
     /// PRIVATE ///

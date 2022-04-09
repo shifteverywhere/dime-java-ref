@@ -16,7 +16,6 @@ import io.dimeformat.exceptions.DimeFormatException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
-import org.json.JSONObject;
 
 /**
  * Represents cryptographic keys. This may be keys for signing and verifying other Di:ME items and envelopes, used for
@@ -177,7 +176,7 @@ public class Key extends Item {
      * @return A newly generated key.
      */
     public static Key generateKey(KeyType type, long validFor, UUID issuerId, String context) {
-        if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
+        if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         Key key = Crypto.generateKey(type);
         if (validFor != -1) {
             key.claims.put(Claim.EXP, key.claims.getInstant(Claim.IAT).plusSeconds(validFor));
@@ -217,7 +216,7 @@ public class Key extends Item {
 
     Key(UUID id, KeyType type, byte[] key, byte[] pub) {
         this.claims = new ClaimsMap(id);
-        this.claims.put(Claim.IAT, Instant.now());
+        this.claims.put(Claim.IAT, Utility.createTimestamp());
         if (key != null) {
             this.claims.put(Claim.KEY, Utility.combine(Key.headerFrom(type, KeyVariant.SECRET), key));
         }
@@ -300,7 +299,7 @@ public class Key extends Item {
     private static byte[] headerFrom(KeyType type, KeyVariant variant) {
         AlgorithmFamily algorithmFamily = AlgorithmFamily.keyTypeOf(type);
         byte[] header = new byte[Key.HEADER_SIZE];
-        header[0] = (byte)Envelope.DIME_VERSION;
+        header[0] = (byte)Dime.VERSION;
         header[1] = algorithmFamily.value;
         switch (algorithmFamily) {
             case AEAD:

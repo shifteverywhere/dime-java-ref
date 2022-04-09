@@ -147,7 +147,7 @@ public class IdentityIssuingRequest extends Item {
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
         iir.claims = new ClaimsMap();
-        iir.claims.put(Claim.IAT, Instant.now());
+        iir.claims.put(Claim.IAT, Utility.createTimestamp());
         iir.claims.put(Claim.PUB, key.getPublic());
         if (capabilities == null || capabilities.length == 0) {
             capabilities = new Capability[] { Capability.GENERIC };
@@ -375,7 +375,7 @@ public class IdentityIssuingRequest extends Item {
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))
         {
-            Instant now = Instant.now();
+            Instant now = Utility.createTimestamp();
             Instant expires = now.plusSeconds(validFor);
             UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
             List<String> ambitList = ambits != null ? List.of(ambits) : null;
@@ -389,7 +389,7 @@ public class IdentityIssuingRequest extends Item {
                     getPrinciples(),
                     ambitList,
                     methodList);
-            if (Identity.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId().compareTo(Identity.getTrustedIdentity().getSubjectId()) != 0) {
+            if (Dime.getTrustedIdentity() != null && issuerIdentity != null && issuerIdentity.getSubjectId().compareTo(Dime.getTrustedIdentity().getSubjectId()) != 0) {
                 issuerIdentity.isTrusted();
                 // The chain will only be set if this is not the trusted identity (and as long as one is set)
                 // and if it is a trusted issuer identity (from set trusted identity) and includeChain is set to true

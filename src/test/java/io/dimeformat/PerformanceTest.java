@@ -28,7 +28,7 @@ public class PerformanceTest {
         System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");
         long totalStart = System.nanoTime();
 
-        Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
         Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
         List<Key> keyList = new ArrayList<>();
         List<IdentityIssuingRequest> iirList = new ArrayList<>();
