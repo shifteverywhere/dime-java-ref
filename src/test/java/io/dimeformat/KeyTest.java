@@ -99,19 +99,19 @@ class KeyTest {
 
     @Test
     void keyHeaderTest1() {
-        byte[] aeadHeader = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0x10, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, AEAD, XChaCha20-Poly1305, 256-bit, extension, extension
+        byte[] aeadHeader = new byte[] { (byte)Dime.VERSION, (byte)0x10, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, AEAD, XChaCha20-Poly1305, 256-bit, extension, extension
         Key aead = Key.generateKey(KeyType.ENCRYPTION);
         assertNull(aead.getPublic());
         byte[] bytes = Base58.decode(aead.getSecret());
         assertNotNull(bytes);
         byte[] header = Utility.subArray(bytes, 0, 6);
-        assertTrue(Arrays.equals(aeadHeader, header));
+        assertArrayEquals(aeadHeader, header);
     }
 
     @Test
     void keyHeaderTest2() {
-        byte[] ecdhHeaderSecret = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0x40, (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, public, extension, extension
-        byte[] ecdhHeaderPublic = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0x40, (byte)0x02, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, private, extension, extension
+        byte[] ecdhHeaderSecret = new byte[] { (byte)Dime.VERSION, (byte)0x40, (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, public, extension, extension
+        byte[] ecdhHeaderPublic = new byte[] { (byte)Dime.VERSION, (byte)0x40, (byte)0x02, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, private, extension, extension
         Key ecdh = Key.generateKey(KeyType.EXCHANGE);
         byte[] bytesSecret = Base58.decode(ecdh.getSecret());
         byte[] bytesPublic = Base58.decode(ecdh.getPublic());
@@ -119,14 +119,14 @@ class KeyTest {
         assertNotNull(bytesPublic);
         byte[] headerSecret = Utility.subArray(bytesSecret, 0, 6);
         byte[] headerPublic = Utility.subArray(bytesPublic, 0, 6);
-        assertTrue(Arrays.equals(ecdhHeaderSecret, headerSecret));
-        assertTrue(Arrays.equals(ecdhHeaderPublic, headerPublic));
+        assertArrayEquals(ecdhHeaderSecret, headerSecret);
+        assertArrayEquals(ecdhHeaderPublic, headerPublic);
     }
 
     @Test
     void keyHeaderTest3() {
-        byte[] eddsaHeaderSecret = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0x80, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, public, extension, extension
-        byte[] eddsaHeaderPublic = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0x80, (byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, private, extension, extension
+        byte[] eddsaHeaderSecret = new byte[] { (byte)Dime.VERSION, (byte)0x80, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, public, extension, extension
+        byte[] eddsaHeaderPublic = new byte[] { (byte)Dime.VERSION, (byte)0x80, (byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, private, extension, extension
         Key eddsa = Key.generateKey(KeyType.IDENTITY);
         byte[] bytesSecret = Base58.decode(eddsa.getSecret());
         byte[] bytesPublic = Base58.decode(eddsa.getPublic());
@@ -134,19 +134,19 @@ class KeyTest {
         assertNotNull(bytesPublic);
         byte[] headerSecret = Utility.subArray(bytesSecret, 0, 6);
         byte[] headerPublic = Utility.subArray(bytesPublic, 0, 6);
-        assertTrue(Arrays.equals(eddsaHeaderSecret, headerSecret));
-        assertTrue(Arrays.equals(eddsaHeaderPublic, headerPublic));
+        assertArrayEquals(eddsaHeaderSecret, headerSecret);
+        assertArrayEquals(eddsaHeaderPublic, headerPublic);
     }
 
     @Test
     void keyHeaderTest4() {
-        byte[] hashHeader = new byte[] { (byte)Envelope.DIME_VERSION, (byte)0xE0, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, Secure Hashing, Blake2b, 256-bit, extension, extension
+        byte[] hashHeader = new byte[] { (byte)Dime.VERSION, (byte)0xE0, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, Secure Hashing, Blake2b, 256-bit, extension, extension
         Key hash = Key.generateKey(KeyType.AUTHENTICATION);
         assertNull(hash.getPublic());
         byte[] bytes = Base58.decode(hash.getSecret());
         assertNotNull(bytes);
         byte[] header = Utility.subArray(bytes, 0, 6);
-        assertTrue(Arrays.equals(hashHeader, header));
+        assertArrayEquals(hashHeader, header);
     }
 
     @Test

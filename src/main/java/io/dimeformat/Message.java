@@ -198,8 +198,8 @@ public class Message extends Item {
      * @param context The context to attach to the message, may be null.
      */
     public Message(UUID audienceId, UUID issuerId, long validFor, String context) {
-        if (context != null && context.length() > Envelope.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Envelope.MAX_CONTEXT_LENGTH + "."); }
-        Instant iat = Instant.now();
+        if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
+        Instant iat = Utility.createTimestamp();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
         this.claims = new ClaimsMap();
         this.claims.put(Claim.AUD, audienceId);
@@ -346,7 +346,7 @@ public class Message extends Item {
     protected void decode(String encoded) throws DimeFormatException {
         String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
         if (components.length != Message.NBR_EXPECTED_COMPONENTS) {
-            throw new DimeFormatException("Unexpected number of components for identity issuing request, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
+            throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
         }
         if (components[Message.TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Message.CLAIMS_INDEX]);

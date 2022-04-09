@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -19,74 +20,80 @@ public class Commons {
     /// PUBLIC ///
 
     public static final String SYSTEM_NAME = "dime-java-ref";
+    public static final String PAYLOAD = "Racecar is racecar backwards.";
+    public static final String MIMETYPE = "text/plain";
+    public static final String CONTEXT = "io.dimeformat.test";
 
     public static Key getTrustedKey() {
         if (Commons._trustedKey == null) { Commons._trustedKey = Commons.importFromEncoded(Commons._encodedTrustedKey); }
         return Commons._trustedKey;
-    };
+    }
     
     public static Identity getTrustedIdentity() {
         if (Commons._trustedIdentity == null) { Commons._trustedIdentity = Commons.importFromEncoded(Commons._encodedTrustedIdentity); }
         return Commons._trustedIdentity;
-    };
+    }
 
     public static Key getIntermediateKey() {
         if (Commons._intermediateKey == null) { Commons._intermediateKey = Commons.importFromEncoded(Commons._encodedIntermediateKey); }
         return Commons._intermediateKey;
-    };
+    }
     
     public static Identity getIntermediateIdentity() {
         if (Commons._intermediateIdentity == null) { Commons._intermediateIdentity = Commons.importFromEncoded(Commons._encodedIntermediateIdentity); }
         return Commons._intermediateIdentity;
-    };
+    }
 
     public static Key getIssuerKey() {
         if (Commons._issuerKey == null) { Commons._issuerKey = Commons.importFromEncoded(Commons._encodedIssuerKey); }
         return Commons._issuerKey;
-    };
+    }
     
     public static Identity getIssuerIdentity() {
         if (Commons._issuerIdentity == null) { Commons._issuerIdentity = Commons.importFromEncoded(Commons._encodedIssuerIdentity); }
         return Commons._issuerIdentity;
-    };
+    }
 
     public static Key getAudienceKey() {
         if (Commons._audienceKey == null) { Commons._audienceKey = Commons.importFromEncoded(Commons._encodedAudienceKey); }
         return Commons._audienceKey;
-    };
+    }
     
     public static Identity getAudienceIdentity() {
         if (Commons._audienceIdentity == null) { Commons._audienceIdentity = Commons.importFromEncoded(Commons._encodedAudienceIdentity); }
         return Commons._audienceIdentity;
-    };
+    }
 
     /// TESTS ///
 
     @Test
     public void generateCommons() {
-        Identity.setTrustedIdentity(null);
+        Dime.setTrustedIdentity(null);
         Key trustedKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity trustedIdentity = Commons.generateIdentity(trustedKey, trustedKey, null, IdentityIssuingRequest.VALID_FOR_1_YEAR * 10, new Capability[] { Capability.GENERIC, Capability.ISSUE });
+        assertNotNull(trustedIdentity);
         System.out.println("// -- TRUSTED IDENTITY ---");
         System.out.println("private static final String _encodedTrustedKey = \"" + trustedKey.exportToEncoded() + "\";");
         System.out.println("private static final String _encodedTrustedIdentity = \"" + trustedIdentity.exportToEncoded() + "\";\n");
 
-        Identity.setTrustedIdentity(trustedIdentity);
+        Dime.setTrustedIdentity(trustedIdentity);
         Key intermediateKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity intermediateIdentity = Commons.generateIdentity(intermediateKey, trustedKey, trustedIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR * 5, new Capability[] { Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE });
+        assertNotNull(intermediateIdentity);
         System.out.println("// -- INTERMEDIATE IDENTITY --");
         System.out.println("private static final String _encodedIntermediateKey = \"" + intermediateKey.exportToEncoded() + "\";");
         System.out.println("private static final String _encodedIntermediateIdentity = \""+ intermediateIdentity.exportToEncoded() + "\";\n");
 
         Key issuerKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity issuerIdentity = Commons.generateIdentity(issuerKey, intermediateKey, intermediateIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR, new Capability[] { Capability.GENERIC, Capability.IDENTIFY });
+        assertNotNull(issuerIdentity);
         System.out.println("// -- ISSUER IDENTITY (SENDER) --");
         System.out.println("private static final String _encodedIssuerKey = \"" + issuerKey.exportToEncoded() + "\";");
         System.out.println("public static String _encodedIssuerIdentity = \""+ issuerIdentity.exportToEncoded() +"\";\n");
 
         Key audienceKey = Key.generateKey(KeyType.IDENTITY, "id-key");
         Identity audienceIdentity = Commons.generateIdentity(audienceKey, intermediateKey, intermediateIdentity, IdentityIssuingRequest.VALID_FOR_1_YEAR, new Capability[] { Capability.GENERIC, Capability.IDENTIFY });
-
+        assertNotNull(audienceIdentity);
         System.out.println("// -- AUDIENCE IDENTITY (RECEIVER) --");
         System.out.println("private static final String _encodedAudienceKey = \"" + audienceKey.exportToEncoded() + "\";");
         System.out.println("private static String _encodedAudienceIdentity = \""+ audienceIdentity.exportToEncoded() +"\";\n");
@@ -119,14 +126,13 @@ public class Commons {
 
     // -- AUDIENCE IDENTITY (RECEIVER) --
     private static final String _encodedAudienceKey = "Di:KEY.eyJ1aWQiOiJiNTMzZDcwNy1mZjg3LTRmMDItOTA5MC05OTgyZTZhYTAwMjEiLCJwdWIiOiIyVERYZG9OdW5qZGhyYVhTZXI5M3RuanZGR3lEbVNIRzFpQnd4MnNqWW9TUFpoeVlkcE02WVRuUVoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NjE5MloiLCJrZXkiOiJTMjFUWlNMQWYyVTh1RXlUTVphd0FoOHZMNG1Za3JBc050dGlUcG1DelVyajg2NkVrOURCckFtZWJYV0VtcEpwckplN1ZpcWN1Q3JXQ21wb252SE0zZ3c3YXRZbllZRXI5cDg2In0";
-    private static String _encodedAudienceIdentity = "Di:ID.eyJ1aWQiOiJmZDVkYWM2MC0zYjUwLTQ1ZWUtOGI0My1lMWM2YzRiY2NiZjciLCJzdWIiOiIxMjFmM2QzMi1mODU3LTQ5OWYtOTg4YS0wNzY0ODQ4YTdiNjMiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2Njc4NloiLCJwdWIiOiIyVERYZG9OdW5qZGhyYVhTZXI5M3RuanZGR3lEbVNIRzFpQnd4MnNqWW9TUFpoeVlkcE02WVRuUVoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2Njc4NloifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.kdtTRVPwUz1GVAFIZ7Qon261qh1IrpWVQnCZPztHU49g2PDgIC6nd8gbhBQVU1P8Wfq75PF7IpPEsGHPa1WdBA";
+    private static final String _encodedAudienceIdentity = "Di:ID.eyJ1aWQiOiJmZDVkYWM2MC0zYjUwLTQ1ZWUtOGI0My1lMWM2YzRiY2NiZjciLCJzdWIiOiIxMjFmM2QzMi1mODU3LTQ5OWYtOTg4YS0wNzY0ODQ4YTdiNjMiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2Njc4NloiLCJwdWIiOiIyVERYZG9OdW5qZGhyYVhTZXI5M3RuanZGR3lEbVNIRzFpQnd4MnNqWW9TUFpoeVlkcE02WVRuUVoiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2Njc4NloifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.kdtTRVPwUz1GVAFIZ7Qon261qh1IrpWVQnCZPztHU49g2PDgIC6nd8gbhBQVU1P8Wfq75PF7IpPEsGHPa1WdBA";
     private static Key _audienceKey;
     private static Identity _audienceIdentity;
 
     private static <T extends Item> T importFromEncoded(String encoded) {
         try {
-            T item = Item.importFromEncoded(encoded);
-            return item;
+            return Item.importFromEncoded(encoded);
         } catch (Exception e) {
             throw new RuntimeException(); // Should not happen
         }

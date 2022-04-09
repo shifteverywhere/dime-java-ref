@@ -113,7 +113,6 @@ public class Identity extends Item {
     }
     private Key _publicKey;
 
-
     /**
      * Returns a list of any capabilities given to an identity. These are requested by an entity and approved (and
      * potentially modified) by the issuing entity when issuing a new identity. Capabilities are usually used to
@@ -183,18 +182,22 @@ public class Identity extends Item {
     /**
      * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
      * @return An Identity instance.
+     * @deprecated Will be removed in the future, use {#{@link Dime#getTrustedIdentity()}} instead.
      */
+    @Deprecated
     public static synchronized Identity getTrustedIdentity() {
-        return Identity.trustedIdentity;
+        return Dime.getTrustedIdentity();
     }
 
     /**
      * Sets an Identity instance to be the trusted identity used for verifying a trust chain of other Identity
      * instances. This is normally the root identity of a trust chain.
      * @param trustedIdentity The Identity instance to set as a trusted identity.
+     * @deprecated Will be removed in the future, use {#{@link Dime#setTrustedIdentity(Identity)}} instead.
      */
+    @Deprecated
     public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
-        Identity.trustedIdentity = trustedIdentity;
+        Dime.setTrustedIdentity(trustedIdentity);
     }
 
     /**
@@ -220,8 +223,13 @@ public class Identity extends Item {
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted() throws DimeDateException {
-        if (Identity.trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
-        return isTrusted(Identity.trustedIdentity);
+        return isTrusted(0);
+    }
+
+    public boolean isTrusted(long gracePeriod) throws DimeDateException {
+        Identity trustedIdentity = Dime.getTrustedIdentity();
+        if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
+        return isTrusted(trustedIdentity, gracePeriod);
     }
 
     /**
@@ -237,7 +245,7 @@ public class Identity extends Item {
         if (verifyChain(trustedIdentity) == null) {
             return false;
         }
-        Instant now = Instant.now();
+        Instant now = Utility.createTimestamp();
         if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
         if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
         if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
@@ -330,8 +338,6 @@ public class Identity extends Item {
     private static final int TAG_INDEX = 0;
     private static final int CLAIMS_INDEX = 1;
     private static final int CHAIN_INDEX = 2;
-
-    private static Identity trustedIdentity;
     private Identity trustChain;
 
     private static Identity fromEncodedIdentity(String encoded) throws DimeFormatException {
