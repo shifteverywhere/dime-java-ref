@@ -61,7 +61,9 @@ class CryptoTest {
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMyWiIsInB1YiI6IjJEQlZ0bk1aUDc5aEpWTUpwVnlIR29rRU1QWEM2cXkzOHNoeVRIaEpBekY5TlVRdlFmUWRxNGRjMyJ9";
             String encodedShared = "22etZANAXYDE4m15ZtofRnMn81dUwBzN1s7QcoKF2yo8my84Hd5vecQUe";
             Key clientKey = Item.importFromEncoded(encodedClient);
+            assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
+            assertNotNull(serverKey);
             Key shared = Crypto.generateSharedSecret(clientKey, serverKey);
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
@@ -76,7 +78,9 @@ class CryptoTest {
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMxNloiLCJrZXkiOiIyREJWdDhWOWJ4R2pGS0xoa2FodEo0UUtRc3F6Y1ZjNGFqeWNxSnQ4eFZQTlZkYnBveHBLdkFZaUoiLCJwdWIiOiIyREJWdG5NWlA3OWhKVk1KcFZ5SEdva0VNUFhDNnF5MzhzaHlUSGhKQXpGOU5VUXZRZlFkcTRkYzMifQ";
             String encodedShared = "22etZANAXYDE4m15ZtofRnMn81dUwBzN1s7QcoKF2yo8my84Hd5vecQUe";
             Key clientKey = Item.importFromEncoded(encodedClient);
+            assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
+            assertNotNull(serverKey);
             Key shared = Crypto.generateSharedSecret(clientKey, serverKey);
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
@@ -109,7 +113,6 @@ class CryptoTest {
             assertNotNull(cipherText);
             byte[] plainText = Crypto.decrypt(cipherText, key);
             assertNotNull(plainText);
-            String p = new String(plainText, StandardCharsets.UTF_8);
             assertEquals(data, new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");

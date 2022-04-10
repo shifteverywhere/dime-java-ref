@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,7 +26,7 @@ class KeyTest {
     @Test
     void keyTest1() {
         Key key = Key.generateKey(KeyType.IDENTITY);
-        assertTrue(key.getKeyType() == KeyType.IDENTITY);
+        assertSame(key.getKeyType(), KeyType.IDENTITY);
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -36,7 +35,7 @@ class KeyTest {
     @Test
     void keyTest2() {
         Key key = Key.generateKey(KeyType.EXCHANGE);
-        assertTrue(key.getKeyType() == KeyType.EXCHANGE);
+        assertSame(key.getKeyType(), KeyType.EXCHANGE);
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -48,7 +47,7 @@ class KeyTest {
         String exported = key.exportToEncoded();
         assertNotNull(exported);
         assertTrue(exported.startsWith(Envelope.HEADER + ":" + Key.TAG));
-        assertTrue(exported.split("\\.").length == 2);
+        assertEquals(2, exported.split("\\.").length);
     }
 
     @Test
@@ -56,6 +55,7 @@ class KeyTest {
         try {
             String exported = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
             Key key = Item.importFromEncoded(exported);
+            assertNotNull(key);
             assertEquals(KeyType.IDENTITY, key.getKeyType());
             assertEquals(UUID.fromString("3f00cd13-4474-4c04-9b6b-7383d490f17f"), key.getUniqueId());
             assertEquals(Instant.parse("2021-11-18T08:48:25.137918Z"), key.getIssuedAt());
@@ -163,6 +163,7 @@ class KeyTest {
             Key key1 = Key.generateKey(KeyType.IDENTITY, context);
             String exported = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported);
+            assertNotNull(key2);
             assertEquals(context, key2.getContext());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

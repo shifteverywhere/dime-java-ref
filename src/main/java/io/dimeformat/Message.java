@@ -221,27 +221,29 @@ public class Message extends Item {
     }
 
     /**
-     * Verifies the signature of the message using a provided key.
-     * @param key The key to used to verify the signature, must not be null.
+     * Verifies the signature of the message using a provided key. The provided grace period will be used.
+     * @param key The key to used to verify the signature, must not be null. The provided grace period will be used.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
      * @throws DimeDateException If any problems with issued at and expires at dates.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     @Override
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
         // Verify IssuedAt and ExpiresAt
-        Instant now = Instant.now();
-        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Issuing date in the future."); }
+        Instant now = Utility.createTimestamp();
+        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), now, gracePeriod) > 0) { throw new DimeDateException("Issuing date in the future."); }
         if (this.getExpiresAt() != null) {
-            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
-            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Passed expiration date."); }
+            if (Utility.gracefulTimestampCompare(this.getIssuedAt(), this.getExpiresAt(), 0) > 0) { throw new DimeDateException("Expiration before issuing date."); }
+            if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now, gracePeriod) < 0) { throw new DimeDateException("Passed expiration date."); }
         }
-        super.verify(key);
+        super.verify(key, gracePeriod);
     }
 
     /**
      * Verifies the signature of the message using a provided key and verifies a linked item from the proved item. To
-     * verify correctly the linkedItem must be the original item that the message was linked to.
+     * verify correctly the linkedItem must be the original item that the message was linked to. No grace period will be
+     * used.
      * @param key The key to used to verify the signature, must not be null.
      * @param linkedItem The item the message was linked to.
      * @throws DimeDateException If any problems with issued at and expires at dates.
@@ -250,7 +252,23 @@ public class Message extends Item {
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
-        verify(key);
+        verify(key, linkedItem, 0);
+    }
+
+    /**
+     * Verifies the signature of the message using a provided key and verifies a linked item from the proved item. To
+     * verify correctly the linkedItem must be the original item that the message was linked to. The provided grace
+     * period will be used.
+     * @param key The key to used to verify the signature, must not be null.
+     * @param linkedItem The item the message was linked to.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeFormatException If no item has been linked with the message.
+     * @throws DimeIntegrityException If the signature is invalid.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public void verify(Key key, Item linkedItem, long gracePeriod) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
+        verify(key, gracePeriod);
         if (linkedItem != null) {
             String lnk = claims.get(Claim.LNK);
             if (lnk == null || lnk.isEmpty()) { throw new IllegalStateException("No link to Di:ME item found, unable to verify."); }

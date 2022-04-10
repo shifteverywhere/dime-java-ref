@@ -75,4 +75,28 @@ public class DimeTest {
         assertEquals(0, duration.getSeconds());
     }
 
+    @Test
+    void gracefulTimestampCompareTest1() {
+        int gracePeriod = 2;
+        Instant now = Utility.createTimestamp();
+        Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
+        int result = Utility.gracefulTimestampCompare(now, remoteTimestamp1, gracePeriod);
+        assertEquals(0, result);
+        Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
+        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2, gracePeriod);
+        assertEquals(0, result);
+    }
+
+    @Test
+    void gracefulTimestampCompareTest2() {
+        int gracePeriod = 1;
+        Instant now = Utility.createTimestamp();
+        Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
+        int result = Utility.gracefulTimestampCompare(Utility.createTimestamp(), remoteTimestamp1, gracePeriod);
+        assertEquals(1, result);
+        Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
+        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2, gracePeriod);
+        assertEquals(-1, result);
+    }
+
 }

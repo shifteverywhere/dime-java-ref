@@ -121,6 +121,30 @@ final class Utility {
         return now.plusSeconds(modifier);
     }
 
+    /**
+     * Will, if provided with a value different from 0 in gracePeriod, compare two Instant instances using a grace
+     * period. A lower and upper boundary will be calculated from the base time given, the size of this period will be
+     * based on value in gracePeriod. The value provided in gracePeriod should be in whole seconds. The result given
+     * back will be equal to {@link Instant#compareTo(Instant)}. If 0 is provided as grace period, then the two Instant
+     * instances will be compared normally.
+     * @param baseTime The base time to compare a second Instant instance with.
+     * @param otherTime The Instant instance to compare against the given base tne.
+     * @param gracePeriod A period in seconds that should be allowed as grace when comparing.
+     * @return Negative if less, positive is greater, or 0 if the same or within the grace period.
+     */
+    static int gracefulTimestampCompare(Instant baseTime, Instant otherTime, long gracePeriod) {
+        if (gracePeriod == 0) {
+            return baseTime.compareTo(otherTime);
+        } else {
+            Instant lower = baseTime.minusSeconds(gracePeriod);
+            int lowerResult = lower.compareTo(otherTime);
+            Instant upper = baseTime.plusSeconds(gracePeriod);
+            int upperResult = upper.compareTo(otherTime);
+            if (lowerResult == upperResult) return lowerResult;
+            return 0;
+        }
+    }
+
     /// PRIVATE ///
 
     private static final char[] HEX_CHAR_SET = "0123456789abcdef".toCharArray();
