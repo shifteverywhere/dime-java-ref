@@ -164,30 +164,46 @@ public class IdentityIssuingRequest extends Item {
     /**
      * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
      * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership.
+     * create the IIR and will also after issuing of an identity form the proof-of-ownership. No grace period will be
+     * used.
      * @return Returns the IdentityIssuingRequest instance for convenience.
      * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
-    public IdentityIssuingRequest verify() throws DimeDateException, DimeIntegrityException, DimeFormatException {
+    public void verify() throws DimeDateException, DimeIntegrityException, DimeFormatException {
         verify(getPublicKey());
-        return this;
+    }
+
+    /**
+     * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
+     * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
+     * create the IIR and will also after issuing of an identity form the proof-of-ownership. The provided grace period
+     * will be used.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException
+     * @throws DimeIntegrityException
+     * @throws DimeFormatException
+     */
+    public void verify(long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException {
+        verify(getPublicKey(), gracePeriod);
     }
 
     /**
      * Verifies that the IIR has been signed by a secret (private) key that is associated with the provided public key.
      * If this passes then it can be assumed that the sender is in possession of the private key associated with the
      * public key used to verify. This method may be used when verifying that an IIR has been signed by the same secret
-     * key that belongs to an already issued identity, this could be useful when re-issuing an identity.
+     * key that belongs to an already issued identity, this could be useful when re-issuing an identity. The provided
+     * grace period will be used.
      * @param key The key that should be used to verify the IIR, must be of type IDENTITY.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
      * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
      * @throws DimeIntegrityException If the signature can not be verified.
      */
     @Override
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
-        if (Instant.now().compareTo(this.getIssuedAt()) < 0) { throw new DimeDateException("An identity issuing request cannot have an issued at date in the future."); }
-        super.verify(key);
+    public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+        if (Utility.gracefulTimestampCompare(Utility.createTimestamp(), this.getIssuedAt(), gracePeriod) < 0) { throw new DimeDateException("An identity issuing request cannot have an issued at date in the future."); }
+        super.verify(key, gracePeriod);
     }
 
     /**

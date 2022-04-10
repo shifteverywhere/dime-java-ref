@@ -16,6 +16,7 @@ import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -174,11 +175,62 @@ class MessageTest {
     }
 
     @Test
+    void verifyTest5() {
+        try {
+            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            Thread.sleep(1000);
+            try {
+                message.verify(Commons.getIssuerIdentity().getPublicKey());
+                fail("Exception should have been thrown.");
+            } catch (DimeDateException e) { /* All is good */ }
+            message.verify(Commons.getIssuerIdentity().getPublicKey(), 1);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void verifyTest6() {
+        try {
+            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            Thread.sleep(2000);
+            Dime.setTimeModifier(-2);
+            message.verify(Commons.getIssuerIdentity().getPublicKey());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void verifyTest7() {
+        try {
+            Dime.setTimeModifier(-2);
+            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 1);
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            Thread.sleep(2000);
+            message.verify(Commons.getIssuerIdentity().getPublicKey());
+        } catch (DimeDateException e) {
+            // All is good
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void importTest1() { 
         try {
-            Identity.setTrustedIdentity(Commons.getTrustedIdentity());
+            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             String exported = "Di:MSG.eyJ1aWQiOiIwY2VmMWQ4Zi01NGJlLTRjZTAtYTY2OS1jZDI4OTdhYzY0ZTAiLCJhdWQiOiJhNjkwMjE4NC0yYmEwLTRiYTAtYWI5MS1jYTc3ZGE3ZDA1ZDMiLCJpc3MiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJleHAiOiIyMDIxLTExLTE4VDE4OjA2OjAyLjk3NDM5NVoiLCJpYXQiOiIyMDIxLTExLTE4VDE4OjA1OjUyLjk3NDM5NVoifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.vWWk/1Ny6FzsVRNSEsqjhRrSEDvmbfLIE9CmADySp/pa3hqNau0tnhwH3YwRPPEpSl4wXpw0Uqkf56EQJI2TDQ";
             Message message = Item.importFromEncoded(exported);
+            assertNotNull(message);
             assertEquals(UUID.fromString("0cef1d8f-54be-4ce0-a669-cd2897ac64e0"), message.getUniqueId());
             assertEquals(UUID.fromString("a6902184-2ba0-4ba0-ab91-ca77da7d05d3"), message.getAudienceId());
             assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), message.getIssuerId());

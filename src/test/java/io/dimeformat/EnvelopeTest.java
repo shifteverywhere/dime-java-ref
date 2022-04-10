@@ -174,7 +174,7 @@ class EnvelopeTest {
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
             assertTrue(exported.startsWith(Envelope.HEADER));
-            assertTrue(exported.split("\\:").length == 2);
+            assertEquals(2, exported.split(":").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -204,7 +204,7 @@ class EnvelopeTest {
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
             assertTrue(exported.startsWith(Envelope.HEADER));
-            assertTrue(exported.split("\\:").length == 3);
+            assertEquals(3, exported.split(":").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -218,7 +218,7 @@ class EnvelopeTest {
         assertNotNull(exported);
         assertTrue(exported.length() > 0);
         assertTrue(exported.startsWith(Envelope.HEADER));
-        assertTrue(exported.split("\\:").length == 2);
+        assertEquals(2, exported.split(":").length);
     }
 
     @Test
@@ -265,7 +265,7 @@ class EnvelopeTest {
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
             assertTrue(exported.startsWith(Envelope.HEADER));
-            assertTrue(exported.split("\\:").length == 3);
+            assertEquals(3, exported.split(":").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -300,7 +300,7 @@ class EnvelopeTest {
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
             assertTrue(exported.startsWith(Envelope.HEADER));
-            assertTrue(exported.split("\\:").length == 3);
+            assertEquals(3, exported.split(":").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }

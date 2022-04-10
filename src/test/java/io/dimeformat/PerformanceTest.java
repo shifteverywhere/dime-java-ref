@@ -125,7 +125,7 @@ public class PerformanceTest {
         try {
             for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
                 String dime = dimeList.get(i);
-                Identity identity = Item.importFromEncoded(dime);
+                Item.importFromEncoded(dime);
             }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

@@ -218,7 +218,7 @@ public class Identity extends Item {
     /**
      * Will verify if an identity can be trusted using the globally set Trusted Identity
      * ({@link #setTrustedIdentity(Identity)}). Once trust has been established it will also verify the issued at date
-     * and the expires at date to see if these are valid.
+     * and the expires at date to see if these are valid. No grace period will be used.
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
@@ -226,10 +226,39 @@ public class Identity extends Item {
         return isTrusted(0);
     }
 
+    /**
+     * Will verify if an identity can be trusted using the globally set Trusted Identity
+     * ({@link #setTrustedIdentity(Identity)}). Once trust has been established it will also verify the issued at date
+     * and the expires at date to see if these are valid. The provided grace period will be used.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @return True if the identity is trusted.
+     * @throws DimeDateException
+     */
     public boolean isTrusted(long gracePeriod) throws DimeDateException {
         Identity trustedIdentity = Dime.getTrustedIdentity();
         if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
         return isTrusted(trustedIdentity, gracePeriod);
+    }
+
+    /**
+     * Will verify if an identity can be trusted using the provided identity. Once trust has been established it will
+     * also verify the issued at date and the expires at date to see if these are valid. The provided grace period will
+     * be used. This period will be used when comparing dates and allow for smaller differences in time synchronization.
+     * @param trustedIdentity The identity to verify the trust against.
+     * @param gracePeriod A grace period to use when evaluating timestamps, in seconds.
+     * @return Tur if the identity is trusted.
+     * @throws DimeDateException
+     */
+    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
+        if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
+        if (verifyChain(trustedIdentity) == null) {
+            return false;
+        }
+        Instant now = Utility.createTimestamp();
+        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), now, gracePeriod) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
+        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), this.getExpiresAt(), 0) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
+        if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now, gracePeriod) < 0) { throw new DimeDateException("Identity has expired."); }
+        return true;
     }
 
     /**

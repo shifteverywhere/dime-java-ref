@@ -8,6 +8,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
@@ -108,12 +109,49 @@ public abstract class Item {
     }
 
     /**
-     * Verifies the signature of the item using a provided key.
+     * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
+     * claim issuer (iss) matches the subject id (sub) of the provided identity. No grace period will be used.
+     * @param issuer The issuer identity to use while verifying.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeIntegrityException If the signature is invalid.
+     */
+    public void verify(Identity issuer) throws DimeDateException, DimeIntegrityException {
+        this.verify(issuer, 0);
+    }
+
+    /**
+     * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
+     * claim issuer (iss) matches the subject id (sub) of the provided identity. The provided grace period will be used.
+     * @param issuer The issuer identity to use while verifying.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeIntegrityException If the signature is invalid.
+     */
+    public void verify(Identity issuer, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+        UUID issuerId = claims.getUUID(Claim.ISS);
+        if (issuerId == null) { throw new DimeIntegrityException("Unable to verify, issuer ID for item is missing."); }
+        if (issuerId.compareTo(issuer.getSubjectId()) != 0) { throw new DimeIntegrityException("Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
+        this.verify(issuer.getPublicKey(), gracePeriod);
+    }
+
+    /**
+     * Verifies the signature of the item using a provided key. No grace period will be used.
      * @param key The key to used to verify the signature, must not be null.
      * @throws DimeDateException If any problems with issued at and expires at dates.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
+        verify(key, 0);
+    }
+
+    /**
+     * Verifies the signature of the item using a provided key. The provided grace period will be used.
+     * @param key The key to used to verify the signature, must not be null.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeIntegrityException If the signature is invalid.
+     */
+    public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
         if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         Crypto.verifySignature(encode(), this.signature, key);
     }

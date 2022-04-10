@@ -61,7 +61,7 @@ class ClaimsMap {
         if (object instanceof Instant) {
             return (Instant) object;
         } else if (object instanceof String) {
-            Instant instant =  Instant.parse((String) object);
+            Instant instant = Instant.parse((String) object);
             _claims.put(claim.toString(), instant);
             return instant;
         } else {
