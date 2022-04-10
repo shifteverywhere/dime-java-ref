@@ -4,7 +4,7 @@
 //  Compact data format for trusted and secure communication between networked entities.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright © 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
