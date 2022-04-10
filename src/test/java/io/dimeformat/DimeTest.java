@@ -18,6 +18,8 @@ public class DimeTest {
 
     @BeforeAll
     static void beforeAll() {
+        Dime.setTrustedIdentity(null);
+        Dime.setTimeModifier(0);
         assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
         assertNull(Dime.getTrustedIdentity());
         assertEquals(0, Dime.getTimeModifier());
