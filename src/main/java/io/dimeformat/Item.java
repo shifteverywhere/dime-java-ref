@@ -85,6 +85,14 @@ public abstract class Item {
     }
 
     /**
+     * Will remove a signature from an item.
+     */
+    public void strip() {
+        this.encoded = null;
+        this.signature = null;
+    }
+
+    /**
      * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
      * changed. This is created by securely hashing the item and will be unique and change as soon as any content
      * changes.

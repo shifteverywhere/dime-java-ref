@@ -517,4 +517,23 @@ class MessageTest {
         fail("Should not happen.");
     }
 
+    @Test
+    void stripTest1() {
+        try {
+            Message message = new Message(Commons.getIssuerIdentity().getSubjectId());
+            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            try {
+                message.setPublicKey(Commons.getIssuerKey().publicCopy());
+                fail("Expected exception was not thrown.");
+            } catch (IllegalStateException e) {
+                // All is good
+            }
+            message.strip();
+            message.sign(Commons.getIssuerKey());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 }
