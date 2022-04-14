@@ -24,9 +24,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class IdentityTest {
 
     @Test
-    void getTagTest1() {
+    void getItemIdentifierTest1() {
        Identity identity = new Identity();
-       assertEquals("ID", identity.getTag());
+       assertEquals("ID", identity.getItemIdentifier());
+       assertEquals("ID", Identity.ITEM_IDENTIFIER);
     }
 
     @Test
@@ -308,7 +309,7 @@ class IdentityTest {
             String exported = identity.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
-            assertTrue(exported.startsWith(Envelope.HEADER + ":" + Identity.TAG));
+            assertTrue(exported.startsWith(Envelope.HEADER + ":" + Identity.ITEM_IDENTIFIER));
             assertEquals(4, exported.split("\\.").length);
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 

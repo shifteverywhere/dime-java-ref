@@ -32,16 +32,12 @@ public class IdentityIssuingRequest extends Item {
     /** A constant holding the number of seconds for a year (based on 365 days). */
     public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
 
-    /** A tag identifying the Di:ME item type, part of the header. */
-    public static final String TAG = "IIR";
+    /** The item type identifier for Di:ME Identity Issuing Request items. */
+    public static final String ITEM_IDENTIFIER = "IIR";
 
-    /**
-     * Returns the tag of the Di:ME item.
-     * @return The tag of the item.
-     */
     @Override
-    public String getTag() {
-        return IdentityIssuingRequest.TAG;
+    public String getItemIdentifier() {
+        return IdentityIssuingRequest.ITEM_IDENTIFIER;
     }
 
     /**
@@ -359,7 +355,7 @@ public class IdentityIssuingRequest extends Item {
     protected void decode(String encoded) throws DimeFormatException {
         String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
         if (components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE && components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE + " or  " + IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE + ", got " + components.length + "."); }
-        if (components[IdentityIssuingRequest.TAG_INDEX].compareTo(IdentityIssuingRequest.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.TAG + ", got " + components[IdentityIssuingRequest.TAG_INDEX] + "."); }
+        if (components[IdentityIssuingRequest.TAG_INDEX].compareTo(IdentityIssuingRequest.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.ITEM_IDENTIFIER + ", got " + components[IdentityIssuingRequest.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[IdentityIssuingRequest.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         if (components.length == NBR_COMPONENTS_WITH_SIGNATURE) {
@@ -371,7 +367,7 @@ public class IdentityIssuingRequest extends Item {
     @Override
     protected String encode() {
         if (this.encoded == null) {
-            this.encoded = IdentityIssuingRequest.TAG +
+            this.encoded = IdentityIssuingRequest.ITEM_IDENTIFIER +
                     Envelope.COMPONENT_DELIMITER +
                     Utility.toBase64(this.claims.toJSON());
         }

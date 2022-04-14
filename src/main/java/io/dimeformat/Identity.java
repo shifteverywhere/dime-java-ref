@@ -29,16 +29,12 @@ public class Identity extends Item {
 
     /// PUBLIC ///
 
-    /** A tag identifying the Di:ME item type, part of the header. */
-    public static final String TAG = "ID";
+    /** The item type identifier for Di:ME Identity items. */
+    public static final String ITEM_IDENTIFIER = "ID";
 
-    /**
-     * Returns the tag of the Di:ME item.
-     * @return The tag of the item.
-     */
     @Override
-    public String getTag() {
-        return Identity.TAG;
+    public String getItemIdentifier() {
+        return Identity.ITEM_IDENTIFIER;
     }
 
     /**
@@ -333,7 +329,7 @@ public class Identity extends Item {
         String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
         if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
                 components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
-        if (components[Identity.TAG_INDEX].compareTo(Identity.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.TAG + ", got " + components[Identity.TAG_INDEX] + "."); }
+        if (components[Identity.TAG_INDEX].compareTo(Identity.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.ITEM_IDENTIFIER + ", got " + components[Identity.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Identity.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         if (components.length == Identity.NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
@@ -348,7 +344,7 @@ public class Identity extends Item {
     protected String encode()  {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
-            builder.append(Identity.TAG);
+            builder.append(Identity.ITEM_IDENTIFIER);
             builder.append(Envelope.COMPONENT_DELIMITER);
             builder.append(Utility.toBase64(claims.toJSON()));
             if (this.trustChain != null) {

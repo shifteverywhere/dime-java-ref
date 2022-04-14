@@ -19,9 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DataTest {
 
     @Test
-    void getTagTest1() {
+    void getItemIdentifierTest1() {
         Data data = new Data(UUID.randomUUID());
-        assertEquals("DAT", data.getTag());
+        assertEquals("DAT", data.getItemIdentifier());
+        assertEquals("DAT", Data.ITEM_IDENTIFIER);
     }
 
     @Test
@@ -62,7 +63,7 @@ public class DataTest {
             String encoded = data.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Data.TAG));
+            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Data.ITEM_IDENTIFIER));
             assertEquals(3, encoded.split("\\.").length);
             data.sign(Commons.getIssuerKey());
             encoded = data.exportToEncoded();

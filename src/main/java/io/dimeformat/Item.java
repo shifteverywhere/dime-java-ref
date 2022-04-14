@@ -24,10 +24,12 @@ public abstract class Item {
     /// PUBLIC ///
 
     /**
-     * Returns the tag of the Di:ME item. Must be overridden by any subclass.
-     * @return The tag of the item.
+     * Returns the type identifier of the Di:ME item. This can be used to identify the type of Di:ME object held in this
+     * generic class. It is also used in the exported Di:ME format to indicate the beginning of a Di:ME item inside an
+     * envelope. Typically, this is represented by a short series of letters.
+     * @return The item type of the Di:ME item.
      */
-    public abstract String getTag();
+    public abstract String getItemIdentifier();
 
     /**
      * Returns a unique identifier for the instance. This will be generated at instance creation.
@@ -210,11 +212,11 @@ public abstract class Item {
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {
-            case Data.TAG: return Data.class;
-            case Identity.TAG: return Identity.class;
-            case IdentityIssuingRequest.TAG: return IdentityIssuingRequest.class;
-            case Message.TAG: return Message.class;
-            case Key.TAG: return Key.class;
+            case Data.ITEM_IDENTIFIER: return Data.class;
+            case Identity.ITEM_IDENTIFIER: return Identity.class;
+            case IdentityIssuingRequest.ITEM_IDENTIFIER: return IdentityIssuingRequest.class;
+            case Message.ITEM_IDENTIFIER: return Message.class;
+            case Key.ITEM_IDENTIFIER: return Key.class;
             default: return null;
         }
     }
