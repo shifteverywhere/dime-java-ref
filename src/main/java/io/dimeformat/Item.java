@@ -210,6 +210,7 @@ public abstract class Item {
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {
+            case Data.TAG: return Data.class;
             case Identity.TAG: return Identity.class;
             case IdentityIssuingRequest.TAG: return IdentityIssuingRequest.class;
             case Message.TAG: return Message.class;

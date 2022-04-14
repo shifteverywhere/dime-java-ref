@@ -21,7 +21,7 @@ import java.util.UUID;
  * verify the integrity and trust of the message. Messages may also be end-to-end encrypted to protect the
  * confidentiality of the message payload.
  */
-public class Message extends Item {
+public class Message extends Data {
 
     /// PUBLIC ///
 
@@ -38,45 +38,12 @@ public class Message extends Item {
     }
 
     /**
-     * Returns a unique identifier for the instance. This will be generated at instance creation.
-     * @return A unique identifier, as a UUID.
-     */
-    @Override
-    public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
-    }
-
-    /**
      * Returns the audience (receiver) identifier. This is optional, although required if encrypting the message
      * payload.
      * @return The audience identifier, as a UUID.
      */
     public UUID getAudienceId() {
         return claims.getUUID(Claim.AUD);
-    }
-
-    /**
-     * Returns the issuer (sender/creator) identifier of the message.
-     * @return The issuer identifier, as a UUID.
-     */
-    public UUID getIssuerId() {
-        return claims.getUUID(Claim.ISS);
-    }
-
-    /**
-     * The date and time when this message was created.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
-    }
-
-    /**
-     * The date and time when the message will expire.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getExpiresAt() {
-        return claims.getInstant(Claim.EXP);
     }
 
     /**
@@ -146,14 +113,6 @@ public class Message extends Item {
     }
 
     /**
-     * Returns the context that is attached to the message.
-     * @return A String instance.
-     */
-    public String getContext() {
-        return claims.get(Claim.CTX);
-    }
-
-    /**
      * Creates a message from a specified issuer (sender).
      * @param issuerId The issuer identifier.
      */
@@ -207,17 +166,6 @@ public class Message extends Item {
         this.claims.put(Claim.IAT, iat);
         this.claims.put(Claim.EXP, exp);
         this.claims.put(Claim.CTX, context);
-    }
-
-    /**
-     * Will sign the message with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
-     * @param key The key to sign the item with, must be of type IDENTITY.
-     * @throws DimeCryptographicException If something goes wrong.
-     */
-    @Override
-    public void sign(Key key) throws DimeCryptographicException {
-        if (this.payload == null) { throw new IllegalStateException("Unable to sign message, no payload added."); }
-        super.sign(key);
     }
 
     /**
@@ -284,15 +232,6 @@ public class Message extends Item {
     }
 
     /**
-     * Sets the plain text payload of the message.
-     * @param payload The payload to set.
-     */
-    public void setPayload(byte[] payload) {
-        throwIfSigned();
-        this.payload = Utility.toBase64(payload);
-    }
-
-    /**
      * Will encrypt and attach a payload using a shared encryption key between the issuer and audience of a message.
      * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
@@ -307,15 +246,6 @@ public class Message extends Item {
         if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
         Key shared = Crypto.generateSharedSecret(issuerKey, audienceKey);
         setPayload(Crypto.encrypt(payload, shared));
-    }
-
-    /**
-     * Returns the plain text payload of the message. If an encrypted payload have been set, then this will return the
-     * encrypted payload.
-     * @return The message payload.
-     */
-    public byte[] getPayload() {
-        return Utility.fromBase64(this.payload);
     }
 
     /**
@@ -394,7 +324,5 @@ public class Message extends Item {
     private static final int LINK_ITEM_TYPE_INDEX = 0;
     private static final int LINK_UID_INDEX = 1;
     private static final int LINK_THUMBPRINT_INDEX = 2;
-
-    private String payload;
 
 }

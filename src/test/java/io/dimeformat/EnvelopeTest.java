@@ -288,6 +288,41 @@ class EnvelopeTest {
     }
 
     @Test
+    void dataExportTest1() {
+        try {
+            Envelope envelope = new Envelope(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT);
+            Data data = new Data(Commons.getAudienceIdentity().getSubjectId(),100);
+            data.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
+            data.sign(Commons.getIssuerKey());
+            envelope.addItem(data);
+            envelope.sign(Commons.getIssuerKey());
+            String exported = envelope.exportToEncoded();
+            assertNotNull(exported);
+            assertTrue(exported.length() > 0);
+            assertTrue(exported.startsWith(Envelope.HEADER));
+            assertEquals(3, exported.split(":").length);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void dataImportTest1() {
+        try {
+            String exported = "Di.eyJpc3MiOiJiZTRhZjVmMy1lODM4LTQ3MzItYTBmYy1mZmEyYzMyOGVhMTAiLCJ1aWQiOiIxZTI1NWYzMS0xZDdiLTQwZjItYmQ3NS02NmU5Zjk2NDM0ZTciLCJpYXQiOiIyMDIyLTA0LTE0VDA4OjA4OjUzLjMyNDMyOVoiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiMTIxZjNkMzItZjg1Ny00OTlmLTk4OGEtMDc2NDg0OGE3YjYzIiwidWlkIjoiMWYxOTYzY2QtYzExNy00MTM5LWE5ZGItOGNkZmRjYWJlMWYwIiwiZXhwIjoiMjAyMi0wNC0xNFQwODoxMDozMy4zMjU2MTZaIiwiaWF0IjoiMjAyMi0wNC0xNFQwODowODo1My4zMjU2MTZaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.blvhM/e4ZYNmD77ZdIiVgnN6Rj+8GUpyM6arQ6irpkeEpMPhnxV119+r99z1pd7k9bPeRWPyqZmzAq0JmzcmBQ:fR+p3fa2hbEXkYSkXgjTZ1htp+BIk8gRXHDWEeGvumH3y23HrYACsAGEGsAzy/bc3h380n3ywJvfnGgYTGulBQ";
+            Envelope envelope = Envelope.importFromEncoded(exported);
+            assertFalse(envelope.isAnonymous());
+            assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
+            assertEquals(Instant.parse("2022-04-14T08:08:53.324329Z"), envelope.getIssuedAt());
+            assertEquals(Commons.CONTEXT, envelope.getContext());
+            assertEquals(1, envelope.getItems().size());
+            assertEquals(Data.class, envelope.getItems().get(0).getClass());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void messageExportTest1() {
         try {
             Envelope envelope = new Envelope(Commons.getIssuerIdentity().getSubjectId(), "Di:ME");
