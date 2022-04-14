@@ -21,4 +21,4 @@
 ## Version 1.0.0 - 2022-01-24
 - Official version 1.0.0 (**Hurray!**)
 
-**Copyright © 2022 Shift Everywhere AB. All rights reserved.**
+**Copyright (c) 2022 Shift Everywhere AB. All rights reserved.**

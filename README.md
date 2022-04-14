@@ -5,7 +5,7 @@ Di:ME (Data Integrity Message Envelope) is a powerful universal data format that
 Potential use cases for Di:ME includes:
 •	IOT networks for distributing sensitive data, including collected sensor data, operation instructions, patches and firmware updates
 •	Automatic processing where audit trails and results logging is curial
-•	Peer-to-peer messaging where each responses gets cryptographically linked
+•	Peer-to-peer messaging where each response gets cryptographically linked
 •	Distribution of sensitive information and records within large networks
 •	Establishing application-based networks with trusted entities
 
