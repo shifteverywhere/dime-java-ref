@@ -25,16 +25,12 @@ public class Message extends Data {
 
     /// PUBLIC ///
 
-    /** A tag identifying the Di:ME item type, part of the header. */
-    public static final String TAG = "MSG";
+    /** The item type identifier for Di:ME Message items. */
+    public static final String ITEM_IDENTIFIER = "MSG";
 
-    /**
-     * Returns the tag of the Di:ME item.
-     * @return The tag of the item.
-     */
     @Override
-    public String getTag() {
-        return Message.TAG;
+    public String getItemIdentifier() {
+        return Message.ITEM_IDENTIFIER;
     }
 
     /**
@@ -223,7 +219,7 @@ public class Message extends Data {
             String[] components = lnk.split("\\" + Envelope.COMPONENT_DELIMITER);
             if (components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
-            if (components[Message.LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0
+            if (components[Message.LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getItemIdentifier()) != 0
                     || components[Message.LINK_UID_INDEX].compareTo(linkedItem.getUniqueId().toString()) != 0
                     || components[Message.LINK_THUMBPRINT_INDEX].compareTo(msgHash) != 0) {
                 throw new DimeIntegrityException("Failed to verify link Dime item (provided item did not match).");
@@ -274,7 +270,7 @@ public class Message extends Data {
     public void linkItem(Item item) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to link item, message is already signed."); }
         if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
-        claims.put(Claim.LNK, item.getTag() + Envelope.COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope.COMPONENT_DELIMITER + item.thumbprint());
+        claims.put(Claim.LNK, item.getItemIdentifier() + Envelope.COMPONENT_DELIMITER + item.getUniqueId().toString() + Envelope.COMPONENT_DELIMITER + item.thumbprint());
     }
 
     /// PACKAGE-PRIVATE ///
@@ -295,7 +291,7 @@ public class Message extends Data {
         if (components.length != Message.NBR_EXPECTED_COMPONENTS) {
             throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
         }
-        if (components[Message.TAG_INDEX].compareTo(Message.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.TAG + ", got: " + components[Message.TAG_INDEX] + "."); }
+        if (components[Message.TAG_INDEX].compareTo(Message.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.ITEM_IDENTIFIER + ", got: " + components[Message.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Message.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         payload = components[Message.PAYLOAD_INDEX];
@@ -306,7 +302,7 @@ public class Message extends Data {
     @Override
     protected String encode() {
         if (this.encoded == null) {
-            this.encoded = Message.TAG +
+            this.encoded = Message.ITEM_IDENTIFIER +
                     Envelope.COMPONENT_DELIMITER +
                     Utility.toBase64(claims.toJSON()) +
                     Envelope.COMPONENT_DELIMITER +

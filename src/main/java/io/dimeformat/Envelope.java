@@ -39,6 +39,7 @@ public class Envelope {
      * */
     @Deprecated
     public static final int MAX_CONTEXT_LENGTH = Dime.MAX_CONTEXT_LENGTH;
+
     /** The standard envelope header. */
     public static final String HEADER = "Di";
     /**

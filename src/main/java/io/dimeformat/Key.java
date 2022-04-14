@@ -25,16 +25,12 @@ public class Key extends Item {
 
     /// PUBLIC ///
 
-    /** A tag identifying the Di:ME item type, part of the header. */
-    public static final String TAG = "KEY";
+    /** The item type identifier for Di:ME Key items. */
+    public static final String ITEM_IDENTIFIER = "KEY";
 
-    /**
-     * Returns the tag of the Di:ME item.
-     * @return The tag of the item.
-     */
     @Override
-    public String getTag() {
-        return Key.TAG;
+    public String getItemIdentifier() {
+        return Key.ITEM_IDENTIFIER;
     }
 
     /**
@@ -273,7 +269,7 @@ public class Key extends Item {
     protected void decode(String encoded) throws DimeFormatException {
         String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
         if (components.length != Key.NBR_EXPECTED_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + Key.NBR_EXPECTED_COMPONENTS + ", got " + components.length +"."); }
-        if (components[Key.TAG_INDEX].compareTo(Key.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.TAG + ", got " + components[Key.TAG_INDEX] + "."); }
+        if (components[Key.TAG_INDEX].compareTo(Key.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.ITEM_IDENTIFIER + ", got " + components[Key.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Key.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         this.encoded = encoded;
@@ -282,7 +278,7 @@ public class Key extends Item {
     @Override
     protected String encode() {
         if (this.encoded == null) {
-            this.encoded = Key.TAG +
+            this.encoded = Key.ITEM_IDENTIFIER +
                     Envelope.COMPONENT_DELIMITER +
                     Utility.toBase64(this.claims.toJSON());
         }

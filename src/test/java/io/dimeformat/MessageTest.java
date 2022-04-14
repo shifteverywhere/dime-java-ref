@@ -23,9 +23,10 @@ import java.util.UUID;
 class MessageTest {
 
     @Test
-    void getTagTest1() {
+    void getItemIdentifierTest1() {
         Message message = new Message(null, -1);
-        assertEquals("MSG", message.getTag());
+        assertEquals("MSG", message.getItemIdentifier());
+        assertEquals("MSG", Message.ITEM_IDENTIFIER);
     }
 
     @Test
@@ -84,7 +85,7 @@ class MessageTest {
             String encoded = message.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Message.TAG));
+            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Message.ITEM_IDENTIFIER));
             assertEquals(4, encoded.split("\\.").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 

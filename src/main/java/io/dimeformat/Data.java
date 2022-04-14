@@ -24,16 +24,12 @@ public class Data extends Item {
 
     /// PUBLIC ///
 
-    /** A tag identifying the Di:ME item type, part of the header. */
-    public static final String TAG = "DAT";
+    /** The item type identifier for Di:ME Data items. */
+    public static final String ITEM_IDENTIFIER = "DAT";
 
-    /**
-     * Returns the tag of the Di:ME item.
-     * @return The tag of the item.
-     */
     @Override
-    public String getTag() {
-        return Data.TAG;
+    public String getItemIdentifier() {
+        return Data.ITEM_IDENTIFIER;
     }
 
     /**
@@ -191,7 +187,7 @@ public class Data extends Item {
         if (components.length != Data.NBR_EXPECTED_COMPONENTS_UNSIGNED && components.length != Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
             throw new DimeFormatException("Unexpected number of components for data item request, expected: " + Data.NBR_EXPECTED_COMPONENTS_UNSIGNED + " or " + Data.NBR_EXPECTED_COMPONENTS_SIGNED + ", got " + components.length +".");
         }
-        if (components[Data.TAG_INDEX].compareTo(Data.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Data.TAG + ", got: " + components[Data.TAG_INDEX] + "."); }
+        if (components[Data.TAG_INDEX].compareTo(Data.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Data.ITEM_IDENTIFIER + ", got: " + components[Data.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Data.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         payload = components[Data.PAYLOAD_INDEX];
@@ -204,7 +200,7 @@ public class Data extends Item {
     @Override
     protected String encode() {
         if (this.encoded == null) {
-            this.encoded = this.TAG +
+            this.encoded = this.ITEM_IDENTIFIER +
                     Envelope.COMPONENT_DELIMITER +
                     Utility.toBase64(claims.toJSON()) +
                     Envelope.COMPONENT_DELIMITER +
