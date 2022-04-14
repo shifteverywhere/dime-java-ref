@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DimeTest {
 
@@ -99,6 +100,24 @@ public class DimeTest {
         Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
         result = Utility.gracefulTimestampCompare(now, remoteTimestamp2, gracePeriod);
         assertEquals(-1, result);
+    }
+
+    @Test
+    void gracefulTimestampCompareTest3() {
+        try {
+            int gracePeriod = 2;
+            Instant iat = Instant.parse("2022-01-01T23:43:34.8755323Z");
+            Instant exp = Instant.parse("2022-01-01T23:43:32.8755323Z");
+            Instant res = Instant.parse("2022-01-01T23:43:33.968000Z");
+            Instant now = Instant.parse("2022-01-01T23:43:33.052000Z");
+            assertTrue(Utility.gracefulTimestampCompare(iat, now, gracePeriod) <= 0); // checks so it passes
+            assertTrue(Utility.gracefulTimestampCompare(res, now, gracePeriod) <= 0); // checks so it passes
+            assertTrue(Utility.gracefulTimestampCompare(exp, now, gracePeriod) >= 0); // checks so it passes
+            // Issued at and expires at are created by same entity and should not be compared with grace period
+            assertTrue(Utility.gracefulTimestampCompare(iat, exp, 0) > 0); // check so it fails
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
 }
