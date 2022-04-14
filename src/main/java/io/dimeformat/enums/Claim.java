@@ -54,6 +54,10 @@ public enum Claim {
      */
     LNK,
     /**
+     * MIME type
+     */
+    MIM,
+    /**
      * Method
      */
     MTD,

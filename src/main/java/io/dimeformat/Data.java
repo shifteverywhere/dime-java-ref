@@ -1,0 +1,224 @@
+//
+//  Data.java
+//  Di:ME - Data Identity Message Envelope
+//  Compact data format for trusted and secure communication between networked entities.
+//
+//  Released under the MIT licence, see LICENSE for more information.
+//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//
+package io.dimeformat;
+
+import io.dimeformat.enums.Claim;
+import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.DimeDateException;
+import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.DimeIntegrityException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Di:ME item that carries a data payload. The payload may be any data.
+ */
+public class Data extends Item {
+
+    /// PUBLIC ///
+
+    /** A tag identifying the Di:ME item type, part of the header. */
+    public static final String TAG = "DAT";
+
+    /**
+     * Returns the tag of the Di:ME item.
+     * @return The tag of the item.
+     */
+    @Override
+    public String getTag() {
+        return Data.TAG;
+    }
+
+    /**
+     * Returns a unique identifier for the instance. This will be generated at instance creation.
+     * @return A unique identifier, as a UUID.
+     */
+    @Override
+    public UUID getUniqueId() {
+        return claims.getUUID(Claim.UID);
+    }
+
+    /**
+     * Returns the identifier of the entity that created the data item (issuer). This is optional.
+     * @return The identifier of the issuer of the data item.
+     */
+    public UUID getIssuerId() {
+        return claims.getUUID(Claim.ISS);
+    }
+
+    /**
+     * The date and time when this data item was created.
+     * @return A UTC timestamp, as an Instant.
+     */
+    public Instant getIssuedAt() {
+        return claims.getInstant(Claim.IAT);
+    }
+
+    /**
+     * Returns the expiration date of the data item. This is optional.
+     * @return A UTC timestamp, as an Instant.
+     */
+    public Instant getExpiresAt() {
+        return claims.getInstant(Claim.EXP);
+    }
+
+    /**
+     * Returns the context that is attached to the data.
+     * @return A String instance.
+     */
+    public String getContext() {
+        return claims.get(Claim.CTX);
+    }
+
+    /**
+     * Returns the mime type associated with the data payload. This is optional.
+     * @return A String instance.
+     */
+    public String getMIMEType() {
+        return claims.get(Claim.MIM);
+    }
+
+    /**
+     * Creates a new Data instance with the provided parameters.
+     * @param issuerId The identifier of the issuer, must not be null.
+     */
+    public Data(UUID issuerId) {
+        this(issuerId, -1, null);
+    }
+
+    /**
+     * Creates a new Data instance with the provided parameters.
+     * @param issuerId The identifier of the issuer, must not be null.
+     * @param validFor Number of seconds the data item should be valid, if -1 is provided, then it will never expire.
+     */
+    public Data(UUID issuerId, long validFor) {
+        this(issuerId, validFor, null);
+    }
+
+    /**
+     * Creates a new Data instance with the provided parameters.
+     * @param issuerId The identifier of the issuer, must not be null.
+     * @param context The context to attach to the data item, may be null.
+     */
+    public Data(UUID issuerId, String context) {
+        this(issuerId, -1, context);
+    }
+
+    /**
+     * Creates a new Data instance with the provided parameters.
+     * @param issuerId The identifier of the issuer, must not be null.
+     * @param validFor Number of seconds the data item should be valid, if -1 is provided, then it will never expire.
+     * @param context The context to attach to the data item, may be null.
+     */
+    public Data(UUID issuerId, long validFor, String context) {
+        if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
+        if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
+        this.claims = new ClaimsMap();
+        this.claims.put(Claim.ISS, issuerId);
+        Instant iat = Utility.createTimestamp();
+        this.claims.put(Claim.IAT, iat);
+        if (validFor != -1) {
+            Instant exp = iat.plusSeconds(validFor);
+            this.claims.put(Claim.EXP, exp);
+        }
+        this.claims.put(Claim.CTX, context);
+    }
+
+    /**
+     * Sets the data payload of the item.
+     * @param payload The payload to set.
+     */
+    public void setPayload(byte[] payload) {
+        setPayload(payload, null);
+    }
+
+    /**
+     * Sets the data payload of the item.
+     * @param payload The payload to set.
+     * @param mimeType The MIME type of the payload, may be null.
+     */
+    public void setPayload(byte[] payload, String mimeType) {
+        throwIfSigned();
+        this.payload = Utility.toBase64(payload);
+        this.claims.put(Claim.MIM, mimeType);
+    }
+
+    /**
+     * Returns the data payload set in the item.
+     * @return The message payload.
+     */
+    public byte[] getPayload() {
+        return Utility.fromBase64(this.payload);
+    }
+
+    @Override
+    public void sign(Key key) throws DimeCryptographicException {
+        if (this.payload == null) { throw new IllegalStateException("Unable to sign item, no payload added."); }
+        super.sign(key);
+    }
+
+    @Override
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
+        if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
+        // Verify IssuedAt and ExpiresAt
+        Instant now = Utility.createTimestamp();
+        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Issuing date in the future."); }
+        if (this.getExpiresAt() != null) {
+            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
+            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Passed expiration date."); }
+        }
+        super.verify(key);
+    }
+
+    /// PACKAGE-PRIVATE ///
+
+    Data() { }
+
+    /// PROTECTED ///
+
+    protected String payload;
+
+    @Override
+    protected void decode(String encoded) throws DimeFormatException {
+        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        if (components.length != Data.NBR_EXPECTED_COMPONENTS_UNSIGNED && components.length != Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
+            throw new DimeFormatException("Unexpected number of components for data item request, expected: " + Data.NBR_EXPECTED_COMPONENTS_UNSIGNED + " or " + Data.NBR_EXPECTED_COMPONENTS_SIGNED + ", got " + components.length +".");
+        }
+        if (components[Data.TAG_INDEX].compareTo(Data.TAG) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Data.TAG + ", got: " + components[Data.TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Data.CLAIMS_INDEX]);
+        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
+        payload = components[Data.PAYLOAD_INDEX];
+        this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+        if (components.length == Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
+            signature = components[components.length - 1];
+        }
+    }
+
+    @Override
+    protected String encode() {
+        if (this.encoded == null) {
+            this.encoded = this.TAG +
+                    Envelope.COMPONENT_DELIMITER +
+                    Utility.toBase64(claims.toJSON()) +
+                    Envelope.COMPONENT_DELIMITER +
+                    this.payload;
+        }
+        return this.encoded;
+    }
+
+    /// PRIVATE ///
+
+    private static final int NBR_EXPECTED_COMPONENTS_UNSIGNED = 3;
+    private static final int NBR_EXPECTED_COMPONENTS_SIGNED = NBR_EXPECTED_COMPONENTS_UNSIGNED + 1;
+    private static final int TAG_INDEX = 0;
+    private static final int CLAIMS_INDEX = 1;
+    private static final int PAYLOAD_INDEX = 2;
+
+}
