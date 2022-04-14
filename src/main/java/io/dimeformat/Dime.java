@@ -23,6 +23,11 @@ public final class Dime {
     public static final int VERSION = 0x01;
 
     /**
+     * A constant holding the number of seconds for a year (based on 365 days).
+     */
+    public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
+
+    /**
      * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
      * @return An Identity instance.
      */
