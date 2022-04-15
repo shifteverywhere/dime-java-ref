@@ -19,6 +19,51 @@ import static org.junit.jupiter.api.Assertions.*;
 class EnvelopeTest {
 
     @Test
+    void getItemTest1() {
+        try {
+            Envelope envelope = new Envelope();
+            envelope.addItem(new Message(UUID.randomUUID(), UUID.randomUUID(), -1, "message-context"));
+            envelope.addItem(Key.generateKey(KeyType.IDENTITY, "key-context"));
+            Item item1 = envelope.getItem("key-context");
+            assertTrue(item1 instanceof Key);
+            assertEquals("key-context", item1.getContext());
+            Item item2 = envelope.getItem("message-context");
+            assertTrue(item2 instanceof Message);
+            assertEquals("message-context", item2.getContext());
+            Item item3 = envelope.getItem("invalid-context");
+            assertNull(item3);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void getItemTest2() {
+        try {
+            String exported = "Di:MSG.eyJpc3MiOiIxODVlNjc0ZS1jYzQ5LTRlNmMtOGRhNi1mNDE1NDY1ZjJiMDUiLCJ1aWQiOiJmMmU3MGU4My00YmJjLTQ1N2YtOWQzMC04YjJhYmRlMjFhZTciLCJhdWQiOiIzZThjYTdiNS0yYmFmLTQ3MzItOWUyNS0zMjVkYTliMTRjYmUiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMjY5MloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.NFnMpo/MeutxUzlIe7TYeTKN3prEoses/so3OstGURMgSsFa0fvepFsGpLuWmZI6BVkeMVVbHwKCIKvfP5KCBw:KEY.eyJ1aWQiOiI3YjA5MjJkOC02MWUzLTRlZjMtYmY2NS05OWNjOWY0OTZhMDIiLCJwdWIiOiIyVERYZG9OdlBnTDI1ZEo2aHh5ZVVIZGttTmJnUlpMM3JNYU5aWVA4OWVyU3ZGY2JIUkhwWUpzUEwiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMDgxNFoiLCJjdHgiOiJrZXktY29udGV4dCIsImtleSI6IlMyMVRaU0xSam5yUUVxS293UGNLd1dNN21tUGV2Rkc3QUtROFhjdmZNVEphZUtpQktSMk5kY2liSmVYd3V3ZEF4d2VDVjZGckpYZTFTUmthenlnQ1I2dzhqaTFWUVJQNlg3ZVQifQ";
+            Envelope envelope = Envelope.importFromEncoded(exported);
+            Item item1 = envelope.getItem("key-context");
+            assertTrue(item1 instanceof Key);
+            assertEquals("key-context", item1.getContext());
+            Item item2 = envelope.getItem("message-context");
+            assertTrue(item2 instanceof Message);
+            assertEquals("message-context", item2.getContext());
+            Item item3 = envelope.getItem("invalid-context");
+            assertNull(item3);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void getItemTest3() {
+        Envelope envelope = new Envelope();
+        envelope.addItem(Key.generateKey(KeyType.IDENTITY));
+        assertNull(envelope.getItem(null));
+        assertNull(envelope.getItem(""));
+    }
+
+    @Test
     void signTest1() {
         Envelope envelope = new Envelope();
         try {
