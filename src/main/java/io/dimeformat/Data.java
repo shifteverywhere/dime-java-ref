@@ -1,7 +1,8 @@
 //
 //  Data.java
 //  Di:ME - Data Identity Message Envelope
-//  Compact data format for trusted and secure communication between networked entities.
+//  A powerful universal data format that is built for secure, and integrity protected communication between trusted
+//  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
