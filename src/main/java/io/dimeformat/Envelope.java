@@ -12,13 +12,9 @@ import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * An encapsulating object that can carry one or more Di:ME items. This is usually the format
@@ -192,6 +188,17 @@ public class Envelope {
         if (this.signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
         this.items = new ArrayList<>(items);
         return this;
+    }
+
+    public Item getItem(String context) {
+        if (context == null || items == null || items.size() == 0) return null;
+        for (Item item : items) {
+            String ctx = item.getContext();
+            if (ctx != null && ctx.equalsIgnoreCase(context)) {
+                return item;
+            }
+        }
+        return null;
     }
 
     /**
