@@ -11,7 +11,6 @@ package io.dimeformat;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;

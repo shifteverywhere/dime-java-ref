@@ -12,7 +12,6 @@ import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -42,23 +41,6 @@ public class IdentityIssuingRequest extends Item {
     @Override
     public String getItemIdentifier() {
         return IdentityIssuingRequest.ITEM_IDENTIFIER;
-    }
-
-    /**
-     * Returns a unique identifier for the instance. This will be generated at instance creation.
-     * @return A unique identifier, as a UUID.
-     */
-    @Override
-    public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
-    }
-
-    /**
-     * The date and time when this IIR was created.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
     }
 
     /**

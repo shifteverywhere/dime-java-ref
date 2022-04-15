@@ -11,7 +11,6 @@ package io.dimeformat;
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -47,48 +46,12 @@ public class Identity extends Item {
     }
 
     /**
-     * Returns a unique identifier for the instance. This will be assigned when issuing an identity, but will change
-     * with each re-issuing even if it is for the same entity.
-     * @return A unique identifier, as a UUID.
-     */
-    @Override
-    public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
-    }
-
-    /**
      * Returns the entity's subject identifier. This is, within the system, defined by system name, unique for one
      * specific entity.
      * @return The subject identifier assigned to an entity, as a UUID.
      */
     public UUID getSubjectId() {
         return claims.getUUID(Claim.SUB);
-    }
-
-    /**
-     * Returns the issuer's subject identifier. The issuer is the entity that has issued the identity to another
-     * entity. If this value is equal to the subject identifier, then this identity is self-issued.
-     * @return The issuer identifier, as a UUID.
-     */
-    public UUID getIssuerId() {
-        return claims.getUUID(Claim.ISS);
-    }
-
-    /**
-     * The date and time when this identity was issued. Although, this date will most often be in the past, the identity
-     * should not be used and not trusted before this date.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
-    }
-
-    /**
-     * The date and time when the identity will expire, and should not be used and not trusted anymore.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getExpiresAt() {
-        return claims.getInstant(Claim.EXP);
     }
 
     /**

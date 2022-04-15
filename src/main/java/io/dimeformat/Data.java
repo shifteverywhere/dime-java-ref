@@ -33,47 +33,6 @@ public class Data extends Item {
     }
 
     /**
-     * Returns a unique identifier for the instance. This will be generated at instance creation.
-     * @return A unique identifier, as a UUID.
-     */
-    @Override
-    public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
-    }
-
-    /**
-     * Returns the identifier of the entity that created the data item (issuer). This is optional.
-     * @return The identifier of the issuer of the data item.
-     */
-    public UUID getIssuerId() {
-        return claims.getUUID(Claim.ISS);
-    }
-
-    /**
-     * The date and time when this data item was created.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
-    }
-
-    /**
-     * Returns the expiration date of the data item. This is optional.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getExpiresAt() {
-        return claims.getInstant(Claim.EXP);
-    }
-
-    /**
-     * Returns the context that is attached to the data.
-     * @return A String instance.
-     */
-    public String getContext() {
-        return claims.get(Claim.CTX);
-    }
-
-    /**
      * Returns the mime type associated with the data payload. This is optional.
      * @return A String instance.
      */
