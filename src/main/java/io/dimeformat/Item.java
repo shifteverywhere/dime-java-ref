@@ -14,6 +14,7 @@ import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -32,10 +33,47 @@ public abstract class Item {
     public abstract String getItemIdentifier();
 
     /**
-     * Returns a unique identifier for the instance. This will be generated at instance creation.
-     * @return A unique identifier, as a UUID. Must be overridden by any subclass.
+     * Returns a unique identifier for the instance. This will be generated at item creation.
+     * @return A unique identifier, as a UUID.
      */
-    public abstract UUID getUniqueId();
+    public UUID getUniqueId() {
+        return claims.getUUID(Claim.UID);
+    }
+
+    /**
+     * Returns the identifier of the entity that created the Di:ME item (issuer). This may be optional depending on the
+     * Di:ME item type.
+     * @return The identifier of the issuer of the key.
+     */
+    public UUID getIssuerId() {
+        return claims.getUUID(Claim.ISS);
+    }
+
+    /**
+     * The date and time when this Di:ME item was issued. Although, this date will most often be in the past, the
+     * item should not be processed if it is in the future.
+     * @return A UTC timestamp, as an Instant.
+     */
+    public Instant getIssuedAt() {
+        return claims.getInstant(Claim.IAT);
+    }
+
+    /**
+     * The date and time when the Di:ME item will expire, and should not be used and not trusted anymore after this
+     * date.
+     * @return A UTC timestamp, as an Instant.
+     */
+    public Instant getExpiresAt() {
+        return claims.getInstant(Claim.EXP);
+    }
+
+    /**
+     * Returns the context that is attached to the Di:ME item.
+     * @return A String instance.
+     */
+    public String getContext() {
+        return claims.get(Claim.CTX);
+    }
 
     /**
      * Checks if the item has been signed or not.

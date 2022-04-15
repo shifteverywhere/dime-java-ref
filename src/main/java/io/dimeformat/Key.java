@@ -14,7 +14,6 @@ import io.dimeformat.enums.KeyType;
 import io.dimeformat.enums.KeyVariant;
 import io.dimeformat.exceptions.DimeFormatException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -41,39 +40,6 @@ public class Key extends Item {
         byte[] key = claims.getBytes(Claim.KEY);
         if (key == null) { key = claims.getBytes(Claim.PUB); }
         return key[0];
-    }
-
-    /**
-     * Returns the identifier of the entity that generated the key (issuer). This is optional.
-     * @return The identifier of the issuer of the key.
-     */
-    public UUID getIssuerId() {
-        return claims.getUUID(Claim.ISS);
-    }
-
-    /**
-     * Returns a unique identifier for the instance. This will be generated at instance creation.
-     * @return A unique identifier, as a UUID.
-     */
-    @Override
-    public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
-    }
-
-    /**
-     * The date and time when this key was created.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
-    }
-
-    /**
-     * Returns the expiration date of the key. This is optional.
-     * @return The expiration date of the key.
-     */
-    public Instant getExpiresAt() {
-        return claims.getInstant(Claim.EXP);
     }
 
     /**
@@ -107,14 +73,6 @@ public class Key extends Item {
      */
     public String getPublic() {
         return claims.get(Claim.PUB);
-    }
-
-    /**
-     * Returns the context that is attached to the key.
-     * @return A String instance.
-     */
-    public String getContext() {
-        return claims.get(Claim.CTX);
     }
 
     /**
