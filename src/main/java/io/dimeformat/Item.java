@@ -210,7 +210,7 @@ public abstract class Item {
     @SuppressWarnings("unchecked")
     static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
         try {
-            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Envelope.COMPONENT_DELIMITER)));
+            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Dime.COMPONENT_DELIMITER)));
             T item;
             try {
                 item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
@@ -232,7 +232,7 @@ public abstract class Item {
 
     protected String toEncoded() {
         if (this.isSigned()) {
-            return encode() + Envelope.COMPONENT_DELIMITER + this.signature;
+            return encode() + Dime.COMPONENT_DELIMITER + this.signature;
         }
         return encode();
     }

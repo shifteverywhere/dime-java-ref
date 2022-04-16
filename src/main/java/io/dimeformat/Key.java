@@ -226,7 +226,7 @@ public class Key extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (components.length != Key.NBR_EXPECTED_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + Key.NBR_EXPECTED_COMPONENTS + ", got " + components.length +"."); }
         if (components[Key.TAG_INDEX].compareTo(Key.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.ITEM_IDENTIFIER + ", got " + components[Key.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Key.CLAIMS_INDEX]);
@@ -238,7 +238,7 @@ public class Key extends Item {
     protected String encode() {
         if (this.encoded == null) {
             this.encoded = Key.ITEM_IDENTIFIER +
-                    Envelope.COMPONENT_DELIMITER +
+                    Dime.COMPONENT_DELIMITER +
                     Utility.toBase64(this.claims.toJSON());
         }
         return this.encoded;

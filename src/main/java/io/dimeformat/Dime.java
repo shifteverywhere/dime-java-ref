@@ -62,6 +62,11 @@ public final class Dime {
         Dime.timeModifier = modifier;
     }
 
+    /// PACKAGE-PRIVATE ///
+
+    static final String COMPONENT_DELIMITER = ".";
+    static final String SECTION_DELIMITER = ":";
+
     /// PRIVATE ///
 
     private static Identity trustedIdentity;

@@ -192,7 +192,7 @@ public class Identity extends Item {
      * and the expires at date to see if these are valid. The provided grace period will be used.
      * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
      * @return True if the identity is trusted.
-     * @throws DimeDateException
+     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted(long gracePeriod) throws DimeDateException {
         Identity trustedIdentity = Dime.getTrustedIdentity();
@@ -207,7 +207,7 @@ public class Identity extends Item {
      * @param trustedIdentity The identity to verify the trust against.
      * @param gracePeriod A grace period to use when evaluating timestamps, in seconds.
      * @return Tur if the identity is trusted.
-     * @throws DimeDateException
+     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
         if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
@@ -290,7 +290,7 @@ public class Identity extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
                 components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
         if (components[Identity.TAG_INDEX].compareTo(Identity.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.ITEM_IDENTIFIER + ", got " + components[Identity.TAG_INDEX] + "."); }
@@ -300,7 +300,7 @@ public class Identity extends Item {
             byte[] issIdentity = Utility.fromBase64(components[Identity.CHAIN_INDEX]);
             this.trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
         }
-        this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+        this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
         this.signature = components[components.length - 1];
     }
 
@@ -309,11 +309,11 @@ public class Identity extends Item {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Identity.ITEM_IDENTIFIER);
-            builder.append(Envelope.COMPONENT_DELIMITER);
+            builder.append(Dime.COMPONENT_DELIMITER);
             builder.append(Utility.toBase64(claims.toJSON()));
             if (this.trustChain != null) {
-                builder.append(Envelope.COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(this.trustChain.encode() + Envelope.COMPONENT_DELIMITER + this.trustChain.signature));
+                builder.append(Dime.COMPONENT_DELIMITER);
+                builder.append(Utility.toBase64(this.trustChain.encode() + Dime.COMPONENT_DELIMITER + this.trustChain.signature));
             }
             this.encoded = builder.toString();
         }

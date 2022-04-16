@@ -143,7 +143,7 @@ public class Data extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (components.length != Data.NBR_EXPECTED_COMPONENTS_UNSIGNED && components.length != Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
             throw new DimeFormatException("Unexpected number of components for data item request, expected: " + Data.NBR_EXPECTED_COMPONENTS_UNSIGNED + " or " + Data.NBR_EXPECTED_COMPONENTS_SIGNED + ", got " + components.length +".");
         }
@@ -151,7 +151,7 @@ public class Data extends Item {
         byte[] json = Utility.fromBase64(components[Data.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         payload = components[Data.PAYLOAD_INDEX];
-        this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+        this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
         if (components.length == Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
             signature = components[components.length - 1];
         }
@@ -160,10 +160,10 @@ public class Data extends Item {
     @Override
     protected String encode() {
         if (this.encoded == null) {
-            this.encoded = this.ITEM_IDENTIFIER +
-                    Envelope.COMPONENT_DELIMITER +
+            this.encoded = Data.ITEM_IDENTIFIER +
+                    Dime.COMPONENT_DELIMITER +
                     Utility.toBase64(claims.toJSON()) +
-                    Envelope.COMPONENT_DELIMITER +
+                    Dime.COMPONENT_DELIMITER +
                     this.payload;
         }
         return this.encoded;

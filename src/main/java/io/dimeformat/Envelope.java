@@ -137,9 +137,9 @@ public class Envelope {
      */
     public static Envelope importFromEncoded(String encoded) throws DimeFormatException {
         if (!encoded.startsWith(Envelope.HEADER)) { throw new DimeFormatException("Not a Dime envelope object, invalid header."); }
-        String[] sections = encoded.split("\\" + Envelope.SECTION_DELIMITER);
+        String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
         // 0: HEADER
-        String[] components = sections[0].split("\\" + Envelope.COMPONENT_DELIMITER);
+        String[] components = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
         Envelope envelope;
         if (components.length == 2) {
             byte[] json = Utility.fromBase64(components[1]);
@@ -158,7 +158,7 @@ public class Envelope {
         if (envelope.isAnonymous()) {
             envelope.encoded = encoded;
         } else {
-            envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.SECTION_DELIMITER));
+            envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.SECTION_DELIMITER));
             envelope.signature = sections[sections.length - 1];
         }
         return envelope;
@@ -239,7 +239,7 @@ public class Envelope {
     public String exportToEncoded() {
         if (!this.isAnonymous()) {
             if (this.signature == null) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
-            return encode() + Envelope.SECTION_DELIMITER + this.signature;
+            return encode() + Dime.SECTION_DELIMITER + this.signature;
         } else {
             return encode();
         }
@@ -255,7 +255,7 @@ public class Envelope {
     public String thumbprint() throws DimeCryptographicException {
         String enc = encode();
         if (!this.isAnonymous()) {
-            enc += Envelope.SECTION_DELIMITER + this.signature;
+            enc += Dime.SECTION_DELIMITER + this.signature;
         }
         return Envelope.thumbprint(enc);
     }
@@ -273,11 +273,6 @@ public class Envelope {
         return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
     }
 
-    /// PACKAGE-PRIVATE ///
-
-    static final String COMPONENT_DELIMITER = ".";
-    static final String SECTION_DELIMITER = ":";
-
     /// PRIVATE ///
 
     private ClaimsMap claims;
@@ -294,11 +289,11 @@ public class Envelope {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
             if (!this.isAnonymous()) {
-                builder.append(Envelope.COMPONENT_DELIMITER);
+                builder.append(Dime.COMPONENT_DELIMITER);
                 builder.append(Utility.toBase64(claims.toJSON()));
             }
             for (Item item : this.items) {
-                builder.append(Envelope.SECTION_DELIMITER);
+                builder.append(Dime.SECTION_DELIMITER);
                 builder.append(item.toEncoded());
             }
             this.encoded = builder.toString();
