@@ -191,11 +191,31 @@ public class Envelope {
         return this;
     }
 
+    /**
+     * Returns any item inside the envelope that matches the provided context (ctx).
+     * @param context The context to look for.
+     * @return The found item, or null if none was found.
+     */
     public Item getItem(String context) {
         if (context == null || items == null || items.size() == 0) return null;
         for (Item item : items) {
             String ctx = item.getContext();
             if (ctx != null && ctx.equalsIgnoreCase(context)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns any item inside the envelope that matches the provided unique id (uid).
+     * @param uniqueId The unique id to look for.
+     * @return The found item, or null if none was found.
+     */
+    public Item getItem(UUID uniqueId) {
+        if (uniqueId == null || items == null || items.size() == 0) return null;
+        for (Item item : items) {
+            if (item.getUniqueId().equals(uniqueId)) {
                 return item;
             }
         }
