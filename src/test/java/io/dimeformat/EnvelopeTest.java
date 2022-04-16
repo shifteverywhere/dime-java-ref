@@ -22,17 +22,25 @@ class EnvelopeTest {
     @Test
     void getItemTest1() {
         try {
+            Message message = new Message(UUID.randomUUID(), UUID.randomUUID(), -1, "message-context");
+            Key key = Key.generateKey(KeyType.IDENTITY, "key-context");
             Envelope envelope = new Envelope();
-            envelope.addItem(new Message(UUID.randomUUID(), UUID.randomUUID(), -1, "message-context"));
-            envelope.addItem(Key.generateKey(KeyType.IDENTITY, "key-context"));
+            envelope.addItem(message);
+            envelope.addItem(key);
+            // Context
             Item item1 = envelope.getItem("key-context");
             assertTrue(item1 instanceof Key);
             assertEquals("key-context", item1.getContext());
             Item item2 = envelope.getItem("message-context");
             assertTrue(item2 instanceof Message);
             assertEquals("message-context", item2.getContext());
-            Item item3 = envelope.getItem("invalid-context");
-            assertNull(item3);
+            // Unique ID
+            Item item3 = envelope.getItem(key.getUniqueId());
+            assertTrue(item3 instanceof Key);
+            assertEquals(key.getUniqueId(), item3.getUniqueId());
+            Item item4 = envelope.getItem(message.getUniqueId());
+            assertTrue(item4 instanceof Message);
+            assertEquals(message.getUniqueId(), item4.getUniqueId());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -43,14 +51,22 @@ class EnvelopeTest {
         try {
             String exported = "Di:MSG.eyJpc3MiOiIxODVlNjc0ZS1jYzQ5LTRlNmMtOGRhNi1mNDE1NDY1ZjJiMDUiLCJ1aWQiOiJmMmU3MGU4My00YmJjLTQ1N2YtOWQzMC04YjJhYmRlMjFhZTciLCJhdWQiOiIzZThjYTdiNS0yYmFmLTQ3MzItOWUyNS0zMjVkYTliMTRjYmUiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMjY5MloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.NFnMpo/MeutxUzlIe7TYeTKN3prEoses/so3OstGURMgSsFa0fvepFsGpLuWmZI6BVkeMVVbHwKCIKvfP5KCBw:KEY.eyJ1aWQiOiI3YjA5MjJkOC02MWUzLTRlZjMtYmY2NS05OWNjOWY0OTZhMDIiLCJwdWIiOiIyVERYZG9OdlBnTDI1ZEo2aHh5ZVVIZGttTmJnUlpMM3JNYU5aWVA4OWVyU3ZGY2JIUkhwWUpzUEwiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMDgxNFoiLCJjdHgiOiJrZXktY29udGV4dCIsImtleSI6IlMyMVRaU0xSam5yUUVxS293UGNLd1dNN21tUGV2Rkc3QUtROFhjdmZNVEphZUtpQktSMk5kY2liSmVYd3V3ZEF4d2VDVjZGckpYZTFTUmthenlnQ1I2dzhqaTFWUVJQNlg3ZVQifQ";
             Envelope envelope = Envelope.importFromEncoded(exported);
+            // Context
             Item item1 = envelope.getItem("key-context");
             assertTrue(item1 instanceof Key);
             assertEquals("key-context", item1.getContext());
             Item item2 = envelope.getItem("message-context");
             assertTrue(item2 instanceof Message);
             assertEquals("message-context", item2.getContext());
-            Item item3 = envelope.getItem("invalid-context");
-            assertNull(item3);
+            // Unique ID
+            UUID uid1 = UUID.fromString("7b0922d8-61e3-4ef3-bf65-99cc9f496a02");
+            Item item3 = envelope.getItem(uid1);
+            assertTrue(item3 instanceof Key);
+            assertEquals(uid1, item3.getUniqueId());
+            UUID uid2 = UUID.fromString("f2e70e83-4bbc-457f-9d30-8b2abde21ae7");
+            Item item4 = envelope.getItem(uid2);
+            assertTrue(item4 instanceof Message);
+            assertEquals(uid2, item4.getUniqueId());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -60,8 +76,11 @@ class EnvelopeTest {
     void getItemTest3() {
         Envelope envelope = new Envelope();
         envelope.addItem(Key.generateKey(KeyType.IDENTITY));
-        assertNull(envelope.getItem(null));
+        assertNull(envelope.getItem((String)null));
         assertNull(envelope.getItem(""));
+        assertNull(envelope.getItem("invalid-context"));
+        assertNull(envelope.getItem((UUID)null));
+        assertNull(envelope.getItem(UUID.randomUUID()));
     }
 
     @Test
