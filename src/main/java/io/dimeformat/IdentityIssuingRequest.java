@@ -340,13 +340,13 @@ public class IdentityIssuingRequest extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Envelope.COMPONENT_DELIMITER);
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE && components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE + " or  " + IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE + ", got " + components.length + "."); }
         if (components[IdentityIssuingRequest.TAG_INDEX].compareTo(IdentityIssuingRequest.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.ITEM_IDENTIFIER + ", got " + components[IdentityIssuingRequest.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[IdentityIssuingRequest.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         if (components.length == NBR_COMPONENTS_WITH_SIGNATURE) {
-            this.encoded = encoded.substring(0, encoded.lastIndexOf(Envelope.COMPONENT_DELIMITER));
+            this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
             this.signature = components[IdentityIssuingRequest.SIGNATURE_INDEX];
         }
     }
@@ -355,7 +355,7 @@ public class IdentityIssuingRequest extends Item {
     protected String encode() {
         if (this.encoded == null) {
             this.encoded = IdentityIssuingRequest.ITEM_IDENTIFIER +
-                    Envelope.COMPONENT_DELIMITER +
+                    Dime.COMPONENT_DELIMITER +
                     Utility.toBase64(this.claims.toJSON());
         }
         return this.encoded;
