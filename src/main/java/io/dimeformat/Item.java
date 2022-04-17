@@ -122,7 +122,7 @@ public abstract class Item {
     public void sign(Key key) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        this.signature = Crypto.generateSignature(encode(), key);
+        this.signature = Crypto.generateSignature(encoded(false), key);
     }
 
     /**
@@ -141,7 +141,7 @@ public abstract class Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public String thumbprint() throws DimeCryptographicException {
-        return Item.thumbprint(this.toEncoded());
+        return Item.thumbprint(encoded(true));
     }
 
     /**
@@ -201,8 +201,8 @@ public abstract class Item {
      * @throws DimeIntegrityException If the signature is invalid.
      */
     public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
-        if (!this.isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
-        Crypto.verifySignature(encode(), this.signature, key);
+        if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
+        Crypto.verifySignature(encoded(false), this.signature, key);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -224,22 +224,35 @@ public abstract class Item {
         }
     }
 
+    String forExport() {
+        return encoded(true);
+    }
+
     /// PROTECTED ///
 
     protected String encoded;
     protected String signature;
     protected ClaimsMap claims;
 
-    protected String toEncoded() {
-        if (this.isSigned()) {
-            return encode() + Dime.COMPONENT_DELIMITER + this.signature;
+    protected String encoded(boolean withSignature) {
+        if (this.encoded == null) {
+            StringBuilder builder = new StringBuilder();
+            encode(builder);
+            this.encoded = builder.toString();
         }
-        return encode();
+        if (withSignature && isSigned()) {
+            return this.encoded + Dime.COMPONENT_DELIMITER + this.signature;
+        }
+        return this.encoded;
     }
 
     protected abstract void decode(String encoded) throws DimeFormatException;
 
-    protected abstract String encode();
+    protected void encode(StringBuilder builder) {
+        builder.append(this.getItemIdentifier());
+        builder.append(Dime.COMPONENT_DELIMITER);
+        builder.append(Utility.toBase64(this.claims.toJSON()));
+    }
 
     protected void throwIfSigned() {
         if (this.isSigned()) {

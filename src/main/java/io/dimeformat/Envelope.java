@@ -314,7 +314,7 @@ public class Envelope {
             }
             for (Item item : this.items) {
                 builder.append(Dime.SECTION_DELIMITER);
-                builder.append(item.toEncoded());
+                builder.append(item.forExport());
             }
             this.encoded = builder.toString();
         }

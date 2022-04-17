@@ -140,7 +140,7 @@ public class IdentityIssuingRequest extends Item {
         if (principles != null && !principles.isEmpty()) {
             iir.claims.put(Claim.PRI, principles);
         }
-        iir.signature = Crypto.generateSignature(iir.encode(), key);
+        iir.signature = Crypto.generateSignature(iir.encoded(false), key);
         return iir;
     }
 
@@ -349,16 +349,6 @@ public class IdentityIssuingRequest extends Item {
             this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
             this.signature = components[IdentityIssuingRequest.SIGNATURE_INDEX];
         }
-    }
-
-    @Override
-    protected String encode() {
-        if (this.encoded == null) {
-            this.encoded = IdentityIssuingRequest.ITEM_IDENTIFIER +
-                    Dime.COMPONENT_DELIMITER +
-                    Utility.toBase64(this.claims.toJSON());
-        }
-        return this.encoded;
     }
 
     /// PRIVATE ///
