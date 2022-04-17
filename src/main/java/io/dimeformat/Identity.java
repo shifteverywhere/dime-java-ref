@@ -290,9 +290,10 @@ public class Identity extends Item {
 
     @Override
     protected void decode(String encoded) throws DimeFormatException {
+        if (encoded == null || encoded.length() == 0) { throw new NullPointerException("Encoded string must not be null or empty."); }
         String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
-                components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
+                components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
         if (components[Identity.TAG_INDEX].compareTo(Identity.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.ITEM_IDENTIFIER + ", got " + components[Identity.TAG_INDEX] + "."); }
         byte[] json = Utility.fromBase64(components[Identity.CLAIMS_INDEX]);
         claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
@@ -305,19 +306,12 @@ public class Identity extends Item {
     }
 
     @Override
-    protected String encode()  {
-        if (this.encoded == null) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(Identity.ITEM_IDENTIFIER);
+    protected void encode(StringBuilder builder) {
+        super.encode(builder);
+        if (this.trustChain != null) {
             builder.append(Dime.COMPONENT_DELIMITER);
-            builder.append(Utility.toBase64(claims.toJSON()));
-            if (this.trustChain != null) {
-                builder.append(Dime.COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(this.trustChain.encode() + Dime.COMPONENT_DELIMITER + this.trustChain.signature));
-            }
-            this.encoded = builder.toString();
+            builder.append(Utility.toBase64(this.trustChain.forExport()));
         }
-        return this.encoded;
     }
 
     /// PRIVATE ///

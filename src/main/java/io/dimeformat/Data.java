@@ -158,16 +158,12 @@ public class Data extends Item {
     }
 
     @Override
-    protected String encode() {
-        if (this.encoded == null) {
-            this.encoded = Data.ITEM_IDENTIFIER +
-                    Dime.COMPONENT_DELIMITER +
-                    Utility.toBase64(claims.toJSON()) +
-                    Dime.COMPONENT_DELIMITER +
-                    this.payload;
-        }
-        return this.encoded;
+    protected void encode(StringBuilder builder) {
+        super.encode(builder);
+        builder.append(Dime.COMPONENT_DELIMITER);
+        builder.append(this.payload);
     }
+
 
     /// PRIVATE ///
 

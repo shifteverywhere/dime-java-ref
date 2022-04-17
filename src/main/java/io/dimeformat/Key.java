@@ -234,16 +234,6 @@ public class Key extends Item {
         this.encoded = encoded;
     }
 
-    @Override
-    protected String encode() {
-        if (this.encoded == null) {
-            this.encoded = Key.ITEM_IDENTIFIER +
-                    Dime.COMPONENT_DELIMITER +
-                    Utility.toBase64(this.claims.toJSON());
-        }
-        return this.encoded;
-    }
-
     /// PRIVATE ///
 
     private static final int NBR_EXPECTED_COMPONENTS = 2;

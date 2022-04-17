@@ -280,9 +280,9 @@ public class Message extends Data {
     /// PROTECTED ///
 
     @Override
-    protected String toEncoded() {
-        if (this.signature == null) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
-        return super.toEncoded();
+    protected String forExport() {
+        if (!isSigned()) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
+        return super.forExport();
     }
 
     @Override
@@ -297,18 +297,6 @@ public class Message extends Data {
         payload = components[Message.PAYLOAD_INDEX];
         this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
         signature = components[components.length - 1];
-    }
-
-    @Override
-    protected String encode() {
-        if (this.encoded == null) {
-            this.encoded = Message.ITEM_IDENTIFIER +
-                    Dime.COMPONENT_DELIMITER +
-                    Utility.toBase64(claims.toJSON()) +
-                    Dime.COMPONENT_DELIMITER +
-                    this.payload;
-        }
-        return this.encoded;
     }
 
     /// PRIVATE ///
