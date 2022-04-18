@@ -62,12 +62,7 @@ public class Identity extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            String pub = claims.get(Claim.PUB);
-            if (pub != null && pub.length() > 0) {
-                try {
-                    _publicKey = Key.fromBase58Key(pub);
-                } catch (DimeFormatException ignored) { /* ignored */ }
-            }
+            _publicKey = claims.getKey(Claim.PUB);
         }
         return _publicKey;
     }

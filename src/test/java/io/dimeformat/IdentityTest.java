@@ -37,7 +37,7 @@ class IdentityTest {
             UUID subjectId = UUID.randomUUID();
             Key key = Key.generateKey(KeyType.IDENTITY);            
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
             assertEquals(0, subjectId.compareTo(identity.getSubjectId()));
             assertEquals(0, subjectId.compareTo(identity.getIssuerId()));
@@ -61,7 +61,7 @@ class IdentityTest {
             Key key = Key.generateKey(KeyType.IDENTITY);
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
-            Identity identity = iir.issueIdentity(subjectId, IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
+            Identity identity = iir.issueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
             assertEquals(Dime.getTrustedIdentity().getSystemName(), identity.getSystemName());
             assertEquals(0, subjectId.compareTo(identity.getSubjectId()));
             assertTrue(identity.hasCapability(caps[0]));
@@ -305,7 +305,7 @@ class IdentityTest {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
             Key key = Key.generateKey(KeyType.IDENTITY);
-            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
             String exported = identity.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);

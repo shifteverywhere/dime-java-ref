@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
+import io.dimeformat.exceptions.DimeFormatException;
 import org.json.JSONObject;
 import java.time.Instant;
 import java.util.*;
@@ -18,7 +19,7 @@ import java.util.*;
  * Handles claims for Di:ME items.
  */
 class ClaimsMap {
-
+    
     public ClaimsMap() {
         this._claims = new HashMap<>();
         put(Claim.UID, UUID.randomUUID());
@@ -74,6 +75,15 @@ class ClaimsMap {
         String string = get(claim);
         if (string == null) { return null; }
         return Base58.decode(string);
+    }
+
+    public Key getKey(Claim claim) {
+        String string = get(claim);
+        if (string == null || string.length() == 0) { return null; }
+        try {
+            return Key.fromBase58Key(string);
+        } catch (DimeFormatException ignored) { /* ignored */ }
+        return null;
     }
 
     public void put(Claim claim, Object value) {
