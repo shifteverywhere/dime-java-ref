@@ -20,17 +20,17 @@ import java.util.*;
 class ClaimsMap {
 
     public ClaimsMap() {
-        this._claims = new HashMap<String, Object>();
+        this._claims = new HashMap<>();
         put(Claim.UID, UUID.randomUUID());
     }
 
     public ClaimsMap(UUID uid) {
-        this._claims = new HashMap<String, Object>();
+        this._claims = new HashMap<>();
         put(Claim.UID, uid);
     }
 
     public ClaimsMap(String encoded) {
-        this._claims = (HashMap) ClaimsMap.fromJSON(encoded);
+        this._claims = ClaimsMap.fromJSON(encoded);
     }
 
     public String toJSON() {
@@ -92,11 +92,11 @@ class ClaimsMap {
 
     /// PRIVATE ///
 
-    protected final HashMap _claims;
+    protected final HashMap<String, Object> _claims;
 
-    private static Map fromJSON(String json) {
+    private static HashMap<String, Object> fromJSON(String json) {
         JSONObject jsonObject = new JSONObject(json);
-        return jsonObject.toMap();
+        return (HashMap<String, Object>)jsonObject.toMap();
     }
 
 }
