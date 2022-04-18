@@ -265,6 +265,9 @@ public class Identity extends Item {
 
     /// PACKAGE-PRIVATE ///
 
+    /**
+     * This is used to runtime instantiate new objects when parsing Di:ME envelopes.
+     */
     Identity() { }
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
@@ -289,25 +292,20 @@ public class Identity extends Item {
     /// PROTECTED ///
 
     @Override
-    protected void decode(String encoded) throws DimeFormatException {
-        if (encoded == null || encoded.length() == 0) { throw new NullPointerException("Encoded string must not be null or empty."); }
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
         if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
                 components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
-        if (components[Identity.TAG_INDEX].compareTo(Identity.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Identity.ITEM_IDENTIFIER + ", got " + components[Identity.TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Identity.CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
         if (components.length == Identity.NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
-            byte[] issIdentity = Utility.fromBase64(components[Identity.CHAIN_INDEX]);
+            byte[] issIdentity = Utility.fromBase64(components[Identity.COMPONENTS_CHAIN_INDEX]);
             this.trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
         }
-        this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
         this.signature = components[components.length - 1];
+        return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
     }
 
     @Override
-    protected void encode(StringBuilder builder) {
-        super.encode(builder);
+    protected void customEncoding(StringBuilder builder) {
+        super.customEncoding(builder);
         if (this.trustChain != null) {
             builder.append(Dime.COMPONENT_DELIMITER);
             builder.append(Utility.toBase64(this.trustChain.forExport()));
@@ -318,9 +316,7 @@ public class Identity extends Item {
 
     private static final int NBR_EXPECTED_COMPONENTS_MIN = 3;
     private static final int NBR_EXPECTED_COMPONENTS_MAX = 4;
-    private static final int TAG_INDEX = 0;
-    private static final int CLAIMS_INDEX = 1;
-    private static final int CHAIN_INDEX = 2;
+    private static final int COMPONENTS_CHAIN_INDEX = 2;
     private Identity trustChain;
 
     private static Identity fromEncodedIdentity(String encoded) throws DimeFormatException {

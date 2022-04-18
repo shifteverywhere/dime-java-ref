@@ -14,7 +14,6 @@ import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.enums.KeyVariant;
 import io.dimeformat.exceptions.DimeFormatException;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -167,6 +166,9 @@ public class Key extends Item {
 
     /// PACKAGE-PRIVATE ///
 
+    /**
+     * This is used to runtime instantiate new objects when parsing Di:ME envelopes.
+     */
     Key() { }
 
     Key(UUID id, KeyType type, byte[] key, byte[] pub) {
@@ -224,21 +226,8 @@ public class Key extends Item {
         throw new DimeFormatException("Invalid key. (K1010)");
     }
 
-    @Override
-    protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (components.length != Key.NBR_EXPECTED_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + Key.NBR_EXPECTED_COMPONENTS + ", got " + components.length +"."); }
-        if (components[Key.TAG_INDEX].compareTo(Key.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Key.ITEM_IDENTIFIER + ", got " + components[Key.TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Key.CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
-        this.encoded = encoded;
-    }
-
     /// PRIVATE ///
 
-    private static final int NBR_EXPECTED_COMPONENTS = 2;
-    private static final int TAG_INDEX = 0;
-    private static final int CLAIMS_INDEX = 1;
     private static final int HEADER_SIZE = 6;
 
     private static byte[] headerFrom(KeyType type, KeyVariant variant) {

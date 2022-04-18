@@ -20,7 +20,7 @@ class KeyTest {
 
     @Test
     void getItemIdentifierTest1() {
-        Key key = Key.generateKey(KeyType.IDENTITY);
+        Key key = new Key();
         assertEquals("KEY", key.getItemIdentifier());
         assertEquals("KEY", Key.ITEM_IDENTIFIER);
     }

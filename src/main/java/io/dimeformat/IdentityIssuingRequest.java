@@ -13,11 +13,9 @@ import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -149,7 +147,6 @@ public class IdentityIssuingRequest extends Item {
      * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
      * create the IIR and will also after issuing of an identity form the proof-of-ownership. No grace period will be
      * used.
-     * @return Returns the IdentityIssuingRequest instance for convenience.
      * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
@@ -164,9 +161,9 @@ public class IdentityIssuingRequest extends Item {
      * create the IIR and will also after issuing of an identity form the proof-of-ownership. The provided grace period
      * will be used.
      * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @throws DimeDateException
-     * @throws DimeIntegrityException
-     * @throws DimeFormatException
+     * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
+     * @throws DimeIntegrityException If the signature can not be verified.
+     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
     public void verify(long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException {
         verify(getPublicKey(), gracePeriod);
@@ -339,24 +336,20 @@ public class IdentityIssuingRequest extends Item {
     /// PROTECTED ///
 
     @Override
-    protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE && components.length != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) { throw new DimeFormatException("Unexpected number of components for identity issuing request, expected " + IdentityIssuingRequest.NBR_COMPONENTS_WITHOUT_SIGNATURE + " or  " + IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE + ", got " + components.length + "."); }
-        if (components[IdentityIssuingRequest.TAG_INDEX].compareTo(IdentityIssuingRequest.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + IdentityIssuingRequest.ITEM_IDENTIFIER + ", got " + components[IdentityIssuingRequest.TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[IdentityIssuingRequest.CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
+    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
         if (components.length == NBR_COMPONENTS_WITH_SIGNATURE) {
-            this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
-            this.signature = components[IdentityIssuingRequest.SIGNATURE_INDEX];
+            this.signature = components[IdentityIssuingRequest.COMPONENTS_SIGNATURE_INDEX];
+            return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
+        } else if (components.length > NBR_COMPONENTS_WITH_SIGNATURE) {
+            throw new DimeFormatException("Unexpected number of components found in Identity issuing request, got: " + components.length);
         }
+        return encoded;
     }
 
     /// PRIVATE ///
-    private static final int NBR_COMPONENTS_WITHOUT_SIGNATURE = 2;
+
     private static final int NBR_COMPONENTS_WITH_SIGNATURE = 3;
-    private static final int TAG_INDEX = 0;
-    private static final int CLAIMS_INDEX = 1;
-    private static final int SIGNATURE_INDEX = 2;
+    private static final int COMPONENTS_SIGNATURE_INDEX = 2;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());

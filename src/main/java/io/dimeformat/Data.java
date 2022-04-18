@@ -14,7 +14,6 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -142,35 +141,28 @@ public class Data extends Item {
     protected String payload;
 
     @Override
-    protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
         if (components.length != Data.NBR_EXPECTED_COMPONENTS_UNSIGNED && components.length != Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
             throw new DimeFormatException("Unexpected number of components for data item request, expected: " + Data.NBR_EXPECTED_COMPONENTS_UNSIGNED + " or " + Data.NBR_EXPECTED_COMPONENTS_SIGNED + ", got " + components.length +".");
         }
-        if (components[Data.TAG_INDEX].compareTo(Data.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Data.ITEM_IDENTIFIER + ", got: " + components[Data.TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Data.CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
-        payload = components[Data.PAYLOAD_INDEX];
-        this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
+        payload = components[Data.COMPONENTS_PAYLOAD_INDEX];
         if (components.length == Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
             signature = components[components.length - 1];
         }
+        return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
     }
 
     @Override
-    protected void encode(StringBuilder builder) {
-        super.encode(builder);
+    protected void customEncoding(StringBuilder builder) {
+        super.customEncoding(builder);
         builder.append(Dime.COMPONENT_DELIMITER);
         builder.append(this.payload);
     }
-
 
     /// PRIVATE ///
 
     private static final int NBR_EXPECTED_COMPONENTS_UNSIGNED = 3;
     private static final int NBR_EXPECTED_COMPONENTS_SIGNED = NBR_EXPECTED_COMPONENTS_UNSIGNED + 1;
-    private static final int TAG_INDEX = 0;
-    private static final int CLAIMS_INDEX = 1;
-    private static final int PAYLOAD_INDEX = 2;
+    private static final int COMPONENTS_PAYLOAD_INDEX = 2;
 
 }

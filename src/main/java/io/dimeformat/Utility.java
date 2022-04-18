@@ -22,7 +22,7 @@ final class Utility {
     /**
      * Generate secure random bytes.
      * @param length The number of bytes to generate.
-     * @return
+     * @return An array with secure random bytes.
      */
     static byte[] randomBytes(final int length) {
         if (length <= 0) { return new byte[0]; }

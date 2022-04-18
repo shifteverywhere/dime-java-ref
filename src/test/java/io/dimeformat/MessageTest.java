@@ -25,7 +25,7 @@ class MessageTest {
 
     @Test
     void getItemIdentifierTest1() {
-        Message message = new Message(null, -1);
+        Message message = new Message();
         assertEquals("MSG", message.getItemIdentifier());
         assertEquals("MSG", Message.ITEM_IDENTIFIER);
     }

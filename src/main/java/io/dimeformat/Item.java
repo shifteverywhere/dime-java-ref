@@ -207,6 +207,10 @@ public abstract class Item {
 
     /// PACKAGE-PRIVATE ///
 
+    static final int MINIMUM_NBR_COMPONENTS = 2;
+    static final int COMPONENTS_TAG_INDEX = 0;
+    static final int COMPONENTS_CLAIMS_INDEX = 1;
+
     @SuppressWarnings("unchecked")
     static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
         try {
@@ -237,7 +241,7 @@ public abstract class Item {
     protected String encoded(boolean withSignature) {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
-            encode(builder);
+            customEncoding(builder);
             this.encoded = builder.toString();
         }
         if (withSignature && isSigned()) {
@@ -246,12 +250,23 @@ public abstract class Item {
         return this.encoded;
     }
 
-    protected abstract void decode(String encoded) throws DimeFormatException;
-
-    protected void encode(StringBuilder builder) {
+    protected void customEncoding(StringBuilder builder) {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         builder.append(Utility.toBase64(this.claims.toJSON()));
+    }
+
+    protected void decode(String encoded) throws DimeFormatException {
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+        if (components.length < Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for Di:ME item, expected at least " + Item.MINIMUM_NBR_COMPONENTS + ", got " + components.length +"."); }
+        if (components[Item.COMPONENTS_TAG_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Di:ME item tag, expected: " + getItemIdentifier() + ", got " + components[Item.COMPONENTS_TAG_INDEX] + "."); }
+        byte[] json = Utility.fromBase64(components[Item.COMPONENTS_CLAIMS_INDEX]);
+        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
+        this.encoded = customDecoding(components, encoded);
+    }
+
+    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
+        return encoded;
     }
 
     protected void throwIfSigned() {
