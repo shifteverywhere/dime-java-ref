@@ -68,7 +68,7 @@ public class PerformanceTest {
         try {
             for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
                 IdentityIssuingRequest iir = iirList.get(i);
-                Identity identity = iir.issueIdentity(UUID.randomUUID(), IdentityIssuingRequest.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
+                Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
                 identityList.add(identity);
             }
         } catch (Exception e) {
