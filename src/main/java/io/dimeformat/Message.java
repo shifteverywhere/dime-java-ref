@@ -12,7 +12,6 @@ package io.dimeformat;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.*;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -275,6 +274,9 @@ public class Message extends Data {
 
     /// PACKAGE-PRIVATE ///
 
+    /**
+     * This is used to runtime instantiate new objects when parsing Di:ME envelopes.
+     */
     Message() { }
 
     /// PROTECTED ///
@@ -285,26 +287,16 @@ public class Message extends Data {
         return super.forExport();
     }
 
-    @Override
-    protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
         if (components.length != Message.NBR_EXPECTED_COMPONENTS) {
             throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
         }
-        if (components[Message.TAG_INDEX].compareTo(Message.ITEM_IDENTIFIER) != 0) { throw new DimeFormatException("Unexpected item tag, expected: " + Message.ITEM_IDENTIFIER + ", got: " + components[Message.TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Message.CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
-        payload = components[Message.PAYLOAD_INDEX];
-        this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
-        signature = components[components.length - 1];
+        return super.customDecoding(components, encoded);
     }
 
     /// PRIVATE ///
 
     private static final int NBR_EXPECTED_COMPONENTS = 4;
-    private static final int TAG_INDEX = 0;
-    private static final int CLAIMS_INDEX = 1;
-    private static final int PAYLOAD_INDEX = 2;
     private static final int LINK_ITEM_TYPE_INDEX = 0;
     private static final int LINK_UID_INDEX = 1;
     private static final int LINK_THUMBPRINT_INDEX = 2;
