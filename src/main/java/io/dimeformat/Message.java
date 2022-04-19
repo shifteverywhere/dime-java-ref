@@ -254,7 +254,8 @@ public class Message extends Item {
         if (linkedItem != null) {
             String lnk = claims.get(Claim.LNK);
             if (lnk == null || lnk.isEmpty()) { throw new IllegalStateException("No link to Di:ME item found, unable to verify."); }
-            String[] components = lnk.split("\\" + Envelope.COMPONENT_DELIMITER);
+            String item = lnk.split("\\" + Envelope.SECTION_DELIMITER)[0]; // This is in preparation of a future change where it would be possible to link more than one item
+            String[] components = item.split("\\" + Envelope.COMPONENT_DELIMITER);
             if (components.length != 3) { throw new DimeFormatException("Invalid data found in item link field."); }
             String msgHash = linkedItem.thumbprint();
             if (components[Message.LINK_ITEM_TYPE_INDEX].compareTo(linkedItem.getTag()) != 0

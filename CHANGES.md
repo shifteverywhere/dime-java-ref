@@ -1,5 +1,8 @@
 # CHANGES
 
+## Version 1.0.3 - 2022-04-19
+- Minor fix to prepare for an upcoming change that allows for more than one item to be linked to a Message item
+
 ## Version 1.0.2 - 2022-02-30
 - Includes a fix where the public copy of a key did not receive the claims from the source key
 - Updates org.json dependency to version 20220320
