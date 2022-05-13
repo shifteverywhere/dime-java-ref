@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.Base64;
 
 /** Utility support methods. */
-final class Utility {
+public final class Utility {
 
     /// PUBLIC ///
 
@@ -24,7 +24,7 @@ final class Utility {
      * @param length The number of bytes to generate.
      * @return An array with secure random bytes.
      */
-    static byte[] randomBytes(final int length) {
+    public static byte[] randomBytes(final int length) {
         if (length <= 0) { return new byte[0]; }
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[length];
@@ -37,7 +37,7 @@ final class Utility {
      * @param bytes Byte array to encode.
      * @return Hexadecimal string.
      */
-    static String toHex(byte[] bytes) {
+    public static String toHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
@@ -52,7 +52,7 @@ final class Utility {
      * @param bytes Byte array to encode.
      * @return Base 64 encoded string.
      */
-    static String toBase64(byte[] bytes) {
+    public static String toBase64(byte[] bytes) {
         return Base64.getEncoder().withoutPadding().encodeToString(bytes);
     }
 
@@ -61,7 +61,7 @@ final class Utility {
      * @param string The string to encode.
      * @return Base 64 encoded string.
      */
-    static String toBase64(String string) {
+    public static String toBase64(String string) {
         return Utility.toBase64(string.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -70,7 +70,7 @@ final class Utility {
      * @param base64 String to decode.
      * @return Decoded byte array.
      */
-    static byte[] fromBase64(String base64) {
+    public static byte[] fromBase64(String base64) {
         return Base64.getDecoder().decode(base64);
     }
 
@@ -80,7 +80,7 @@ final class Utility {
      * @param second Second byte array.
      * @return First + second combined.
      */
-    static byte[] combine(byte[] first, byte[] second) {
+    public static byte[] combine(byte[] first, byte[] second) {
         byte[] result = new byte[first.length + second.length];
         System.arraycopy(first, 0, result, 0, first.length);
         System.arraycopy(second, 0, result, first.length, second.length);
@@ -94,7 +94,7 @@ final class Utility {
      * @param length The length of the sub-array.
      * @return The extracted sub-array.
      */
-    static byte[] subArray(byte[] array, int start, int length) {
+    public static byte[] subArray(byte[] array, int start, int length) {
         byte[] result = new byte[length];
         System.arraycopy(array, start, result, 0, length);
         return result;
@@ -106,7 +106,7 @@ final class Utility {
      * @param start The start position in of the sub-array in the original array.
      * @return The extracted sub-array.
      */
-    static byte[] subArray(byte[] array, int start) {
+    public static byte[] subArray(byte[] array, int start) {
         return Utility.subArray(array, start, array.length - start);
     }
 
@@ -115,7 +115,7 @@ final class Utility {
      * modifier is set, then the current local time, in UTC, will be captured.
      * @return An Instant timestamp
      */
-    static Instant createTimestamp() {
+    public static Instant createTimestamp() {
         Instant now = Instant.now();
         long modifier = Dime.getTimeModifier();
         if (modifier == 0) { return now; }
@@ -133,7 +133,7 @@ final class Utility {
      * @param gracePeriod A period in seconds that should be allowed as grace when comparing.
      * @return Negative if less, positive is greater, or 0 if the same or within the grace period.
      */
-    static int gracefulTimestampCompare(Instant baseTime, Instant otherTime, long gracePeriod) {
+    public static int gracefulTimestampCompare(Instant baseTime, Instant otherTime, long gracePeriod) {
         if (gracePeriod == 0) {
             return baseTime.compareTo(otherTime);
         } else {
