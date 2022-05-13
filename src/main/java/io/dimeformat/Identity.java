@@ -206,13 +206,10 @@ public class Identity extends Item {
      */
     public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
         if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
-        if (verifyChain(trustedIdentity) == null) {
+        if (verifyChain(trustedIdentity, gracePeriod) == null) {
             return false;
         }
-        Instant now = Utility.createTimestamp();
-        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), now, gracePeriod) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
-        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), this.getExpiresAt(), 0) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
-        if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now, gracePeriod) < 0) { throw new DimeDateException("Identity has expired."); }
+        verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
         return true;
     }
 
@@ -225,15 +222,7 @@ public class Identity extends Item {
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
-        if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
-        if (verifyChain(trustedIdentity) == null) {
-            return false;
-        }
-        Instant now = Utility.createTimestamp();
-        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Identity is not yet valid, issued at date in the future."); }
-        if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Invalid expiration date, expires at before issued at."); }
-        if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Identity has expired."); }
-        return true;
+        return isTrusted(trustedIdentity, 0);
     }
 
     /**
@@ -320,16 +309,16 @@ public class Identity extends Item {
         return identity;
     }
 
-    private Identity verifyChain(Identity trustedIdentity) throws DimeDateException {
+    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
         Identity verifyingIdentity;
         if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
-            verifyingIdentity = trustChain.verifyChain(trustedIdentity);
+            verifyingIdentity = trustChain.verifyChain(trustedIdentity, gracePeriod);
         } else {
             verifyingIdentity = trustedIdentity;
         }
         if (verifyingIdentity == null) { return null; }
         try {
-            super.verify(verifyingIdentity.getPublicKey());
+            super.verify(verifyingIdentity.getPublicKey(), gracePeriod);
             return this;
         } catch (DimeIntegrityException e) {
             return null;

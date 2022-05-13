@@ -11,7 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyUsage;
+import io.dimeformat.enums.KeyType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +22,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest1() {
         try {
-            Key key = Key.generateKey(KeyUsage.IDENTITY);
+            Key key = Key.generateKey(KeyType.IDENTITY);
             ItemLink link = new ItemLink(key);
             assertNotNull(link);
             assertEquals(key.getItemIdentifier(), link.itemIdentifier);
@@ -48,7 +48,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest3() {
         try {
-            Key key = Key.generateKey(KeyUsage.IDENTITY);
+            Key key = Key.generateKey(KeyType.IDENTITY);
             ItemLink link = new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), key.getUniqueId());
             assertNotNull(link);
             assertEquals(Key.ITEM_IDENTIFIER, link.itemIdentifier);
@@ -62,7 +62,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest4() {
         try {
-            Key key = Key.generateKey(KeyUsage.IDENTITY);
+            Key key = Key.generateKey(KeyType.IDENTITY);
             try {
                 new ItemLink(null, key.thumbprint(), key.getUniqueId());
                 fail("Exception should have been thrown");
@@ -226,10 +226,10 @@ class ItemLinkTest {
     @Test
     void fromEncodedListTest1() {
         try {
-            String lnk1 = new ItemLink(Key.generateKey(KeyUsage.IDENTITY)).toEncoded();
-            String lnk2 = new ItemLink(Key.generateKey(KeyUsage.EXCHANGE)).toEncoded();
-            String lnk3 = new ItemLink(Key.generateKey(KeyUsage.ENCRYPTION)).toEncoded();
-            String lnk4 = new ItemLink(Key.generateKey(KeyUsage.AUTHENTICATION)).toEncoded();
+            String lnk1 = new ItemLink(Key.generateKey(KeyType.IDENTITY)).toEncoded();
+            String lnk2 = new ItemLink(Key.generateKey(KeyType.EXCHANGE)).toEncoded();
+            String lnk3 = new ItemLink(Key.generateKey(KeyType.ENCRYPTION)).toEncoded();
+            String lnk4 = new ItemLink(Key.generateKey(KeyType.AUTHENTICATION)).toEncoded();
             List<ItemLink> links = ItemLink.fromEncodedList(lnk1 + ":" + lnk2 + ":" + lnk3 + ":" + lnk4);
             assertNotNull(links);
             assertEquals(4, links.size());

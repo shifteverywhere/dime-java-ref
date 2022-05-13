@@ -15,6 +15,7 @@ import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -120,16 +121,9 @@ public class Data extends Item {
     }
 
     @Override
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
-        // Verify IssuedAt and ExpiresAt
-        Instant now = Utility.createTimestamp();
-        if (this.getIssuedAt().compareTo(now) > 0) { throw new DimeDateException("Issuing date in the future."); }
-        if (this.getExpiresAt() != null) {
-            if (this.getIssuedAt().compareTo(this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
-            if (this.getExpiresAt().compareTo(now) < 0) { throw new DimeDateException("Passed expiration date."); }
-        }
-        super.verify(key);
+        super.verify(key, linkedItems, gracePeriod);
     }
 
     /// PACKAGE-PRIVATE ///

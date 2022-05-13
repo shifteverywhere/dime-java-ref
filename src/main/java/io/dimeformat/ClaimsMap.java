@@ -9,8 +9,10 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.crypto.CryptoSuite;
 import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.enums.KeyType;
+import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import java.time.Instant;
 import java.util.*;
@@ -19,7 +21,7 @@ import java.util.*;
  * Handles claims for Di:ME items.
  */
 class ClaimsMap {
-    
+
     public ClaimsMap() {
         this._claims = new HashMap<>();
         put(Claim.UID, UUID.randomUUID());
@@ -82,8 +84,19 @@ class ClaimsMap {
         if (string == null || string.length() == 0) { return null; }
         try {
             return Key.fromBase58Key(string);
-        } catch (DimeFormatException ignored) { /* ignored */ }
-        return null;
+        } catch (DimeFormatException ignored) {
+            return null;
+        }
+    }
+
+    public List<ItemLink> getItemLinks(Claim claim) {
+        String string = get(claim);
+        if (string == null || string.length() == 0) { return null; }
+        try {
+            return ItemLink.fromEncodedList(string);
+        } catch (DimeFormatException e) {
+            return null;
+        }
     }
 
     public void put(Claim claim, Object value) {

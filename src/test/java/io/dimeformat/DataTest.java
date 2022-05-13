@@ -41,7 +41,6 @@ public class DataTest {
 
     @Test
     void dataTest2() {
-        Instant now = Instant.now();
         Data data = new Data(UUID.randomUUID(), -1, Commons.CONTEXT);
         data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
         assertEquals(Commons.MIMETYPE, data.getMIMEType());
@@ -132,13 +131,13 @@ public class DataTest {
         String encoded = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
         try {
             Data data = Item.importFromEncoded(encoded);
+            fail("Expected exception not thrown.");
         } catch (ClassCastException e) {
-            return; // All is well
+            /* All is well, carry on */
         }
         catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        fail("Should not happen.");
     }
 
     @Test
@@ -180,7 +179,7 @@ public class DataTest {
     void contextTest2() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            Data data = new Data(Commons.getIssuerIdentity().getSubjectId(), context);
+            new Data(Commons.getIssuerIdentity().getSubjectId(), context);
         } catch (IllegalArgumentException e) { return; } // All is well
         fail("Should not happen.");
     }

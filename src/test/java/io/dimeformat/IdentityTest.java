@@ -35,7 +35,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(null);
             UUID subjectId = UUID.randomUUID();
-            Key key = Key.generateKey(KeyType.IDENTITY);            
+            Key key = Key.generateKey(KeyType.IDENTITY);
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());

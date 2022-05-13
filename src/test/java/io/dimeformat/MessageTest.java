@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.UUID;
 
 class MessageTest {
@@ -410,12 +411,12 @@ class MessageTest {
             issuerMessage.sign(Commons.getIssuerKey());
             Message responseMessage = new Message(issuer.getSubjectId(), receiver.getSubjectId(), 100);
             responseMessage.setPayload("It is!".getBytes(StandardCharsets.UTF_8));
-            responseMessage.linkItem(issuerMessage);
+            responseMessage.addItemLink(issuerMessage);
             responseMessage.sign(Commons.getAudienceKey());
             String responseEncoded = responseMessage.exportToEncoded();
             Message finalMessage = Item.importFromEncoded(responseEncoded);
             assertNotNull(finalMessage);
-            finalMessage.verify(Commons.getAudienceKey(), issuerMessage);
+            finalMessage.verify(Commons.getAudienceKey(), Arrays.asList(issuerMessage));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -427,9 +428,9 @@ class MessageTest {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-            message.linkItem(Key.generateKey(KeyType.EXCHANGE));
+            message.addItemLink(Key.generateKey(KeyType.EXCHANGE));
             message.sign(Commons.getIssuerKey());
-            message.verify(Commons.getIssuerKey(), Commons.getIssuerKey());
+            message.verify(Commons.getIssuerKey(), Arrays.asList(Commons.getIssuerKey()));
         } catch (DimeIntegrityException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -445,7 +446,7 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.linkItem(Key.generateKey(KeyType.EXCHANGE));
+            message.addItemLink(Key.generateKey(KeyType.EXCHANGE));
         } catch (IllegalStateException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -485,6 +486,19 @@ class MessageTest {
             issuerMessage2.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
             issuerMessage2.sign(Commons.getIssuerKey());
             assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void thumbprintTest3() {
+        try {
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            String thumbprint = message.thumbprint();
+        } catch (IllegalStateException e) {
+            /* All is well */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

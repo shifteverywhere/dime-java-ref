@@ -16,6 +16,7 @@ import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -159,50 +160,173 @@ public abstract class Item {
 
     /**
      * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
-     * claim issuer (iss) matches the subject id (sub) of the provided identity. No grace period will be used.
+     * claim issuer (iss) matches the subject id (sub) of the provided identity. No grace period will be used when
+     * comparing dates.
      * @param issuer The issuer identity to use while verifying.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     public void verify(Identity issuer) throws DimeDateException, DimeIntegrityException {
-        this.verify(issuer, 0);
+        this.verify(issuer, null, 0);
     }
 
     /**
      * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
-     * claim issuer (iss) matches the subject id (sub) of the provided identity. The provided grace period will be used.
+     * claim issuer (iss) matches the subject id (sub) of the provided identity. The provided grace period will be used
+     * when verifying dates.
      * @param issuer The issuer identity to use while verifying.
      * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     public void verify(Identity issuer, long gracePeriod) throws DimeDateException, DimeIntegrityException {
-        UUID issuerId = claims.getUUID(Claim.ISS);
-        if (issuerId == null) { throw new DimeIntegrityException("Unable to verify, issuer ID for item is missing."); }
-        if (issuerId.compareTo(issuer.getSubjectId()) != 0) { throw new DimeIntegrityException("Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
-        this.verify(issuer.getPublicKey(), gracePeriod);
+        verify(issuer, null, gracePeriod);
     }
 
     /**
-     * Verifies the signature of the item using a provided key. No grace period will be used.
+     *  Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
+     *  claim issuer (iss) matches the subject id (sub) of the provided identity. Any items provided in linkedItems will
+     *  be verified with item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException
+     *  will be thrown. Only items provided will be verified, any additional item links will be ignored. Providing items
+     *  that are not linked will also result in a DimeIntegrityException being thrown. No grace period will be used when
+     *  comparing dates.
+     * @param issuer The issuer identity to use while verifying.
+     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
+     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
+     */
+    public void verify(Identity issuer, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException {
+        verify(issuer, linkedItems, 0);
+    }
+
+    /**
+     * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
+     * claim issuer (iss) matches the subject id (sub) of the provided identity. Any items provided in linkedItems will
+     * be verified with item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException
+     * will be thrown. Only items provided will be verified, any additional item links will be ignored. Providing items
+     * that are not linked will also result in a DimeIntegrityException being thrown. The provided grace period will be
+     * used when verifying dates.
+     * @param issuer The issuer identity to use while verifying.
+     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
+     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
+     */
+    public void verify(Identity issuer, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+        if(issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
+        UUID issuerId = claims.getUUID(Claim.ISS);
+        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new DimeIntegrityException("Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
+        this.verify(issuer.getPublicKey(), linkedItems, gracePeriod);
+    }
+
+    /**
+     * Verifies the signature of the item using a provided key. No grace period will be used when comparing dates.
      * @param key The key to used to verify the signature, must not be null.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
-     * @throws DimeIntegrityException If the signature is invalid.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
+     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
     public void verify(Key key) throws DimeDateException, DimeIntegrityException {
-        verify(key, 0);
+        verify(key, null, 0);
     }
 
     /**
-     * Verifies the signature of the item using a provided key. The provided grace period will be used.
+     * Verifies the signature of the item using a provided key. The provided grace period will be used when comparing
+     * dates.
      * @param key The key to used to verify the signature, must not be null.
      * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+        verify(key, null, gracePeriod);
+    }
+
+    /**
+     * Verifies the signature of the item using a provided key. Any items provided in linkedItems will be verified with
+     * item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException will be thrown.
+     * Only items provided will be verified, any additional item links will be ignored. Providing items that are not
+     * linked will also result in a DimeIntegrityException being thrown.No grace period will be used when comparing
+     * dates.
+     * @param key The key to used to verify the signature, must not be null.
+     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
+     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
+     */
+    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException {
+        verify(key, linkedItems, 0);
+    }
+
+    /**
+     * Verifies the signature of the item using a provided key. Any items provided in linkedItems will be verified with
+     * item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException will be thrown.
+     * Only items provided will be verified, any additional item links will be ignored. Providing items that are not
+     * linked will also result in a DimeIntegrityException being thrown. The provided grace period will be used when
+     * comparing dates.
+     * @param key The key to used to verify the signature, must not be null.
+     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
+     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
+     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
+     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
+     */
+    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
         if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
+        verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
         Crypto.verifySignature(encoded(false), this.signature, key);
+        if (linkedItems != null) {
+            if (itemLinks == null) {
+                itemLinks = claims.getItemLinks(Claim.LNK);
+            }
+            if (itemLinks != null) {
+                if (!ItemLink.verify(linkedItems, itemLinks)) {
+                    throw new DimeIntegrityException("Unable to verify, provided linked items did not verify correctly.");
+                }
+            } else {
+                throw new DimeIntegrityException("Unable to verify, no linked items found.");
+            }
+        }
+    }
+
+    /**
+     * Will cryptographically link a tag to another Di:ME item.
+     * @param item The item to link to the tag.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public void addItemLink(Item item) throws DimeCryptographicException {
+        throwIfSigned();
+        if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
+        if (this.itemLinks == null) {
+            this.itemLinks = new ArrayList<>();
+        }
+        this.itemLinks.add(new ItemLink(item));
+    }
+
+    public void setItemLinks(List<Item> items) throws DimeCryptographicException {
+        throwIfSigned();
+        if (items == null) { throw new IllegalArgumentException("Items to link with must not be null."); }
+        this.itemLinks = new ArrayList<>();
+        for (Item item: items) {
+            this.itemLinks.add(new ItemLink(item));
+        }
+    }
+
+    public List<ItemLink> getItemLinks() {
+        if (this.itemLinks == null) {
+            String lnk = this.claims.get(Claim.LNK);
+            if (lnk != null && !lnk.isEmpty()) {
+                try {
+                    this.itemLinks = ItemLink.fromEncodedList(lnk);
+                } catch (DimeFormatException e) {
+                    // TODO: what to do here?
+                }
+            }
+        }
+        return this.itemLinks;
+    }
+
+    public void removeLinkItems() {
+        if (claims.get(Claim.LNK) == null) return;
+        throwIfSigned();
+        claims.remove(Claim.LNK);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -237,6 +361,16 @@ public abstract class Item {
     protected String encoded;
     protected String signature;
     protected ClaimsMap claims;
+    protected List<ItemLink> itemLinks;
+
+    protected void verifyDates(long gracePeriod) throws DimeDateException {
+        Instant now = Utility.createTimestamp();
+        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), now, gracePeriod) > 0) { throw new DimeDateException("Issuing date in the future."); }
+        if (this.getExpiresAt() != null) {
+            if (Utility.gracefulTimestampCompare(this.getIssuedAt(), this.getExpiresAt(), 0) > 0) { throw new DimeDateException("Expiration before issuing date."); }
+            if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now, gracePeriod) < 0) { throw new DimeDateException("Passed expiration date."); }
+        }
+    }
 
     protected String encoded(boolean withSignature) {
         if (this.encoded == null) {
@@ -253,6 +387,9 @@ public abstract class Item {
     protected void customEncoding(StringBuilder builder) {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
+        if (itemLinks != null && !itemLinks.isEmpty()) {
+            this.claims.put(Claim.LNK, ItemLink.toEncoded(itemLinks));
+        }
         builder.append(Utility.toBase64(this.claims.toJSON()));
     }
 
@@ -282,8 +419,9 @@ public abstract class Item {
             case Data.ITEM_IDENTIFIER: return Data.class;
             case Identity.ITEM_IDENTIFIER: return Identity.class;
             case IdentityIssuingRequest.ITEM_IDENTIFIER: return IdentityIssuingRequest.class;
-            case Message.ITEM_IDENTIFIER: return Message.class;
             case Key.ITEM_IDENTIFIER: return Key.class;
+            case Message.ITEM_IDENTIFIER: return Message.class;
+            case Tag.ITEM_IDENTIFIER: return Tag.class;
             default: return null;
         }
     }
