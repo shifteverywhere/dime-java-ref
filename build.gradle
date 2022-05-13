@@ -20,7 +20,7 @@ repositories {
 
 dependencies {
     api 'com.goterl:lazysodium-java:5.1.1'
-    api 'net.java.dev.jna:jna:5.10.0'
+    api 'net.java.dev.jna:jna:5.11.0'
     api 'org.json:json:20220320'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
