@@ -13,7 +13,9 @@ import io.dimeformat.enums.AlgorithmFamily;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.enums.KeyVariant;
+import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,9 +38,10 @@ public class Key extends Item {
      * Returns the version of the Di:ME specification for which this key was generated.
      * @return The Di:ME specification version of the key.
      */
+    @Deprecated
     public int getVersion() {
-        byte[] key = claims.getBytes(Claim.KEY);
-        if (key == null) { key = claims.getBytes(Claim.PUB); }
+        byte[] key = getClaims().getBytes(Claim.KEY);
+        if (key == null) { key = getClaims().getBytes(Claim.PUB); }
         return key[0];
     }
 
@@ -47,9 +50,10 @@ public class Key extends Item {
      * associated with the cryptographic algorithm the key is generated for.
      * @return The type of the key.
      */
+    @Deprecated
     public KeyType getKeyType() {
-        byte[] key = claims.getBytes(Claim.KEY);
-        if (key == null) { key = claims.getBytes(Claim.PUB); }
+        byte[] key = getClaims().getBytes(Claim.KEY);
+        if (key == null) { key = getClaims().getBytes(Claim.PUB); }
         switch (Key.getAlgorithmFamily(key)) {
             case AEAD: return KeyType.ENCRYPTION;
             case ECDH: return KeyType.EXCHANGE;
@@ -64,7 +68,7 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getSecret() {
-        return claims.get(Claim.KEY);
+        return getClaims().get(Claim.KEY);
     }
 
     /**
@@ -72,8 +76,10 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getPublic() {
-        return claims.get(Claim.PUB);
+        return getClaims().get(Claim.PUB);
     }
+
+    public List<KeyType> getKeyUsage() { return null; }
 
     /**
      * Will generate a new Key with a specified type.
@@ -131,13 +137,17 @@ public class Key extends Item {
      */
     public static Key generateKey(KeyType type, long validFor, UUID issuerId, String context) {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        Key key = Crypto.generateKey(type);
-        if (validFor != -1) {
-            key.claims.put(Claim.EXP, key.claims.getInstant(Claim.IAT).plusSeconds(validFor));
+        try {
+            Key key = Crypto.generateKey(type);
+            if (validFor != -1) {
+                key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
+            }
+            key.getClaims().put(Claim.ISS, issuerId);
+            key.getClaims().put(Claim.CTX, context);
+            return key;
+        } catch (DimeCryptographicException e) {
+            throw new RuntimeException("This should not happen, if it does complain to the author.");
         }
-        key.claims.put(Claim.ISS, issuerId);
-        key.claims.put(Claim.CTX, context);
-        return key;
     }
 
     /**
@@ -156,12 +166,12 @@ public class Key extends Item {
      * @return A new instance of the key with only the public part.
      */
     public Key publicCopy() {
-        Key copy = new Key(getUniqueId(), this.getKeyType(), null, getRawPublic());
-        copy.claims.put(Claim.IAT, this.claims.getInstant(Claim.IAT));
-        copy.claims.put(Claim.EXP, this.claims.getInstant(Claim.EXP));
-        copy.claims.put(Claim.ISS, this.claims.getUUID(Claim.ISS));
-        copy.claims.put(Claim.CTX, this.claims.get(Claim.CTX));
-        return copy;
+        Key copyKey = new Key(getUniqueId(), this.getKeyType(), null, getRawPublic());
+        copyKey.getClaims().put(Claim.IAT, getClaims().getInstant(Claim.IAT));
+        copyKey.getClaims().put(Claim.EXP, getClaims().getInstant(Claim.EXP));
+        copyKey.getClaims().put(Claim.ISS, getClaims().getUUID(Claim.ISS));
+        copyKey.getClaims().put(Claim.CTX, getClaims().get(Claim.CTX));
+        return copyKey;
     }
 
     /// PACKAGE-PRIVATE ///
@@ -172,13 +182,13 @@ public class Key extends Item {
     Key() { }
 
     Key(UUID id, KeyType type, byte[] key, byte[] pub) {
-        this.claims = new ClaimsMap(id);
-        this.claims.put(Claim.IAT, Utility.createTimestamp());
+        getClaims().put(Claim.UID, id);
+        getClaims().put(Claim.IAT, Utility.createTimestamp());
         if (key != null) {
-            this.claims.put(Claim.KEY, Utility.combine(Key.headerFrom(type, KeyVariant.SECRET), key));
+            getClaims().put(Claim.KEY, Utility.combine(Key.headerFrom(type, KeyVariant.SECRET), key));
         }
         if (pub != null) {
-            this.claims.put(Claim.PUB, Utility.combine(Key.headerFrom(type, KeyVariant.PUBLIC), pub));
+            getClaims().put(Claim.PUB, Utility.combine(Key.headerFrom(type, KeyVariant.PUBLIC), pub));
         }
     }
 
@@ -186,7 +196,7 @@ public class Key extends Item {
 
     byte[] getRawSecret() {
         if (_rawSecret == null) {
-            _rawSecret = claims.getBytes(Claim.KEY);
+            _rawSecret = getClaims().getBytes(Claim.KEY);
             if (_rawSecret == null) { return null; }
             _rawSecret = Utility.subArray(_rawSecret, Key.HEADER_SIZE, _rawSecret.length - Key.HEADER_SIZE);
         }
@@ -196,7 +206,7 @@ public class Key extends Item {
 
     byte[] getRawPublic() {
         if (_rawPublic == null) {
-            _rawPublic = claims.getBytes(Claim.PUB);
+            _rawPublic = getClaims().getBytes(Claim.PUB);
             if (_rawPublic == null) { return null; }
             _rawPublic = Utility.subArray(_rawPublic, Key.HEADER_SIZE, _rawPublic.length - Key.HEADER_SIZE);
         }
@@ -206,24 +216,20 @@ public class Key extends Item {
 
     /// PROTECTED ///
 
-    protected Key(String base58key) throws DimeFormatException {
+    protected Key(String base58key) {
         if (base58key != null && base58key.length() > 0) {
             byte[] bytes = Base58.decode(base58key);
             if (bytes.length > 0) {
                 switch (Key.getKeyVariant(bytes)) {
                     case SECRET:
-                        this.claims = new ClaimsMap();
-                        this.claims.put(Claim.KEY, bytes);
+                        getClaims().put(Claim.KEY, bytes);
                         break;
                     case PUBLIC:
-                        this.claims = new ClaimsMap();
-                        this.claims.put(Claim.PUB, bytes);
+                        getClaims().put(Claim.PUB, bytes);
                         break;
                 }
-                if (this.claims != null) { return; }
             }
         }
-        throw new DimeFormatException("Invalid key. (K1010)");
     }
 
     /// PRIVATE ///

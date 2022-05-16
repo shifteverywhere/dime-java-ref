@@ -50,7 +50,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = claims.getKey(Claim.PUB);
+            _publicKey = getClaims().getKey(Claim.PUB);
         }
         return _publicKey;
     }
@@ -63,7 +63,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public List<Capability> getCapabilities() {
         if (_capabilities == null) {
-            List<String> caps = claims.get(Claim.CAP);
+            List<String> caps = getClaims().get(Claim.CAP);
             _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
         }
         return _capabilities;
@@ -77,7 +77,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public Map<String, Object> getPrinciples() {
         if (_principles == null) {
-            Map<String, Object> pri = claims.get(Claim.PRI);
+            Map<String, Object> pri = getClaims().get(Claim.PRI);
             if (pri != null) {
                 _principles = Collections.unmodifiableMap(pri);
             }
@@ -122,16 +122,15 @@ public class IdentityIssuingRequest extends Item {
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
-        iir.claims = new ClaimsMap();
-        iir.claims.put(Claim.IAT, Utility.createTimestamp());
-        iir.claims.put(Claim.PUB, key.getPublic());
+        iir.getClaims().put(Claim.IAT, Utility.createTimestamp());
+        iir.getClaims().put(Claim.PUB, key.getPublic());
         if (capabilities == null || capabilities.length == 0) {
             capabilities = new Capability[] { Capability.GENERIC };
         }
         List<Capability> caps = List.of(capabilities);
-        iir.claims.put(Claim.CAP, caps.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
+        iir.getClaims().put(Claim.CAP, caps.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
         if (principles != null && !principles.isEmpty()) {
-            iir.claims.put(Claim.PRI, principles);
+            iir.getClaims().put(Claim.PRI, principles);
         }
         iir.signature = Crypto.generateSignature(iir.encoded(false), key);
         return iir;
@@ -146,7 +145,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
-    public void verify() throws DimeDateException, DimeIntegrityException, DimeFormatException {
+    public void verify() throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
         super.verify(getPublicKey(), null, 0);
     }
 
@@ -160,7 +159,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
-    public void verify(long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException {
+    public void verify(long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
         super.verify(getPublicKey(), null, gracePeriod);
     }
 
@@ -175,7 +174,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
-    public void verify(List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException {
+    public void verify(List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
         super.verify(getPublicKey(), linkedItems, gracePeriod);
     }
 
@@ -329,20 +328,16 @@ public class IdentityIssuingRequest extends Item {
     /// PROTECTED ///
 
     @Override
-    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
-        if (components.length == NBR_COMPONENTS_WITH_SIGNATURE) {
-            this.signature = components[IdentityIssuingRequest.COMPONENTS_SIGNATURE_INDEX];
-            return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
-        } else if (components.length > NBR_COMPONENTS_WITH_SIGNATURE) {
-            throw new DimeFormatException("Unexpected number of components found in Identity issuing request, got: " + components.length);
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        if (components.size() != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) {
+            throw new DimeFormatException("Unexpected number of components found in identity issuing request item.");
         }
-        return encoded;
+        super.customDecoding(components);
     }
 
     /// PRIVATE ///
 
     private static final int NBR_COMPONENTS_WITH_SIGNATURE = 3;
-    private static final int COMPONENTS_SIGNATURE_INDEX = 2;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());
@@ -360,7 +355,7 @@ public class IdentityIssuingRequest extends Item {
                     this.getPublicKey(),
                     now, expires,
                     issuerId,
-                    claims.get(Claim.CAP),
+                    getClaims().get(Claim.CAP),
                     getPrinciples(),
                     ambitList,
                     methodList);
@@ -380,7 +375,7 @@ public class IdentityIssuingRequest extends Item {
 
     private void completeCapabilities(Capability[] allowedCapabilities, Capability[] requiredCapabilities, boolean isSelfIssue) throws DimeCapabilityException {
         ArrayList<Capability> capabilities;
-        ArrayList<String> caps = claims.get(Claim.CAP);
+        ArrayList<String> caps = getClaims().get(Claim.CAP);
         if (caps != null) {
             capabilities = (ArrayList<Capability>) caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(Collectors.toList());
         } else {
@@ -411,7 +406,7 @@ public class IdentityIssuingRequest extends Item {
                 }
             }
         }
-        claims.put(Claim.CAP, capabilities.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
+        getClaims().put(Claim.CAP, capabilities.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
     }
 
 }

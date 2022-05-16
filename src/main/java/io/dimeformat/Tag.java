@@ -36,9 +36,8 @@ public class Tag extends Item {
     public Tag(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        this.claims = new ClaimsMap();
-        this.claims.put(Claim.ISS, issuerId);
-        this.claims.put(Claim.CTX, context);
+        getClaims().put(Claim.ISS, issuerId);
+        getClaims().put(Claim.CTX, context);
     }
 
     public Tag(UUID issuerId, String context, List<Item> items) throws DimeCryptographicException {
@@ -59,21 +58,6 @@ public class Tag extends Item {
         if (this.itemLinks == null || this.itemLinks.isEmpty()) { throw new IllegalStateException("Unable to export tag, must contain at least 1 linked item."); }
         if (!isSigned()) { throw new IllegalStateException("Unable to export tag, must be signed first."); }
         return super.forExport();
-    }
-
-    @Override
-    protected String encoded(boolean withSignature) {
-        if (this.encoded == null) {
-            StringBuilder builder = new StringBuilder();
-            for (ItemLink link: itemLinks) {
-                if (builder.length() != 0) {
-                    builder.append(Dime.SECTION_DELIMITER);
-                }
-                builder.append(link.toEncoded());
-            }
-            this.claims.put(Claim.LNK, builder.toString());
-        }
-        return super.encoded(withSignature);
     }
 
 }

@@ -43,7 +43,7 @@ public class Identity extends Item {
      * @return The system name
      */
     public String getSystemName() {
-        return claims.get(Claim.SYS);
+        return getClaims().get(Claim.SYS);
     }
 
     /**
@@ -52,7 +52,7 @@ public class Identity extends Item {
      * @return The subject identifier assigned to an entity, as a UUID.
      */
     public UUID getSubjectId() {
-        return claims.getUUID(Claim.SUB);
+        return getClaims().getUUID(Claim.SUB);
     }
 
     /**
@@ -62,7 +62,7 @@ public class Identity extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = claims.getKey(Claim.PUB);
+            _publicKey = getClaims().getKey(Claim.PUB);
         }
         return _publicKey;
     }
@@ -76,7 +76,7 @@ public class Identity extends Item {
      */
     public List<Capability> getCapabilities() {
         if (_capabilities == null) {
-            List<String> caps = claims.get(Claim.CAP);
+            List<String> caps = getClaims().get(Claim.CAP);
             _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
         }
         return _capabilities;
@@ -90,7 +90,7 @@ public class Identity extends Item {
      */
     public Map<String, Object> getPrinciples() {
         if (_principles == null) {
-            Map<String, Object> pri = claims.get(Claim.PRI);
+            Map<String, Object> pri = getClaims().get(Claim.PRI);
             if (pri != null) {
                 _principles = Collections.unmodifiableMap(pri);
             }
@@ -103,9 +103,20 @@ public class Identity extends Item {
      * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
      * may be used.
      * @return An immutable ambit list (as String instances).
+     * @deprecated Will be removed in a future release, use {{@link #getAmbit()}} instead.
      */
+    @Deprecated
     public List<String> getAmbits() {
-        return claims.get(Claim.AMB);
+        return getClaims().get(Claim.AMB);
+    }
+
+    /**
+     * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
+     * may be used.
+     * @return An immutable ambit list (as String instances).
+     */
+    public List<String> getAmbit() {
+        return getClaims().get(Claim.AMB);
     }
 
     /**
@@ -115,7 +126,7 @@ public class Identity extends Item {
      * @return An immutable list of methods (as String instances).
      */
     public List<String> getMethods() {
-        return claims.get(Claim.MTD);
+        return getClaims().get(Claim.MTD);
     }
 
     /**
@@ -164,7 +175,7 @@ public class Identity extends Item {
      * {@link #isTrusted()} or {@link #isTrusted(Identity)} instead.
      */
     @Deprecated
-    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
+    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException {
         if (!isTrusted()) {
             throw new DimeUntrustedIdentityException("Unable to verify trust of entity.");
         }
@@ -177,7 +188,7 @@ public class Identity extends Item {
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted() throws DimeDateException {
+    public boolean isTrusted() throws DimeDateException, DimeCryptographicException {
         return isTrusted(0);
     }
 
@@ -189,7 +200,7 @@ public class Identity extends Item {
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(long gracePeriod) throws DimeDateException {
+    public boolean isTrusted(long gracePeriod) throws DimeDateException, DimeCryptographicException {
         Identity trustedIdentity = Dime.getTrustedIdentity();
         if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
         return isTrusted(trustedIdentity, gracePeriod);
@@ -204,7 +215,7 @@ public class Identity extends Item {
      * @return Tur if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
+    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException, DimeCryptographicException {
         if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
         if (verifyChain(trustedIdentity, gracePeriod) == null) {
             return false;
@@ -221,7 +232,7 @@ public class Identity extends Item {
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
+    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException, DimeCryptographicException {
         return isTrusted(trustedIdentity, 0);
     }
 
@@ -256,17 +267,16 @@ public class Identity extends Item {
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        this.claims = new ClaimsMap();
-        this.claims.put(Claim.SYS, systemName);
-        this.claims.put(Claim.SUB, subjectId);
-        this.claims.put(Claim.ISS, issuerId);
-        this.claims.put(Claim.IAT, issuedAt);
-        this.claims.put(Claim.EXP, expiresAt);
-        this.claims.put(Claim.PUB, subjectKey.getPublic());
-        this.claims.put(Claim.CAP, capabilities);
-        this.claims.put(Claim.PRI, principles);
-        this.claims.put(Claim.AMB, ambits);
-        this.claims.put(Claim.MTD, methods);
+        getClaims().put(Claim.SYS, systemName);
+        getClaims().put(Claim.SUB, subjectId);
+        getClaims().put(Claim.ISS, issuerId);
+        getClaims().put(Claim.IAT, issuedAt);
+        getClaims().put(Claim.EXP, expiresAt);
+        getClaims().put(Claim.PUB, subjectKey.getPublic());
+        getClaims().put(Claim.CAP, capabilities);
+        getClaims().put(Claim.PRI, principles);
+        getClaims().put(Claim.AMB, ambits);
+        getClaims().put(Claim.MTD, methods);
     }
 
     void setTrustChain(Identity trustChain) {
@@ -276,15 +286,15 @@ public class Identity extends Item {
     /// PROTECTED ///
 
     @Override
-    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
-        if (components.length != Identity.NBR_EXPECTED_COMPONENTS_MIN &&
-                components.length != Identity.NBR_EXPECTED_COMPONENTS_MAX) { throw new DimeFormatException("Unexpected number of components for identity, expected "+ Identity.NBR_EXPECTED_COMPONENTS_MIN + " or " + Identity.NBR_EXPECTED_COMPONENTS_MAX +", got " + components.length + "."); }
-        if (components.length == Identity.NBR_EXPECTED_COMPONENTS_MAX) { // There is also a trust chain identity
-            byte[] issIdentity = Utility.fromBase64(components[Identity.COMPONENTS_CHAIN_INDEX]);
-            this.trustChain = Identity.fromEncodedIdentity(new String(issIdentity, StandardCharsets.UTF_8));
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        if (components.size() < Identity.NBR_EXPECTED_COMPONENTS_MIN) {
+            throw new DimeFormatException("Unexpected number of components for identity item.");
+        } else if (components.size() == Identity.NBR_EXPECTED_COMPONENTS_MAX) {
+            // There is also a trust chain identity
+            byte[] issuer = Utility.fromBase64(components.get(Identity.COMPONENTS_CHAIN_INDEX));
+            this.trustChain = Identity.fromEncodedIdentity(new String(issuer, StandardCharsets.UTF_8));
         }
-        this.signature = components[components.length - 1];
-        return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
+        super.customDecoding(components);
     }
 
     @Override
@@ -309,7 +319,7 @@ public class Identity extends Item {
         return identity;
     }
 
-    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
+    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException, DimeCryptographicException {
         Identity verifyingIdentity;
         if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
             verifyingIdentity = trustChain.verifyChain(trustedIdentity, gracePeriod);

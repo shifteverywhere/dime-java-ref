@@ -14,12 +14,10 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /** Base class for any other type of Di:ME items that can be included inside an Envelope instance. */
 public abstract class Item {
@@ -39,7 +37,7 @@ public abstract class Item {
      * @return A unique identifier, as a UUID.
      */
     public UUID getUniqueId() {
-        return claims.getUUID(Claim.UID);
+        return getClaims().getUUID(Claim.UID);
     }
 
     /**
@@ -48,7 +46,7 @@ public abstract class Item {
      * @return The identifier of the issuer of the key.
      */
     public UUID getIssuerId() {
-        return claims.getUUID(Claim.ISS);
+        return getClaims().getUUID(Claim.ISS);
     }
 
     /**
@@ -57,7 +55,7 @@ public abstract class Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return claims.getInstant(Claim.IAT);
+        return getClaims().getInstant(Claim.IAT);
     }
 
     /**
@@ -66,7 +64,7 @@ public abstract class Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return claims.getInstant(Claim.EXP);
+        return getClaims().getInstant(Claim.EXP);
     }
 
     /**
@@ -74,7 +72,7 @@ public abstract class Item {
      * @return A String instance.
      */
     public String getContext() {
-        return claims.get(Claim.CTX);
+        return getClaims().get(Claim.CTX);
     }
 
     /**
@@ -82,7 +80,7 @@ public abstract class Item {
      * @return true or false.
      */
     public boolean isSigned() {
-        return (this.signature != null);
+        return this.signature != null;
     }
 
     /**
@@ -131,6 +129,7 @@ public abstract class Item {
      */
     public void strip() {
         this.encoded = null;
+        this.components = null;
         this.signature = null;
     }
 
@@ -166,7 +165,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
-    public void verify(Identity issuer) throws DimeDateException, DimeIntegrityException {
+    public void verify(Identity issuer) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         this.verify(issuer, null, 0);
     }
 
@@ -179,7 +178,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
-    public void verify(Identity issuer, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+    public void verify(Identity issuer, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         verify(issuer, null, gracePeriod);
     }
 
@@ -195,7 +194,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
-    public void verify(Identity issuer, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException {
+    public void verify(Identity issuer, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         verify(issuer, linkedItems, 0);
     }
 
@@ -212,7 +211,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
-    public void verify(Identity issuer, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+    public void verify(Identity issuer, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if(issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
         UUID issuerId = claims.getUUID(Claim.ISS);
         if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new DimeIntegrityException("Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
@@ -225,7 +224,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         verify(key, null, 0);
     }
 
@@ -237,7 +236,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the signature is invalid.
      */
-    public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         verify(key, null, gracePeriod);
     }
 
@@ -252,7 +251,7 @@ public abstract class Item {
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
-    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         verify(key, linkedItems, 0);
     }
 
@@ -263,12 +262,12 @@ public abstract class Item {
      * linked will also result in a DimeIntegrityException being thrown. The provided grace period will be used when
      * comparing dates.
      * @param key The key to used to verify the signature, must not be null.
-     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
+     * @param linkedItems
      * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
      * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
      * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
      */
-    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
         Crypto.verifySignature(encoded(false), this.signature, key);
@@ -311,7 +310,7 @@ public abstract class Item {
 
     public List<ItemLink> getItemLinks() {
         if (this.itemLinks == null) {
-            String lnk = this.claims.get(Claim.LNK);
+            String lnk = getClaims().get(Claim.LNK);
             if (lnk != null && !lnk.isEmpty()) {
                 try {
                     this.itemLinks = ItemLink.fromEncodedList(lnk);
@@ -332,7 +331,7 @@ public abstract class Item {
     /// PACKAGE-PRIVATE ///
 
     static final int MINIMUM_NBR_COMPONENTS = 2;
-    static final int COMPONENTS_TAG_INDEX = 0;
+    static final int COMPONENTS_IDENTIFIER_INDEX = 0;
     static final int COMPONENTS_CLAIMS_INDEX = 1;
 
     @SuppressWarnings("unchecked")
@@ -359,9 +358,21 @@ public abstract class Item {
     /// PROTECTED ///
 
     protected String encoded;
+    protected List<String> components;
     protected String signature;
-    protected ClaimsMap claims;
     protected List<ItemLink> itemLinks;
+
+    protected final ClaimsMap getClaims() {
+        if (this.claims == null) {
+            if (this.components != null) {
+                byte[] jsonBytes = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
+                this.claims = new ClaimsMap(new String(jsonBytes, StandardCharsets.UTF_8));
+            } else {
+                this.claims = new ClaimsMap();
+            }
+        }
+        return this.claims;
+    }
 
     protected void verifyDates(long gracePeriod) throws DimeDateException {
         Instant now = Utility.createTimestamp();
@@ -371,6 +382,8 @@ public abstract class Item {
             if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now, gracePeriod) < 0) { throw new DimeDateException("Passed expiration date."); }
         }
     }
+
+    /// --- ENCODING/DECODING --- ///
 
     protected String encoded(boolean withSignature) {
         if (this.encoded == null) {
@@ -393,17 +406,23 @@ public abstract class Item {
         builder.append(Utility.toBase64(this.claims.toJSON()));
     }
 
-    protected void decode(String encoded) throws DimeFormatException {
-        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (components.length < Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for Di:ME item, expected at least " + Item.MINIMUM_NBR_COMPONENTS + ", got " + components.length +"."); }
-        if (components[Item.COMPONENTS_TAG_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Di:ME item tag, expected: " + getItemIdentifier() + ", got " + components[Item.COMPONENTS_TAG_INDEX] + "."); }
-        byte[] json = Utility.fromBase64(components[Item.COMPONENTS_CLAIMS_INDEX]);
-        claims = new ClaimsMap(new String(json, StandardCharsets.UTF_8));
-        this.encoded = customDecoding(components, encoded);
+    protected final void decode(String encoded) throws DimeFormatException {
+        String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+        if (array.length < Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for Dime item, expected at least " + Item.MINIMUM_NBR_COMPONENTS + ", got " + array.length +"."); }
+        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
+        this.components = new ArrayList(Arrays.asList(array));
+        customDecoding(this.components);
+        if (isSigned()) {
+            this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
+        } else {
+            this.encoded = encoded;
+        }
     }
 
-    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
-        return encoded;
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        if (components.size() > Item.MINIMUM_NBR_COMPONENTS) {
+            this.signature = components.get(components.size() - 1);
+        }
     }
 
     protected void throwIfSigned() {
@@ -413,6 +432,8 @@ public abstract class Item {
     }
 
     /// PRIVATE ///
+
+    private ClaimsMap claims;
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {

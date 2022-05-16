@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 class MessageTest {
@@ -416,7 +416,7 @@ class MessageTest {
             String responseEncoded = responseMessage.exportToEncoded();
             Message finalMessage = Item.importFromEncoded(responseEncoded);
             assertNotNull(finalMessage);
-            finalMessage.verify(Commons.getAudienceKey(), Arrays.asList(issuerMessage));
+            finalMessage.verify(Commons.getAudienceKey(), List.of(issuerMessage));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -430,7 +430,7 @@ class MessageTest {
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
             message.addItemLink(Key.generateKey(KeyType.EXCHANGE));
             message.sign(Commons.getIssuerKey());
-            message.verify(Commons.getIssuerKey(), Arrays.asList(Commons.getIssuerKey()));
+            message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
         } catch (DimeIntegrityException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -496,7 +496,7 @@ class MessageTest {
         try {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
-            String thumbprint = message.thumbprint();
+            message.thumbprint();
         } catch (IllegalStateException e) {
             /* All is well */
         } catch (Exception e) {

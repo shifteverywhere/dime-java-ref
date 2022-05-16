@@ -41,7 +41,7 @@ public class Message extends Data {
      * @return The audience identifier, as a UUID.
      */
     public UUID getAudienceId() {
-        return claims.getUUID(Claim.AUD);
+        return getClaims().getUUID(Claim.AUD);
     }
 
     /**
@@ -50,7 +50,7 @@ public class Message extends Data {
      * @return A key identifier, as a UUID.
      */
     public UUID getKeyId() {
-        return claims.getUUID(Claim.KID);
+        return getClaims().getUUID(Claim.KID);
     }
 
     /**
@@ -61,9 +61,9 @@ public class Message extends Data {
     public void setKeyId(UUID kid) {
         throwIfSigned();
         if (kid != null) {
-            claims.put(Claim.KID, kid);
+            getClaims().put(Claim.KID, kid);
         } else {
-            claims.remove(Claim.KID);
+            getClaims().remove(Claim.KID);
         }
     }
 
@@ -73,7 +73,7 @@ public class Message extends Data {
      * @return A public key.
      */
     public Key getPublicKey() {
-        String pub = claims.get(Claim.PUB);
+        String pub = getClaims().get(Claim.PUB);
         if (pub != null && pub.length() > 0) {
             try {
                 return Key.fromBase58Key(pub);
@@ -90,9 +90,9 @@ public class Message extends Data {
     public void setPublicKey(Key publicKey) {
         throwIfSigned();
         if (publicKey != null) {
-            claims.put(Claim.PUB, publicKey.getPublic());
+            getClaims().put(Claim.PUB, publicKey.getPublic());
         } else {
-            claims.remove(Claim.PUB);
+            getClaims().remove(Claim.PUB);
         }
     }
 
@@ -102,7 +102,7 @@ public class Message extends Data {
      * @return An identifier of a linked item, as a UUID.
      */
     public UUID getLinkedId() {
-        String lnk = claims.get(Claim.LNK);
+        String lnk = getClaims().get(Claim.LNK);
         if (lnk != null && !lnk.isEmpty()) {
             String uuid = lnk.split("//" + Dime.COMPONENT_DELIMITER)[Message.LINK_UID_INDEX];
             return UUID.fromString(uuid);
@@ -158,12 +158,11 @@ public class Message extends Data {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Utility.createTimestamp();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        this.claims = new ClaimsMap();
-        this.claims.put(Claim.AUD, audienceId);
-        this.claims.put(Claim.ISS, issuerId);
-        this.claims.put(Claim.IAT, iat);
-        this.claims.put(Claim.EXP, exp);
-        this.claims.put(Claim.CTX, context);
+        getClaims().put(Claim.AUD, audienceId);
+        getClaims().put(Claim.ISS, issuerId);
+        getClaims().put(Claim.IAT, iat);
+        getClaims().put(Claim.EXP, exp);
+        getClaims().put(Claim.CTX, context);
     }
 
     @Override
@@ -270,11 +269,12 @@ public class Message extends Data {
         return super.forExport();
     }
 
-    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
-        if (components.length != Message.NBR_EXPECTED_COMPONENTS) {
-            throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.length +".");
+    @Override
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        if (components.size() != Message.NBR_EXPECTED_COMPONENTS) {
+            throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.size() +".");
         }
-        return super.customDecoding(components, encoded);
+        super.customDecoding(components);
     }
 
     /// PRIVATE ///

@@ -38,7 +38,7 @@ public class Data extends Item {
      * @return A String instance.
      */
     public String getMIMEType() {
-        return claims.get(Claim.MIM);
+        return getClaims().get(Claim.MIM);
     }
 
     /**
@@ -76,15 +76,14 @@ public class Data extends Item {
     public Data(UUID issuerId, long validFor, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        this.claims = new ClaimsMap();
-        this.claims.put(Claim.ISS, issuerId);
+        getClaims().put(Claim.ISS, issuerId);
         Instant iat = Utility.createTimestamp();
-        this.claims.put(Claim.IAT, iat);
+        getClaims().put(Claim.IAT, iat);
         if (validFor != -1) {
             Instant exp = iat.plusSeconds(validFor);
-            this.claims.put(Claim.EXP, exp);
+            getClaims().put(Claim.EXP, exp);
         }
-        this.claims.put(Claim.CTX, context);
+        getClaims().put(Claim.CTX, context);
     }
 
     /**
@@ -103,7 +102,7 @@ public class Data extends Item {
     public void setPayload(byte[] payload, String mimeType) {
         throwIfSigned();
         this.payload = Utility.toBase64(payload);
-        this.claims.put(Claim.MIM, mimeType);
+        getClaims().put(Claim.MIM, mimeType);
     }
 
     /**
@@ -121,7 +120,7 @@ public class Data extends Item {
     }
 
     @Override
-    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException {
+    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
         super.verify(key, linkedItems, gracePeriod);
     }
@@ -135,15 +134,10 @@ public class Data extends Item {
     protected String payload;
 
     @Override
-    protected String customDecoding(String[] components, String encoded) throws DimeFormatException {
-        if (components.length != Data.NBR_EXPECTED_COMPONENTS_UNSIGNED && components.length != Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
-            throw new DimeFormatException("Unexpected number of components for data item request, expected: " + Data.NBR_EXPECTED_COMPONENTS_UNSIGNED + " or " + Data.NBR_EXPECTED_COMPONENTS_SIGNED + ", got " + components.length +".");
-        }
-        payload = components[Data.COMPONENTS_PAYLOAD_INDEX];
-        if (components.length == Data.NBR_EXPECTED_COMPONENTS_SIGNED) {
-            signature = components[components.length - 1];
-        }
-        return encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        if (components.size() < Data.NBR_EXPECTED_COMPONENTS_UNSIGNED) { throw new DimeFormatException("Unexpected number of components for data item."); }
+        this.payload = components.get(COMPONENTS_PAYLOAD_INDEX);
+        super.customDecoding(components);
     }
 
     @Override
