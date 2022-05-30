@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PerformanceTest {
 
-    public static final int PERFORMANCE_ROUNDS = 100000;
+    public static final int PERFORMANCE_ROUNDS = 10;
 
     @Test
     public void identityPerformanceTest() {

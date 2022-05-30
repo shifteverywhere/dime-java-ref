@@ -185,8 +185,8 @@ public class Message extends Data {
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
         if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
         if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
-        Key shared = Dime.crypto.generateSharedSecret(issuerKey, audienceKey, List.of(KeyUsage.ENCRYPT));
-        setPayload(Dime.crypto.encrypt(payload, shared));
+        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyUsage.ENCRYPT));
+        setPayload(Dime.crypto.encrypt(payload, sharedKey));
     }
 
     /**
@@ -194,16 +194,13 @@ public class Message extends Data {
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
      * @return The message payload.
-     * @throws DimeKeyMismatchException If provided keys are not of type EXCHANGE.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
-        if (issuerKey == null || issuerKey.getPublic() == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
-        if (audienceKey == null || audienceKey.getPublic() == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
-        if (issuerKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, invalid key type."); }
-        if (audienceKey.getKeyType() != KeyType.EXCHANGE) { throw new IllegalArgumentException("Unable to decrypt, audience key invalid key type."); }
-        Key key = Dime.crypto.generateSharedSecret(issuerKey, audienceKey, List.of(KeyUsage.ENCRYPT));
-        return Dime.crypto.decrypt(getPayload(), key);
+    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeCryptographicException {
+        if (issuerKey == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
+        if (audienceKey == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
+        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyUsage.ENCRYPT));
+        return Dime.crypto.decrypt(getPayload(), sharedKey);
     }
 
     /// DEPRECATED ///

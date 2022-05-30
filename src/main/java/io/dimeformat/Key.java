@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.crypto.ICryptoSuite;
 import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import java.util.List;
@@ -68,9 +69,9 @@ public class Key extends Item {
      */
     public String getCryptoSuiteName() {
         if (_suiteName == null) {
-            if (getRawSecret() == null) {
+            if (getKeyBytes(Claim.KEY) == null) {
                 // It is ok to ignore return value here as we are looking to force the generation of _suite
-                getRawPublic();
+                getKeyBytes(Claim.PUB);
             }
         }
         return _suiteName;
@@ -90,6 +91,32 @@ public class Key extends Item {
      */
     public String getPublic() {
         return getClaims().get(Claim.PUB);
+    }
+
+    /**
+     * Returns the raw byte array of the requested key. Valid claims to request are {@link Claim#KEY} and
+     * {@link Claim#PUB}.
+     * @param claim The key, expressed as a claim, to request bytes of.
+     * @return The raw byte array of the key, null if none exists.
+     */
+    public byte[] getKeyBytes(Claim claim) {
+        try {
+            if (claim == Claim.KEY) {
+                if (this._secretBytes == null) {
+                    decodeKey(getClaims().get(Claim.KEY), Claim.KEY);
+                }
+                return this._secretBytes;
+            } else if (claim == Claim.PUB) {
+                if (this._publicBytes == null) {
+                    decodeKey(getClaims().get(Claim.PUB), Claim.PUB);
+                }
+                return this._publicBytes;
+            } else {
+                throw new IllegalArgumentException("Invalid claim for key provided: " + claim);
+            }
+        } catch (DimeCryptographicException ignored) {
+            return null;
+        }
     }
 
     /**
@@ -191,7 +218,7 @@ public class Key extends Item {
     }
 
     /**
-     * Will generate a new Key for a specific cryptographic usage and attach a specfied context.
+     * Will generate a new Key for a specific cryptographic usage and attach a specified context.
      * @param usage The usage of the key.
      * @param context The context to attach to the key, may be null.
      * @return A newly generated key.
@@ -230,7 +257,12 @@ public class Key extends Item {
     public static Key generateKey(List<KeyUsage> usage, long validFor, UUID issuerId, String context, String suiteName) {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         try {
-            Key key = Dime.crypto.generateKey(usage, suiteName);
+            byte[][] keyBytes = Dime.crypto.generateKey(usage, suiteName);
+            Key key = new Key(UUID.randomUUID(),
+                    usage,
+                    keyBytes[ICryptoSuite.SECRET_KEY_INDEX],
+                    keyBytes.length == 2 ? keyBytes[ICryptoSuite.PUBLIC_KEY_INDEX] : null,
+                    suiteName);
             if (validFor != -1) {
                 key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
             }
@@ -255,6 +287,19 @@ public class Key extends Item {
         copyKey.getClaims().put(Claim.ISS, getIssuerId());
         copyKey.getClaims().put(Claim.CTX, getContext());
         return copyKey;
+    }
+
+    /**
+     * Generates a shared secret from the current key and another provided key. Both keys must have key usage EXCHANGE
+     * specified.
+     * @param key The other key to use with the key exchange (generation of shared key).
+     * @param usage The requested usage of the generated shared key, usually {@link KeyUsage#ENCRYPT}.
+     * @return The generated shared key.
+     * @throws DimeCryptographicException If anything goes wrong.
+     */
+    public Key generateSharedSecret(Key key, List<KeyUsage> usage) throws DimeCryptographicException {
+        byte[] sharedKey = Dime.crypto.generateSharedSecret(this, key, usage);
+        return new Key(UUID.randomUUID(), usage, sharedKey, null, getCryptoSuiteName());
     }
 
     /// PACKAGE-PRIVATE ///
@@ -295,24 +340,6 @@ public class Key extends Item {
         getClaims().remove(Claim.UID); // TODO: rewrite this so that UID is null on creation
     }
 
-    byte[] getRawSecret() {
-        if (this._rawSecret == null) {
-            try {
-                decodeKey(getClaims().get(Claim.KEY), Claim.KEY);
-            } catch (DimeCryptographicException ignored) { /* ignored */ }
-        }
-        return this._rawSecret;
-    }
-
-    byte[] getRawPublic() {
-        if (this._rawPublic == null) {
-            try {
-                decodeKey(getClaims().get(Claim.PUB), Claim.PUB);
-            } catch (DimeCryptographicException ignored) { /* ignored */ }
-        }
-        return this._rawPublic;
-    }
-
     /// PRIVATE ///
 
     private static final int CRYPTO_SUITE_INDEX = 0;
@@ -320,8 +347,8 @@ public class Key extends Item {
     private static final int LEGACY_KEY_HEADER_SIZE = 6;
     private String _suiteName;
     private List<KeyUsage> _usage;
-    private byte[] _rawSecret;
-    private byte[] _rawPublic;
+    private byte[] _secretBytes;
+    private byte[] _publicBytes;
 
     @Deprecated
     private static KeyType getKeyType(byte[] key) {
@@ -367,9 +394,9 @@ public class Key extends Item {
             _type = Key.getKeyType(decoded);
         }
         if (claim == Claim.KEY) {
-            this._rawSecret = rawKey;
+            this._secretBytes = rawKey;
         } else if (claim == Claim.PUB) {
-            this._rawPublic = rawKey;
+            this._publicBytes = rawKey;
         } else {
             throw new IllegalArgumentException("Invalid claim provided for key: " + claim);
         }

@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.crypto.Crypto;
 import io.dimeformat.crypto.CryptoSuiteStandard;
 import io.dimeformat.crypto.ICryptoSuite;
 

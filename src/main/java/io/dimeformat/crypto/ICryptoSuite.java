@@ -55,20 +55,12 @@ public interface ICryptoSuite {
     boolean verifySignature(byte[] data, byte[] signature, byte[] key);
 
     /**
-     * Generates a symmetric cryptographic key for the provided usage, if possible.
-     * @param usage The intended usage of the generated key, i.e. {#{@link KeyUsage#ENCRYPT}}.
+     * Generates a cryptographic key for the provided usage, if possible.
+     * @param usage The intended usage of the generated key, i.e. {#{@link KeyUsage#SIGN}}.
      * @return The generated key.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
-    byte[] generateSymmetricKey(List<KeyUsage> usage) throws DimeCryptographicException;
-
-    /**
-     * Generates an asymmetric cryptographic key pair for the provided usage, if possible.
-     * @param usage The intended usage of the generated key pair, i.e. {#{@link KeyUsage#SIGN}}.
-     * @return The generated key pair
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
-     */
-    byte[][] generateAsymmetricKeys(List<KeyUsage> usage) throws DimeCryptographicException;
+    byte[][] generateKey(List<KeyUsage> usage) throws DimeCryptographicException;
 
     /**
      *  Generates a shared secret from two keys or key pars. These keys must have {#{@link KeyUsage#EXCHANGE}} listad as

@@ -7,9 +7,11 @@
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
 //
-package io.dimeformat;
+package io.dimeformat.crypto;
 
-import io.dimeformat.crypto.ICryptoSuite;
+import io.dimeformat.Key;
+import io.dimeformat.Utility;
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
@@ -59,7 +61,7 @@ public final class Crypto {
         if (key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
         if (!key.getKeyUsage().contains(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        byte[] rawSignature = impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getRawSecret());
+        byte[] rawSignature = impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getKeyBytes(Claim.KEY));
         return Utility.toBase64(rawSignature);
     }
 
@@ -78,7 +80,7 @@ public final class Crypto {
         if (!key.hasUsage(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         byte[] rawSignature = Utility.fromBase64(signature);
-        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), rawSignature, key.getRawPublic())) {
+        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), rawSignature, key.getKeyBytes(Claim.PUB))) {
             throw new DimeIntegrityException("Unable to verify signature (C1002).");
         }
     }
@@ -90,7 +92,7 @@ public final class Crypto {
      * @return The generated key.
      * @throws DimeCryptographicException
      */
-    public Key generateKey(List<KeyUsage> usage) throws DimeCryptographicException {
+    public byte[][] generateKey(List<KeyUsage> usage) throws DimeCryptographicException {
         return generateKey(usage, getDefaultSuiteName());
     }
 
@@ -100,36 +102,28 @@ public final class Crypto {
      * @param suiteName The cryptographic suite that should be used when generating the key.
      * @return The generated key.
      */
-    public Key generateKey(List<KeyUsage> usage, String suiteName) throws DimeCryptographicException {
+    public byte[][] generateKey(List<KeyUsage> usage, String suiteName) throws DimeCryptographicException {
         if (usage == null || usage.size() == 0) { throw new DimeCryptographicException("Key usage must not be null or empty."); }
         ICryptoSuite impl = getCryptoSuite(suiteName);
-        if (usage.contains(KeyUsage.ENCRYPT)) {
-            if (usage.size() != 1) { throw new DimeCryptographicException("Key usage ENCRYPT may not be combined with other usages."); }
-            byte[] key = impl.generateSymmetricKey(usage);
-            return new Key(UUID.randomUUID(), usage, key, null, suiteName);
-        } else {
-            byte[][] keys = impl.generateAsymmetricKeys(usage);
-            return new Key(UUID.randomUUID(), usage, keys[ICryptoSuite.SECRET_KEY_INDEX], keys[ICryptoSuite.PUBLIC_KEY_INDEX], suiteName);
-        }
+        return impl.generateKey(usage);
     }
 
     /**
      * Generates a shared secret from two keys of type EXCHANGE. The initiator of the key exchange is always the
      * server and the receiver of the key exchange is always the client (no matter on which side this method is
-     * called). The returned key will be of type ENCRYPTION.
+     * called).
      * @param clientKey The client key to use (the receiver of the exchange).
      * @param serverKey The server key to use (the initiator of the exchange).
      * @return The generated shared secret key.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Key generateSharedSecret(Key clientKey, Key serverKey, List<KeyUsage> usage) throws DimeCryptographicException {
+    public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<KeyUsage> usage) throws DimeCryptographicException {
         if (!clientKey.getKeyUsage().contains(KeyUsage.EXCHANGE) || !serverKey.getKeyUsage().contains(KeyUsage.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
         if (clientKey.getCryptoSuiteName() != serverKey.getCryptoSuiteName()) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
         ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
-        byte[][] rawClientKeys = new byte[][] { clientKey.getRawSecret(), clientKey.getRawPublic() };
-        byte[][] rawServerKeys = new byte[][] { serverKey.getRawSecret(), serverKey.getRawPublic() };
-        byte[] shared = impl.generateSharedSecret(rawClientKeys, rawServerKeys, usage);
-        return new Key(UUID.randomUUID(), usage, shared, null, clientKey.getCryptoSuiteName());
+        byte[][] rawClientKeys = new byte[][] { clientKey.getKeyBytes(Claim.KEY), clientKey.getKeyBytes(Claim.PUB) };
+        byte[][] rawServerKeys = new byte[][] { serverKey.getKeyBytes(Claim.KEY), serverKey.getKeyBytes(Claim.PUB) };
+        return impl.generateSharedSecret(rawClientKeys, rawServerKeys, usage);
     }
 
     /**
@@ -144,7 +138,7 @@ public final class Crypto {
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.encrypt(plainText, key.getRawSecret());
+        return impl.encrypt(plainText, key.getKeyBytes(Claim.KEY));
     }
 
     /**
@@ -159,7 +153,7 @@ public final class Crypto {
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.decrypt(cipherText, key.getRawSecret());
+        return impl.decrypt(cipherText, key.getKeyBytes(Claim.KEY));
     }
 
     /**

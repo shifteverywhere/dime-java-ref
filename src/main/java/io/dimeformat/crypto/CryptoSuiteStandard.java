@@ -41,29 +41,30 @@ public class CryptoSuiteStandard implements ICryptoSuite {
         return (this.sodium.crypto_sign_verify_detached(signature, data, data.length, key) == 0);
     }
 
-    public byte[] generateSymmetricKey(List<KeyUsage> usage) throws DimeCryptographicException {
-        byte[] secretKey = new byte[CryptoSuiteStandard.NBR_S_KEY_BYTES];
-        this.sodium.crypto_secretbox_keygen(secretKey);
-        return secretKey;
-    }
-
-    public byte[][] generateAsymmetricKeys(List<KeyUsage> usage) throws DimeCryptographicException {
+    public byte[][] generateKey(List<KeyUsage> usage) throws DimeCryptographicException {
         if (usage == null || usage.size() != 1) { throw new IllegalArgumentException("Invalid key usage requested."); }
-        byte[] publicKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
-        byte[] secretKey;
-        switch (usage.get(0)) {
-            case SIGN:
-                secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES * 2];
-                this.sodium.crypto_sign_keypair(publicKey, secretKey);
-                break;
-            case EXCHANGE:
-                secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
-                this.sodium.crypto_kx_keypair(publicKey, secretKey);
-                break;
-            default:
-                throw new DimeCryptographicException("Unable to generate keypair for key type " + usage + ".");
+        KeyUsage use = usage.get(0);
+        if (use == KeyUsage.ENCRYPT) {
+            byte[] secretKey = new byte[CryptoSuiteStandard.NBR_S_KEY_BYTES];
+            this.sodium.crypto_secretbox_keygen(secretKey);
+            return new byte[][] { secretKey };
+        } else {
+            byte[] publicKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
+            byte[] secretKey;
+            switch (usage.get(0)) {
+                case SIGN:
+                    secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES * 2];
+                    this.sodium.crypto_sign_keypair(publicKey, secretKey);
+                    break;
+                case EXCHANGE:
+                    secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
+                    this.sodium.crypto_kx_keypair(publicKey, secretKey);
+                    break;
+                default:
+                    throw new DimeCryptographicException("Unable to generate keypair for key type " + usage + ".");
+            }
+            return new byte[][] { secretKey, publicKey };
         }
-        return new byte[][] { secretKey, publicKey };
     }
 
     public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyUsage> usage) throws DimeCryptographicException {

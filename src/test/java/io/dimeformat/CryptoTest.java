@@ -11,7 +11,6 @@ package io.dimeformat;
 
 import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -23,7 +22,7 @@ class CryptoTest {
     void generateSignatureTest1() {
         try {
             String data = "Racecar is racecar backwards.";
-            Key key = Dime.crypto.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
             String sig = Dime.crypto.generateSignature(data, key);
             Dime.crypto.verifySignature(data, sig, key);
         } catch (Exception e) {
@@ -46,12 +45,12 @@ class CryptoTest {
     @Test
     void generateSharedSecretTest1() {
         try {
-            Key clientKey = Key.generateKey(KeyType.EXCHANGE);
-            Key serverKey = Key.generateKey(KeyType.EXCHANGE);
-            Key shared1 = Dime.crypto.generateSharedSecret(clientKey, serverKey.publicCopy(), List.of(KeyUsage.ENCRYPT));
-            Key shared2 = Dime.crypto.generateSharedSecret(clientKey.publicCopy(), serverKey, List.of(KeyUsage.ENCRYPT));
-            assertEquals(KeyType.ENCRYPTION, shared1.getKeyType());
-            assertEquals(KeyType.ENCRYPTION, shared2.getKeyType());
+            Key clientKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key serverKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key shared1 = clientKey.generateSharedSecret(serverKey.publicCopy(), List.of(KeyUsage.ENCRYPT));
+            Key shared2 = clientKey.publicCopy().generateSharedSecret(serverKey, List.of(KeyUsage.ENCRYPT));
+            assertTrue(shared1.hasUsage(KeyUsage.ENCRYPT));
+            assertTrue(shared2.hasUsage(KeyUsage.ENCRYPT));
             assertEquals(shared1.getSecret(), shared2.getSecret());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -68,7 +67,7 @@ class CryptoTest {
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
             assertNotNull(serverKey);
-            Key shared = Dime.crypto.generateSharedSecret(clientKey, serverKey, List.of(KeyUsage.ENCRYPT));
+            Key shared = clientKey.generateSharedSecret(serverKey, List.of(KeyUsage.ENCRYPT));
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -85,7 +84,7 @@ class CryptoTest {
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
             assertNotNull(serverKey);
-            Key shared = Dime.crypto.generateSharedSecret(clientKey, serverKey, List.of(KeyUsage.ENCRYPT));
+            Key shared = clientKey.generateSharedSecret(serverKey, List.of(KeyUsage.ENCRYPT));
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -96,7 +95,7 @@ class CryptoTest {
     void encryptTest1() {
         try {
             String data = "Racecar is racecar backwards.";
-            Key key = Key.generateKey(KeyType.ENCRYPTION);
+            Key key = Key.generateKey(List.of(KeyUsage.ENCRYPT));
             byte[] cipherText = Dime.crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
             byte[] plainText = Dime.crypto.decrypt(cipherText, key);
