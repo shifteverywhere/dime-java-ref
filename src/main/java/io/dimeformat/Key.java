@@ -114,6 +114,7 @@ public class Key extends Item {
      * @return True if key supports the usage, false otherwise.
      */
     public boolean hasUsage(KeyUsage usage) {
+        if (usage == null) { return false; }
         return getKeyUsage().contains(usage);
     }
 

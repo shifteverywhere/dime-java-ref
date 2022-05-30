@@ -9,8 +9,8 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
@@ -135,7 +135,7 @@ class MessageTest {
     @Test
     void verifyTest2() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
             Identity untrustedSender = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 120, key, Commons.SYSTEM_NAME, null);
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), 120);
@@ -341,8 +341,8 @@ class MessageTest {
     @Test
     void setPayloadTest3() {
         try {
-            Key localKey = Key.generateKey(KeyType.EXCHANGE);
-            Key remoteKey = Key.generateKey(KeyType.EXCHANGE).publicCopy();
+            Key localKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key remoteKey = Key.generateKey(List.of(KeyUsage.EXCHANGE)).publicCopy();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), localKey, remoteKey);
             assertNotEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
@@ -354,8 +354,8 @@ class MessageTest {
     @Test
     void setPayloadTest4() {
         try {
-            Key issuerKey = Key.generateKey(KeyType.EXCHANGE);
-            Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
+            Key issuerKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setKeyId(issuerKey.getUniqueId());
             message.setPublicKey(audienceKey);
@@ -371,8 +371,8 @@ class MessageTest {
     @Test
     void setPayloadTest5() {
         try {
-            Key issuerKey = Key.generateKey(KeyType.EXCHANGE);
-            Key audienceKey = Key.generateKey(KeyType.EXCHANGE);
+            Key issuerKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
             message1.sign(Commons.getIssuerKey());
@@ -388,7 +388,7 @@ class MessageTest {
     @Test
     void setPayloadTest6() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
         } catch (IllegalArgumentException e) {
@@ -427,7 +427,7 @@ class MessageTest {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-            message.addItemLink(Key.generateKey(KeyType.EXCHANGE));
+            message.addItemLink(Key.generateKey(List.of(KeyUsage.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
         } catch (DimeIntegrityException e) { 
@@ -445,7 +445,7 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.addItemLink(Key.generateKey(KeyType.EXCHANGE));
+            message.addItemLink(Key.generateKey(List.of(KeyUsage.EXCHANGE)));
         } catch (IllegalStateException e) { 
             return; // All is well
         } catch (Exception e) {

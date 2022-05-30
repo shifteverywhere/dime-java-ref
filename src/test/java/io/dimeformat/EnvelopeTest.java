@@ -9,10 +9,12 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,7 +25,7 @@ class EnvelopeTest {
     void getItemTest1() {
         try {
             Message message = new Message(UUID.randomUUID(), UUID.randomUUID(), -1, "message-context");
-            Key key = Key.generateKey(KeyType.IDENTITY, "key-context");
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN), "key-context");
             Envelope envelope = new Envelope();
             envelope.addItem(message);
             envelope.addItem(key);
@@ -49,7 +51,7 @@ class EnvelopeTest {
     @Test
     void getItemTest2() {
         try {
-            String exported = "Di:MSG.eyJpc3MiOiIxODVlNjc0ZS1jYzQ5LTRlNmMtOGRhNi1mNDE1NDY1ZjJiMDUiLCJ1aWQiOiJmMmU3MGU4My00YmJjLTQ1N2YtOWQzMC04YjJhYmRlMjFhZTciLCJhdWQiOiIzZThjYTdiNS0yYmFmLTQ3MzItOWUyNS0zMjVkYTliMTRjYmUiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMjY5MloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.NFnMpo/MeutxUzlIe7TYeTKN3prEoses/so3OstGURMgSsFa0fvepFsGpLuWmZI6BVkeMVVbHwKCIKvfP5KCBw:KEY.eyJ1aWQiOiI3YjA5MjJkOC02MWUzLTRlZjMtYmY2NS05OWNjOWY0OTZhMDIiLCJwdWIiOiIyVERYZG9OdlBnTDI1ZEo2aHh5ZVVIZGttTmJnUlpMM3JNYU5aWVA4OWVyU3ZGY2JIUkhwWUpzUEwiLCJpYXQiOiIyMDIyLTA0LTE1VDE1OjU0OjU3LjcwMDgxNFoiLCJjdHgiOiJrZXktY29udGV4dCIsImtleSI6IlMyMVRaU0xSam5yUUVxS293UGNLd1dNN21tUGV2Rkc3QUtROFhjdmZNVEphZUtpQktSMk5kY2liSmVYd3V3ZEF4d2VDVjZGckpYZTFTUmthenlnQ1I2dzhqaTFWUVJQNlg3ZVQifQ";
+            String exported = "Di:MSG.eyJpc3MiOiJkMThhM2ExYi05Y2I2LTQ4MGEtYTJlZC05NGU2NzMwZTVlMzQiLCJ1aWQiOiIwYTQ2YWVkNy0yYzkyLTQwNDQtYmMyMC0yMTc0Y2IwNjA0MmQiLCJhdWQiOiI3YTAyMzkzZS1kMTVkLTQ3NDYtOTU0Mi1hZDljYmUwNzUxYzgiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjQ0NjkxNloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.EBiQVW1sKZgKXEg0qDNoxXGUZXhvO8NfxMWn9YL8zhkVU7jp3q2a8p+5dzlRW1AJXwVdk7iH1jhJMux0DGbpBg:KEY.eyJ1aWQiOiIxMWYxNzllZi0yOWIwLTRlZjAtYjA0Yi0xZjU3MTk5ZTJjZjQiLCJwdWIiOiJEU1ROKzJObWlCMXZVUEhTQzJ6ZW82WWc5REJTUzRXWFN3RUgzS3JVMXpUQmpoOHZVdEt4eFlEIiwiaWF0IjoiMjAyMi0wNS0zMFQxNzoyNTozMS43Mjc3MDRaIiwidXNlIjpbInNpZ24iXSwiY3R4Ijoia2V5LWNvbnRleHQiLCJrZXkiOiJEU1ROK2FEWnRzYUhpb2dvVHU5bVh1NmpaYmNMb3hqUThoWlBoMnhGblJReGJ2VEtvVHdiQUt0YWV1ZEFEUDR2TVRLbm5Ec21hRzJzdHF4ZlozaEY1d21YMzNXZXpQVEg0WSJ9";
             Envelope envelope = Envelope.importFromEncoded(exported);
             // Context
             Item item1 = envelope.getItem("key-context");
@@ -59,11 +61,11 @@ class EnvelopeTest {
             assertTrue(item2 instanceof Message);
             assertEquals("message-context", item2.getContext());
             // Unique ID
-            UUID uid1 = UUID.fromString("7b0922d8-61e3-4ef3-bf65-99cc9f496a02");
+            UUID uid1 = UUID.fromString("11f179ef-29b0-4ef0-b04b-1f57199e2cf4");
             Item item3 = envelope.getItem(uid1);
             assertTrue(item3 instanceof Key);
             assertEquals(uid1, item3.getUniqueId());
-            UUID uid2 = UUID.fromString("f2e70e83-4bbc-457f-9d30-8b2abde21ae7");
+            UUID uid2 = UUID.fromString("0a46aed7-2c92-4044-bc20-2174cb06042d");
             Item item4 = envelope.getItem(uid2);
             assertTrue(item4 instanceof Message);
             assertEquals(uid2, item4.getUniqueId());
@@ -248,7 +250,7 @@ class EnvelopeTest {
     @Test
     public void iirImportTest1() {
         try {
-            String exported = "Di:IIR.eyJ1aWQiOiIzOWY0NmZjZC02YmQxLTQwZWQtODg3ZS02ZTBhZGYyOTczNmQiLCJjYXAiOlsiZ2VuZXJpYyJdLCJwdWIiOiIyVERYZG9OdkpwcGFvYW9BQnAyRnJXM0dGVTl5QTJRSDVXN0JBb2NtZ29qcDc1ek0xRHIyeEczTUgiLCJpYXQiOiIyMDIxLTExLTE4VDE5OjMyOjE3LjI1OTY2OVoifQ.8C9TzVO+/35NZ0H5vsi7QX9CvkF3Vof3IpwRwRgmi1zAU0nDLm2RzEN/JOnU1arD3yGRfyDFNvSlfWgdDZicCg";
+            String exported = "Di:IIR.eyJ1aWQiOiJiNjM4NGM3Yi1hYzFlLTRhY2UtYTBjNC1kZjU1ZGY0OWM1MmEiLCJjYXAiOlsiZ2VuZXJpYyJdLCJwdWIiOiJEU1ROKzJDTWVQZHZ4VkxxcEhxcG1aeVNUaWNnQjV2OE5KZFBlMnlnRnJldDk2TGZWSEJnbXYyIiwiaWF0IjoiMjAyMi0wNS0zMFQxODowMjozNS4yOTg3MDJaIn0.SGwn25l5uXzVB3vs10cOn+MGUU2kFpEicCA09LYIdXieUnQxhbj7WT//IFKJ4un57B7L0vmYJXj9p8MyVezHBg";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
@@ -289,11 +291,11 @@ class EnvelopeTest {
     @Test
     void identityImportTest1() {
         try {
-            String exported = "Di.eyJpc3MiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJpYXQiOiIyMDIxLTExLTE4VDE5OjQ0OjUyLjc1MDAxMloifQ:ID.eyJ1aWQiOiI2YWU2OGE3MC0xN2Y2LTQ1MDQtOWFlMy1jNWJhOWUyZDQ4ZmIiLCJzdWIiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6IjY4ODgwZmYzLWZlOTQtNGZmMC05MTQ4LTAwYjk4MDgzODg3NyIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloifQ.SUQuZXlKMWFXUWlPaUk1TnpOak16VmhNQzB3WW1Vd0xUUmpOVEV0T0dNMFppMDFaalkzWm1Nd01EYzRNalFpTENKemRXSWlPaUkyT0RnNE1HWm1NeTFtWlRrMExUUm1aakF0T1RFME9DMHdNR0k1T0RBNE16ZzROemNpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWkRNNVpUQmlNREV0TVdabE9DMDBZalkyTFdJeU1EZ3RZbUV4TXpoaU5XVXpPR1F3SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UZFVNVFE2TkRnNk1UWXVOVGswTmpnNFdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MWRVaG5NblUyTW1aNlpFZDVOSGhHUkVKTGNHZGpUWGhPWWt0UVF6UmhTMjUwYmxSeVVYQkhiMmw1YWsxTlFVUlNaaUlzSW1saGRDSTZJakl3TWpFdE1URXRNVGhVTVRRNk5EZzZNVFl1TlRrME5qZzRXaUo5LkRZUVB1NlN0S2dpaTgwYm9FeCtucEhteGhyYW40cGZmMFZ4RTVlTmxPd09UaThTNDhRbGFBM29UTndvMVNKV0JxT09VRStWRnQrMVdENXBZQm5IT0Fn.yoSmBKB/YAWQ68gh//utH8G2szGr1VkRlyvR7kdY5Iy2fHtuL5ynA+0ZsehLv/fk6H8poA0yj/qNFIKLOohtAw:ZSEKjL0RtBSUDNhDUXSxt8zCdBX/M2Q2c2cJ22MKe59Mj3qWTMFG8nl+NagF5hx2uNL703DtIAl8OItSjNQcAQ";
+            String exported = "Di.eyJpc3MiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJ1aWQiOiIyMzJkZTY2OC04ODU0LTQ5MDEtYTIyYi1jMTBkMWNiYjMwZTciLCJpYXQiOiIyMDIyLTA1LTMwVDE4OjAzOjExLjg5MDMwMVoifQ:ID.eyJ1aWQiOiJjMTAwMDZhZC0zOGJhLTQ2ZDMtYWE1OS02YTYzNGIyMjMzNTMiLCJzdWIiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImRjZDMyMDcwLWI5OTYtNGE1Mi04MGI2LWI3Mjg2NzczY2MyMSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIzLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoifQ.SUQuZXlKMWFXUWlPaUkwWlRGak1tTTBPUzAwWVdJMkxUUTVZekV0WWpoaFl5MHlaV1U1TkRZek9XVmxNMlVpTENKemRXSWlPaUprWTJRek1qQTNNQzFpT1RrMkxUUmhOVEl0T0RCaU5pMWlOekk0TmpjM00yTmpNakVpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWW1Rek5tWmtNamN0WWpFNVpDMDBZV1ZoTFRneU1XUXRNRGRsWkdVNVpEVXdNMkZrSWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNamN0TURVdE1qbFVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSXNJbkIxWWlJNklrUlRWRTRyVEVjMlptdDZlVmxZTjNNM09FdGFNM05HYVU1dmNsVnZRMEV5UlhsS1JEWjZWbFEzVjFoMVJrVjBUVTE2ZW1sSGJTSXNJbWxoZENJNklqSXdNakl0TURVdE16QlVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSjkuYzgxVCtDaFRLN1RXai9mQzBUTUIrTjFkd1RURVVJb01lQUFFNVB5R0x1SzFsbThkZ1Z5WVFQTnRTeHVyY3ZZOXJsZk1OZ3poUUFrZ3VTbm44dkJ1Qnc.vzjmxBAyp2HX3RlWydjGRWsCLOojiXPZQOwEcdcSf+fVq9yWjHkNmJWjsQfxS0El4fDu7WdBidkdNMD7zhgGCw:GAfjZ9aZhGk2bPi1EJSlSQzGrXfZbgQGxlJuZw8gzlJl91bocDfpUgsGSH7vAhApvOvmQuflNOVWCUM8zK70AA";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
-            assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), envelope.getIssuerId());
-            assertEquals(Instant.parse("2021-11-18T19:44:52.750012Z"), envelope.getIssuedAt());
+            assertEquals(UUID.fromString("6ce4a7b7-0587-407e-9f95-9d1cec1afd79"), envelope.getIssuerId());
+            assertEquals(Instant.parse("2022-05-30T18:03:11.890301Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Identity.class, envelope.getItems().get(0).getClass());
@@ -305,7 +307,7 @@ class EnvelopeTest {
     @Test
     void identityImportTest2() {
         try {
-            String exported = "Di:ID.eyJ1aWQiOiI2YWU2OGE3MC0xN2Y2LTQ1MDQtOWFlMy1jNWJhOWUyZDQ4ZmIiLCJzdWIiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6IjY4ODgwZmYzLWZlOTQtNGZmMC05MTQ4LTAwYjk4MDgzODg3NyIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg2MjM3NloifQ.SUQuZXlKMWFXUWlPaUk1TnpOak16VmhNQzB3WW1Vd0xUUmpOVEV0T0dNMFppMDFaalkzWm1Nd01EYzRNalFpTENKemRXSWlPaUkyT0RnNE1HWm1NeTFtWlRrMExUUm1aakF0T1RFME9DMHdNR0k1T0RBNE16ZzROemNpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWkRNNVpUQmlNREV0TVdabE9DMDBZalkyTFdJeU1EZ3RZbUV4TXpoaU5XVXpPR1F3SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UZFVNVFE2TkRnNk1UWXVOVGswTmpnNFdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MWRVaG5NblUyTW1aNlpFZDVOSGhHUkVKTGNHZGpUWGhPWWt0UVF6UmhTMjUwYmxSeVVYQkhiMmw1YWsxTlFVUlNaaUlzSW1saGRDSTZJakl3TWpFdE1URXRNVGhVTVRRNk5EZzZNVFl1TlRrME5qZzRXaUo5LkRZUVB1NlN0S2dpaTgwYm9FeCtucEhteGhyYW40cGZmMFZ4RTVlTmxPd09UaThTNDhRbGFBM29UTndvMVNKV0JxT09VRStWRnQrMVdENXBZQm5IT0Fn.yoSmBKB/YAWQ68gh//utH8G2szGr1VkRlyvR7kdY5Iy2fHtuL5ynA+0ZsehLv/fk6H8poA0yj/qNFIKLOohtAw";
+            String exported = "Di:ID.eyJ1aWQiOiJjMTAwMDZhZC0zOGJhLTQ2ZDMtYWE1OS02YTYzNGIyMjMzNTMiLCJzdWIiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImRjZDMyMDcwLWI5OTYtNGE1Mi04MGI2LWI3Mjg2NzczY2MyMSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIzLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoifQ.SUQuZXlKMWFXUWlPaUkwWlRGak1tTTBPUzAwWVdJMkxUUTVZekV0WWpoaFl5MHlaV1U1TkRZek9XVmxNMlVpTENKemRXSWlPaUprWTJRek1qQTNNQzFpT1RrMkxUUmhOVEl0T0RCaU5pMWlOekk0TmpjM00yTmpNakVpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWW1Rek5tWmtNamN0WWpFNVpDMDBZV1ZoTFRneU1XUXRNRGRsWkdVNVpEVXdNMkZrSWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNamN0TURVdE1qbFVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSXNJbkIxWWlJNklrUlRWRTRyVEVjMlptdDZlVmxZTjNNM09FdGFNM05HYVU1dmNsVnZRMEV5UlhsS1JEWjZWbFEzVjFoMVJrVjBUVTE2ZW1sSGJTSXNJbWxoZENJNklqSXdNakl0TURVdE16QlVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSjkuYzgxVCtDaFRLN1RXai9mQzBUTUIrTjFkd1RURVVJb01lQUFFNVB5R0x1SzFsbThkZ1Z5WVFQTnRTeHVyY3ZZOXJsZk1OZ3poUUFrZ3VTbm44dkJ1Qnc.vzjmxBAyp2HX3RlWydjGRWsCLOojiXPZQOwEcdcSf+fVq9yWjHkNmJWjsQfxS0El4fDu7WdBidkdNMD7zhgGCw";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
@@ -339,11 +341,11 @@ class EnvelopeTest {
     @Test
     void keyImportTest1() {
         try {
-            String exported = "Di.eyJpc3MiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJpYXQiOiIyMDIxLTExLTE4VDE5OjU1OjQzLjY5Njk2MFoifQ:KEY.eyJ1aWQiOiI4ZjEyNDgzMS01NzBlLTQyMmUtYjNiMS00NzlhNzI3ZTY2ZGEiLCJwdWIiOiIyVERYZG9OdXN2czJjOGdHb1I0b1pjNzZVeDU0c0E4M2J3ZTd3eXJyVjZSUllya25aTDkzblFGZmsiLCJpYXQiOiIyMDIxLTExLTE4VDE0OjUxOjM2Ljg1NzI2M1oiLCJrZXkiOiJTMjFUWlNMS1B2MVhDajdNVGN6V3ZkQVRUU3M5ek4xc3VKNUFEWnlZaldFcnZBaG1WZEduUDYxYm1HRlVodUFmcUg0UkQ1eGdTTjZaY2RhR1prMno4aXhSRnJVU05ZQmhzQnZyIn0:eGmbvRS7gkk9UPN7n2CX4Su5XtdL3qEoRwOqvEixS4mAkr+6qbD3ss4d9+VAMT00OBRKUH61uCoC0FYWTr8VBA";
+            String exported = "Di.eyJpc3MiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJ1aWQiOiIxZTY5MzQ3OC01MDIyLTQ5NGUtODIwZS01NjlmZjc4ZTZlNTYiLCJpYXQiOiIyMDIyLTA1LTMwVDE4OjA0OjU2LjU0MzEwMVoifQ:KEY.eyJ1aWQiOiI2ODBmMmZiMi1mMGE1LTRkMGUtODNiNy0yMmExOTViMzJjODQiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MTc5OFoiLCJ1c2UiOlsic2lnbiJdLCJjdHgiOiJpZC1rZXkiLCJrZXkiOiJEU1ROK2FHb0ZSSFQ4Y243eFdjNWdtYUVmRU05MTh2QzJvZ2hGNkpTNGJ5S2k3cmJRVEU0MjR6blpwOXRXU0M0VDVSeDVGZHByMU5XTE5kcnFBMUFFYVhObXB5MTZVa0V4RiJ9:Fq69NSCs8U+Lv+l0MNZbW+OC3brxv6QjJmjte2rPZr22GjzEwcCczNBAXHghaL197rYLCn4QRYjLCpOXjyK9Ag";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
-            assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), envelope.getIssuerId());
-            assertEquals(Instant.parse("2021-11-18T19:55:43.696960Z"), envelope.getIssuedAt());
+            assertEquals(UUID.fromString("6ce4a7b7-0587-407e-9f95-9d1cec1afd79"), envelope.getIssuerId());
+            assertEquals(Instant.parse("2022-05-30T18:04:56.543101Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Key.class, envelope.getItems().get(0).getClass());

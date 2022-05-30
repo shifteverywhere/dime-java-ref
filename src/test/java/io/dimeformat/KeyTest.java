@@ -11,7 +11,6 @@ package io.dimeformat;
 
 import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -29,8 +28,9 @@ class KeyTest {
 
     @Test
     void keyTest1() {
-        Key key = Key.generateKey(KeyType.IDENTITY);
-        assertSame(key.getKeyType(), KeyType.IDENTITY);
+        Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+        assertEquals(1, key.getKeyUsage().size());
+        assertTrue(key.hasUsage(KeyUsage.SIGN));
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -38,8 +38,9 @@ class KeyTest {
 
     @Test
     void keyTest2() {
-        Key key = Key.generateKey(KeyType.EXCHANGE);
-        assertSame(key.getKeyType(), KeyType.EXCHANGE);
+        Key key = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+        assertEquals(1, key.getKeyUsage().size());
+        assertTrue(key.hasUsage(KeyUsage.EXCHANGE));
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -108,6 +109,7 @@ class KeyTest {
             Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
             String exported1 = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported1);
+            assertNotNull(key2);
             assertTrue(key2.hasUsage(KeyUsage.SIGN));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -116,7 +118,7 @@ class KeyTest {
 
     @Test
     void exportTest1() {
-        Key key = Key.generateKey(KeyType.IDENTITY);
+        Key key = Key.generateKey(List.of(KeyUsage.SIGN));
         String exported = key.exportToEncoded();
         assertNotNull(exported);
         assertTrue(exported.startsWith(Envelope.HEADER + ":" + Key.ITEM_IDENTIFIER));
@@ -126,14 +128,15 @@ class KeyTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
+            String exported = "Di:KEY.eyJ1aWQiOiJjMjhkOTY2OC1hNzU5LTQ4YjQtYmEzYi0zMTE0MWZmZjM0MTUiLCJwdWIiOiJEU1ROKzJkdGFnSm5ISlBxdFNkeEZrVnVCZWRaR2s2UHVIRkZKd1pEUVoyaWpzbWlyb0FDZmR0IiwiaWF0IjoiMjAyMi0wNS0zMFQxODoyNzozNS42NzI4OTJaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTis1MVdnNlVOakFxMnZodURERTRNdEoxNXVOTnBNbjVVRnR1OXVQTUphVlMzamhadnl5MThvcEpBU0haeUR0UE0yTmZvOTRROXhhaVlNdGZOSmZBcnNzVTc0S2Fkd2gifQ";
             Key key = Item.importFromEncoded(exported);
             assertNotNull(key);
-            assertEquals(KeyType.IDENTITY, key.getKeyType());
-            assertEquals(UUID.fromString("3f00cd13-4474-4c04-9b6b-7383d490f17f"), key.getUniqueId());
-            assertEquals(Instant.parse("2021-11-18T08:48:25.137918Z"), key.getIssuedAt());
-            assertEquals("S21Tkgozxhzk5ttFgHhgey6t1419WCMUUM98ZhniVAjfT4iniUknfUrNqfPqdLua2SvxFf8SXkHS1PTBCrdkYXN6qTEm7Mwa2LRd", key.getSecret());
-            assertEquals("S21TZSL1uvF5mTWKiomQKNhmkcYPw5XZ1VBfbSPqmyqG5GaNCUGB7Pj19WShuJuLkhREEJ4kLThehqRkadJLSTAkL9DtyhmLxGfn", key.getPublic());
+            assertEquals(1, key.getKeyUsage().size());
+            assertTrue(key.hasUsage(KeyUsage.SIGN));
+            assertEquals(UUID.fromString("c28d9668-a759-48b4-ba3b-31141fff3415"), key.getUniqueId());
+            assertEquals(Instant.parse("2022-05-30T18:27:35.672892Z"), key.getIssuedAt());
+            assertEquals("DSTN+51Wg6UNjAq2vhuDDE4MtJ15uNNpMn5UFtu9uPMJaVS3jhZvyy18opJASHZyDtPM2Nfo94Q9xaiYMtfNJfArssU74Kadwh", key.getSecret());
+            assertEquals("DSTN+2dtagJnHJPqtSdxFkVuBedZGk6PuHFFJwZDQZ2ijsmiroACfdt", key.getPublic());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
@@ -142,7 +145,7 @@ class KeyTest {
     @Test
     void publicOnlyTest1() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY, 120, UUID.randomUUID(), "Racecar is racecar backwards.");
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN), 120, UUID.randomUUID(), "Racecar is racecar backwards.");
             assertNotNull(key.getSecret());
             Key pubOnly = key.publicCopy();
             assertNull(pubOnly.getSecret());
@@ -173,7 +176,7 @@ class KeyTest {
     @Test
     void contextTest1() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
-        Key key = Key.generateKey(KeyType.IDENTITY, context);
+        Key key = Key.generateKey(List.of(KeyUsage.SIGN), context);
         assertEquals(context, key.getContext());
     }
 
@@ -181,7 +184,7 @@ class KeyTest {
     void contextTest2() {
         try {
             String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
-            Key key1 = Key.generateKey(KeyType.IDENTITY, context);
+            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN), context);
             String exported = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported);
             assertNotNull(key2);
@@ -195,7 +198,7 @@ class KeyTest {
     void contextTest3() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            Key.generateKey(KeyType.IDENTITY, context);
+            Key.generateKey(List.of(KeyUsage.SIGN), context);
         } catch (IllegalArgumentException e) { return; } // All is well
         fail("Should not happen.");
     }
