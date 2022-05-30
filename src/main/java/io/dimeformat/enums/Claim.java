@@ -81,7 +81,11 @@ public enum Claim {
     /**
      * Unique ID
      */
-    UID;
+    UID,
+    /**
+     * Key usage
+     */
+    USE;
 
     @Override
     public String toString() {

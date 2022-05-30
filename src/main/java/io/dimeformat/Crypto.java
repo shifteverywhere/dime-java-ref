@@ -9,13 +9,14 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.KeyType;
+import io.dimeformat.crypto.ICryptoSuite;
+import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-import io.dimeformat.exceptions.DimeKeyMismatchException;
-import com.goterl.lazysodium.SodiumJava;
-import static io.dimeformat.enums.KeyType.*;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -27,23 +28,39 @@ public final class Crypto {
     /// PUBLIC ///
 
     /**
+     * Set the default cryptographic suite name. This will be used when no suite is specificed for cryptographic
+     * operations. It can be queried through {@link Crypto#getDefaultSuiteName()}. This will be set by default to
+     * Dime Standard Cryptographic Suite (DSTD).
+     * @param name The name of the suite to set as the default.
+     */
+    public synchronized void setDefaultSuiteName(String name) {
+        if (_suiteMap == null) { throw new IllegalStateException("Unable to set default cryptographic suite name, no suites registered."); }
+        if (!_suiteMap.containsKey(name)) { throw new IllegalArgumentException("No cryptographic suite registered for name: " + name); }
+        _defaultSuiteName = name;
+    }
+
+    /**
+     * Returns the name of the cryptographic suite that is set as the default.
+     * @return Name of default cryptographic suite.
+     */
+    public synchronized String getDefaultSuiteName() {
+        return _defaultSuiteName;
+    }
+
+    /**
      * Generates a cryptographic signature from a data string.
      * @param data The string to sign.
      * @param key The key to use for the signature.
      * @return The signature that was generated, encoded in Base 64.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static String generateSignature(String data, Key key) throws DimeCryptographicException {
+    public String generateSignature(String data, Key key) throws DimeCryptographicException {
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Unable to sign, data must not be null or of length zero."); }
-        if (key == null || key.getRawSecret() == null) { throw new IllegalArgumentException("Unable to sign, key must not be null."); }
-        if (key.getKeyType() != IDENTITY) { throw new IllegalArgumentException("Unable to sign, wrong key type provided, got: " + key.getKeyType() + ", expected: " + IDENTITY + "."); }
-        byte[] signature = new byte[Crypto.NBR_SIGNATURE_BYTES];
-        byte[] message = data.getBytes(StandardCharsets.UTF_8);
-        byte[] secret = key.getRawSecret();
-        if (Crypto.sodium.crypto_sign_detached(signature, null, message, message.length, secret) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed (C1001).");
-        }
-        return Utility.toBase64(signature);
+        if (key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
+        if (!key.getKeyUsage().contains(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
+        ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
+        byte[] rawSignature = impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getRawSecret());
+        return Utility.toBase64(rawSignature);
     }
 
     /**
@@ -53,46 +70,46 @@ public final class Crypto {
      * @param key The key that should be used for the verification.
      * @throws DimeIntegrityException If something goes wrong.
      */
-    public static void verifySignature(String data, String signature, Key key) throws DimeIntegrityException {
+    public void verifySignature(String data, String signature, Key key) throws DimeCryptographicException, DimeIntegrityException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
         if (signature == null || signature.length() == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
-        if (key.getRawPublic() == null) { throw new IllegalArgumentException("Unable to sign, public key in key must not be null."); }
-        if (key.getKeyType() != IDENTITY) { throw new IllegalArgumentException("Unable to sign, wrong key type provided, got: " + key.getKeyType() + ", expected: " + IDENTITY + "."); }
+        if (key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify, public key in key must not be null."); }
+        if (!key.hasUsage(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
+        ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         byte[] rawSignature = Utility.fromBase64(signature);
-        byte[] message = data.getBytes(StandardCharsets.UTF_8);
-        byte[] publicKey = key.getRawPublic();
-        if (Crypto.sodium.crypto_sign_verify_detached(rawSignature, message, message.length, publicKey) != 0) {
+        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), rawSignature, key.getRawPublic())) {
             throw new DimeIntegrityException("Unable to verify signature (C1002).");
         }
     }
 
     /**
+     * Generates a cryptographic key of a provided type. This will use the cryptographic suite that is set as the
+     * default.
+     * @param usage The usage of the key to generate.
+     * @return The generated key.
+     * @throws DimeCryptographicException
+     */
+    public Key generateKey(List<KeyUsage> usage) throws DimeCryptographicException {
+        return generateKey(usage, getDefaultSuiteName());
+    }
+
+    /**
      * Generates a cryptographic key of a provided type.
-     * @param type The type of the key to generate.
+     * @param usage The usage of the key to generate.
+     * @param suiteName The cryptographic suite that should be used when generating the key.
      * @return The generated key.
      */
-    public static Key generateKey(KeyType type) {
-        if (type == ENCRYPTION || type == AUTHENTICATION) {
-            byte[] secretKey = new byte[Crypto.NBR_S_KEY_BYTES];
-            Crypto.sodium.crypto_secretbox_keygen(secretKey);
-            return new Key(UUID.randomUUID(), type, secretKey, null);
+    public Key generateKey(List<KeyUsage> usage, String suiteName) throws DimeCryptographicException {
+        if (usage == null || usage.size() == 0) { throw new DimeCryptographicException("Key usage must not be null or empty."); }
+        ICryptoSuite impl = getCryptoSuite(suiteName);
+        if (usage.contains(KeyUsage.ENCRYPT)) {
+            if (usage.size() != 1) { throw new DimeCryptographicException("Key usage ENCRYPT may not be combined with other usages."); }
+            byte[] key = impl.generateSymmetricKey(usage);
+            return new Key(UUID.randomUUID(), usage, key, null, suiteName);
         } else {
-            byte[] publicKey = new byte[Crypto.NBR_A_KEY_BYTES];
-            byte[] secretKey;
-            switch (type) {
-                case IDENTITY:
-                    secretKey = new byte[Crypto.NBR_A_KEY_BYTES * 2];
-                    Crypto.sodium.crypto_sign_keypair(publicKey, secretKey);
-                    break;
-                case EXCHANGE:
-                    secretKey = new byte[Crypto.NBR_A_KEY_BYTES];
-                    Crypto.sodium.crypto_kx_keypair(publicKey, secretKey);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown or unsupported key type.");
-            }
-            return new Key(UUID.randomUUID(), type, secretKey, publicKey);
+            byte[][] keys = impl.generateAsymmetricKeys(usage);
+            return new Key(UUID.randomUUID(), usage, keys[ICryptoSuite.SECRET_KEY_INDEX], keys[ICryptoSuite.PUBLIC_KEY_INDEX], suiteName);
         }
     }
 
@@ -103,26 +120,16 @@ public final class Crypto {
      * @param clientKey The client key to use (the receiver of the exchange).
      * @param serverKey The server key to use (the initiator of the exchange).
      * @return The generated shared secret key.
-     * @throws DimeKeyMismatchException If provided keys are of the wrong type.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public static Key generateSharedSecret(Key clientKey, Key serverKey) throws DimeKeyMismatchException, DimeCryptographicException {
-        if (clientKey.getVersion() != serverKey.getVersion()) { throw new DimeKeyMismatchException("Unable to generate shared key, source keys from different versions."); }
-        if (clientKey.getKeyType() != EXCHANGE || serverKey.getKeyType() != EXCHANGE) { throw new DimeKeyMismatchException("Keys must be of type 'Exchange'."); }
-        byte[] shared = new byte[Crypto.NBR_X_KEY_BYTES];
-        if (clientKey.getRawSecret() != null) {
-            byte[] secret = Utility.combine(clientKey.getRawSecret(), clientKey.getRawPublic());
-            if (sodium.crypto_kx_client_session_keys(shared, null, clientKey.getRawPublic(), secret, serverKey.getRawPublic()) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed. C1003)");
-            }
-        } else if (serverKey.getRawSecret() != null) {
-            if (sodium.crypto_kx_server_session_keys(null, shared, serverKey.getRawPublic(), serverKey.getRawSecret(), clientKey.getRawPublic()) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed. C1004)");
-            }
-        } else {
-            throw new DimeKeyMismatchException("Invalid keys provided.");
-        }
-        return new Key(UUID.randomUUID(), KeyType.ENCRYPTION, shared, null);
+    public Key generateSharedSecret(Key clientKey, Key serverKey, List<KeyUsage> usage) throws DimeCryptographicException {
+        if (!clientKey.getKeyUsage().contains(KeyUsage.EXCHANGE) || !serverKey.getKeyUsage().contains(KeyUsage.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
+        if (clientKey.getCryptoSuiteName() != serverKey.getCryptoSuiteName()) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
+        ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
+        byte[][] rawClientKeys = new byte[][] { clientKey.getRawSecret(), clientKey.getRawPublic() };
+        byte[][] rawServerKeys = new byte[][] { serverKey.getRawSecret(), serverKey.getRawPublic() };
+        byte[] shared = impl.generateSharedSecret(rawClientKeys, rawServerKeys, usage);
+        return new Key(UUID.randomUUID(), usage, shared, null, clientKey.getCryptoSuiteName());
     }
 
     /**
@@ -132,18 +139,12 @@ public final class Crypto {
      * @return The encrypted cipher text.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
+    public byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
         if (plainText == null || plainText.length == 0) { throw new IllegalArgumentException("Plain text to encrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        byte[] nonce = Utility.randomBytes(Crypto.NBR_NONCE_BYTES);
-        if (nonce.length > 0) {
-            byte[] cipherText = new byte[Crypto.NBR_MAC_BYTES + plainText.length];
-            if (Crypto.sodium.crypto_secretbox_easy(cipherText, plainText, plainText.length, nonce, key.getRawSecret()) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed. (C1005)");
-            }
-            return Utility.combine(nonce, cipherText);
-        }
-        throw new DimeCryptographicException("Unable to generate sufficient nonce. (C1006)");
+        if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
+        return impl.encrypt(plainText, key.getRawSecret());
     }
 
     /**
@@ -153,46 +154,87 @@ public final class Crypto {
      * @return The decrypted plain text.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static byte[] decrypt(byte[] cipherText, Key key) throws DimeCryptographicException {
+    public byte[] decrypt(byte[] cipherText, Key key) throws DimeCryptographicException {
         if (cipherText == null ||cipherText.length == 0) { throw new IllegalArgumentException("Cipher text to decrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        byte[] nonce = Utility.subArray(cipherText, 0, Crypto.NBR_NONCE_BYTES);
-        byte[] bytes = Utility.subArray(cipherText, Crypto.NBR_NONCE_BYTES);
-        byte[] plainText = new byte[bytes.length - Crypto.NBR_MAC_BYTES];
-        if (Crypto.sodium.crypto_secretbox_open_easy(plainText, bytes, bytes.length, nonce, key.getRawSecret()) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. (C1007)");
-        }
-        return plainText;
+        if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
+        return impl.decrypt(cipherText, key.getRawSecret());
+    }
+
+    /**
+     * Generates a secure hash of a byte array. This will use the cryptographic suite that is set as the default.
+     * @param data The data that should be hashed.
+     * @return The generated secure hash.
+     * @throws DimeCryptographicException If something goes wrong.
+     */
+    public byte[] generateHash(byte[] data) throws DimeCryptographicException {
+        return generateHash(data, getDefaultSuiteName());
     }
 
     /**
      * Generates a secure hash of a byte array.
      * @param data The data that should be hashed.
+     * @param suiteName The cryptographic suite that should be used to generate the hash.
      * @return The generated secure hash.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static byte[] generateHash(byte[] data) throws DimeCryptographicException {
-        byte[] hash = new byte[Crypto.NBR_HASH_BYTES];
-        if (Crypto.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed. C1008)");
+    public byte[] generateHash(byte[] data, String suiteName) throws DimeCryptographicException {
+        ICryptoSuite crypto = getCryptoSuite(suiteName);
+        return crypto.generateHash(data);
+    }
+
+    /**
+     * Registers a cryptographic suite. The provided name must be unique, it should also be short as it will be
+     * included with the encoded key, uppercase is recommended. If a cryptographic suite is already register with the
+     * provided name then IllegalArgumentException will be thrown.
+     * @param impl The implementation instance of ICryptoSuite.
+     * @param name A unique name for the suite.
+     */
+    public void registerCryptoSuite(ICryptoSuite impl, String name) {
+        if (impl == null) { throw new IllegalArgumentException("Instance of ICrypto implementation must not be null."); }
+        if (name == null || name.isEmpty()) { throw new IllegalArgumentException("Name of cryptographic suite must not be null or empty."); }
+        if (_suiteMap == null) {
+            _suiteMap = new HashMap<>();
+        } else if (_suiteMap.containsKey(name)) {
+            throw new IllegalArgumentException("Cryptographic suite already exists with name: " + name);
         }
-        return hash;
+        _suiteMap.put(name, impl);
+    }
+
+    /**
+     * Indicates if a cryptographic suite with the provided name is supported (and registered).
+     * @param name The name of the cryptographic suite to check for.
+     * @return True if supported, false if not.
+     */
+    public boolean hasCryptoSuite(String name) {
+        if (_suiteMap == null) { return false; }
+        return _suiteMap.containsKey(name);
+    }
+
+    /**
+     * Returns a set of the names of all registered cryptographic suites.
+     * @return Set of registered cryptographic suites, names only.
+     */
+    public Set<String> allCryptoSuites() {
+        if (_suiteMap == null) { return null; }
+        return _suiteMap.keySet();
     }
 
     /// PRIVATE ///
 
-    private static final int NBR_SIGNATURE_BYTES = 64;
-    private static final int NBR_MAC_BYTES = 16;
-    private static final int NBR_HASH_BYTES = 32;
-    private static final int NBR_A_KEY_BYTES = 32;
-    private static final int NBR_S_KEY_BYTES = 32;
-    private static final int NBR_X_KEY_BYTES = 32;
-    private static final int NBR_NONCE_BYTES = 24;
-    private static final SodiumJava sodium = new SodiumJava();
+    private HashMap<String, ICryptoSuite> _suiteMap;
+    private String _defaultSuiteName;
 
-    private Crypto() {
-        throw new IllegalStateException("Not intended to be instantiated.");
+    private ICryptoSuite getCryptoSuite(String name) throws DimeCryptographicException {
+        if (_suiteMap == null || _suiteMap.isEmpty()) {
+            throw new DimeCryptographicException("Unable to perform cryptographic operation, no suites registered.");
+        }
+        ICryptoSuite impl = _suiteMap.get(name);
+        if (impl == null) {
+            throw new DimeCryptographicException("Unable to find cryptographic suite with name: " + name);
+        }
+        return impl;
     }
-
 
 }

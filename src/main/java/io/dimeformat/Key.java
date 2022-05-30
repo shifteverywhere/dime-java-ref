@@ -9,14 +9,11 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.AlgorithmFamily;
-import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyVariant;
+import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeFormatException;
 import java.util.List;
 import java.util.UUID;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents cryptographic keys. This may be keys for signing and verifying other Di:ME items and envelopes, used for
@@ -40,9 +37,7 @@ public class Key extends Item {
      */
     @Deprecated
     public int getVersion() {
-        byte[] key = getClaims().getBytes(Claim.KEY);
-        if (key == null) { key = getClaims().getBytes(Claim.PUB); }
-        return key[0];
+        return 1;
     }
 
     /**
@@ -52,15 +47,33 @@ public class Key extends Item {
      */
     @Deprecated
     public KeyType getKeyType() {
-        byte[] key = getClaims().getBytes(Claim.KEY);
-        if (key == null) { key = getClaims().getBytes(Claim.PUB); }
-        switch (Key.getAlgorithmFamily(key)) {
-            case AEAD: return KeyType.ENCRYPTION;
-            case ECDH: return KeyType.EXCHANGE;
-            case EDDSA: return KeyType.IDENTITY;
-            case HASH: return KeyType.AUTHENTICATION;
-            default: return KeyType.UNDEFINED;
+        if (_type == null) {
+            if (!getCryptoSuiteName().equals(Dime.LEGACY_SUITE)) { // This will force key decode
+                if (hasUsage(KeyUsage.SIGN)) {
+                    return KeyType.IDENTITY;
+                } else if (hasUsage(KeyUsage.EXCHANGE)) {
+                    return KeyType.EXCHANGE;
+                } else if (hasUsage(KeyUsage.ENCRYPT)) {
+                    return KeyType.ENCRYPTION;
+                }
+            }
         }
+        return _type;
+    }
+    private KeyType _type;
+
+    /**
+     * Returns the cryptographic suite used to generate they key.
+     * @return Cryptographic suite
+     */
+    public String getCryptoSuiteName() {
+        if (_suiteName == null) {
+            if (getRawSecret() == null) {
+                // It is ok to ignore return value here as we are looking to force the generation of _suite
+                getRawPublic();
+            }
+        }
+        return _suiteName;
     }
 
     /**
@@ -79,13 +92,37 @@ public class Key extends Item {
         return getClaims().get(Claim.PUB);
     }
 
-    public List<KeyType> getKeyUsage() { return null; }
+    /**
+     * Returns a list of cryptographic usages that the key may perform.
+     * @return List of usages.
+     */
+    public List<KeyUsage> getKeyUsage() {
+        if (_usage == null) {
+            if (getCryptoSuiteName().equals(Dime.LEGACY_SUITE)) {
+                _usage = List.of(KeyUsage.fromKeyType(getKeyType()));
+            } else {
+                List<String> usage = getClaims().get(Claim.USE);
+                _usage = usage.stream().map(cap -> KeyUsage.valueOf(cap.toUpperCase())).collect(toList());
+            }
+        }
+        return _usage;
+    }
+
+    /**
+     * Indicates if a key may be used for a specific cryptographic usage.
+     * @param usage The usage to test for.
+     * @return True if key supports the usage, false otherwise.
+     */
+    public boolean hasUsage(KeyUsage usage) {
+        return getKeyUsage().contains(usage);
+    }
 
     /**
      * Will generate a new Key with a specified type.
      * @param type The type of key to generate.
      * @return A newly generated key.
      */
+    @Deprecated
     public static Key generateKey(KeyType type) {
         return Key.generateKey(type, -1, null, null);
     }
@@ -93,9 +130,10 @@ public class Key extends Item {
     /**
      * Will generate a new Key with a specified type.
      * @param type The type of key to generate.
-     * @param context The context to attach to the message, may be null.
+     * @param context The context to attach to the key, may be null.
      * @return A newly generated key.
      */
+    @Deprecated
     public static Key generateKey(KeyType type, String context) {
         return Key.generateKey(type, -1, null, context);
     }
@@ -108,6 +146,7 @@ public class Key extends Item {
      * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
      * @return A newly generated key.
      */
+    @Deprecated
     public static Key generateKey(KeyType type, long validFor) {
         return Key.generateKey(type, validFor, null, null);
     }
@@ -121,6 +160,7 @@ public class Key extends Item {
      * @param issuerId The identifier of the issuer (creator) of the key, may be null.
      * @return A newly generated key.
      */
+    @Deprecated
     public static Key generateKey(KeyType type, long validFor, UUID issuerId) {
         return Key.generateKey(type, validFor, issuerId, null);
     }
@@ -132,13 +172,64 @@ public class Key extends Item {
      * @param type The type of key to generate.
      * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
      * @param issuerId The identifier of the issuer (creator) of the key, may be null.
-     * @param context The context to attach to the message, may be null.
+     * @param context The context to attach to the key, may be null.
      * @return A newly generated key.
      */
+    @Deprecated
     public static Key generateKey(KeyType type, long validFor, UUID issuerId, String context) {
+        return Key.generateKey(List.of(KeyUsage.fromKeyType(type)), validFor, issuerId, context, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Will generate a new Key for a specific cryptographic usage.
+     * @param usage The usage of the key.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(List<KeyUsage> usage) {
+        return Key.generateKey(usage, -1, null, null, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Will generate a new Key for a specific cryptographic usage and attach a specfied context.
+     * @param usage The usage of the key.
+     * @param context The context to attach to the key, may be null.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(List<KeyUsage> usage, String context) {
+        return Key.generateKey(usage, -1, null, context, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Will generate a new Key for a specific cryptographic usage, an expiration date, and the identifier of the issuer.
+     * Abiding to the expiration date is application specific as the key will continue to function after the expiration
+     * date. Providing -1 as validFor will skip setting an expiration date. The specified context will be attached to
+     * the generated key.
+     * @param usage The usage of the key.
+     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
+     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
+     * @param context The context to attach to the key, may be null.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(List<KeyUsage> usage, long validFor, UUID issuerId, String context) {
+        return Key.generateKey(usage, validFor, issuerId, context, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Will generate a new Key for a specific cryptographic usage, an expiration date, and the identifier of the issuer.
+     * Abiding to the expiration date is application specific as the key will continue to function after the expiration
+     * date. Providing -1 as validFor will skip setting an expiration date. The specified context will be attached to
+     * the generated key. The cryptographic suite specified will be used when generating the key.
+     * @param usage The usage of the key.
+     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
+     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
+     * @param context The context to attach to the key, may be null.
+     * @param suiteName A newly generated key.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(List<KeyUsage> usage, long validFor, UUID issuerId, String context, String suiteName) {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         try {
-            Key key = Crypto.generateKey(type);
+            Key key = Dime.crypto.generateKey(usage, suiteName);
             if (validFor != -1) {
                 key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
             }
@@ -146,18 +237,8 @@ public class Key extends Item {
             key.getClaims().put(Claim.CTX, context);
             return key;
         } catch (DimeCryptographicException e) {
-            throw new RuntimeException("This should not happen, if it does complain to the author.");
+            throw new RuntimeException("Unexpected exception thrown when generating key: " + e);
         }
-    }
-
-    /**
-     * Will instantiate a Key instance from a base 58 encoded string.
-     * @param base58key A base 58 encoded key.
-     * @return A Key instance.
-     * @throws DimeFormatException If the format of the provided key string is invalid.
-     */
-    public static Key fromBase58Key(String base58key) throws DimeFormatException {
-        return new Key(base58key);
     }
 
     /**
@@ -166,114 +247,131 @@ public class Key extends Item {
      * @return A new instance of the key with only the public part.
      */
     public Key publicCopy() {
-        Key copyKey = new Key(getUniqueId(), this.getKeyType(), null, getRawPublic());
-        copyKey.getClaims().put(Claim.IAT, getClaims().getInstant(Claim.IAT));
-        copyKey.getClaims().put(Claim.EXP, getClaims().getInstant(Claim.EXP));
-        copyKey.getClaims().put(Claim.ISS, getClaims().getUUID(Claim.ISS));
-        copyKey.getClaims().put(Claim.CTX, getClaims().get(Claim.CTX));
+        Key copyKey = new Key(getKeyUsage(), null, getPublic(), getCryptoSuiteName());
+        copyKey.getClaims().put(Claim.UID, getUniqueId());
+        copyKey.getClaims().put(Claim.IAT, getIssuedAt());
+        copyKey.getClaims().put(Claim.EXP, getExpiresAt());
+        copyKey.getClaims().put(Claim.ISS, getIssuerId());
+        copyKey.getClaims().put(Claim.CTX, getContext());
         return copyKey;
     }
 
     /// PACKAGE-PRIVATE ///
 
     /**
-     * This is used to runtime instantiate new objects when parsing Di:ME envelopes.
+     * This is used to runtime instantiate new objects when parsing Dime envelopes.
      */
     Key() { }
 
-    Key(UUID id, KeyType type, byte[] key, byte[] pub) {
+    Key(UUID id, List<KeyUsage> usage, byte[] key, byte[] pub, String suiteName) {
         getClaims().put(Claim.UID, id);
         getClaims().put(Claim.IAT, Utility.createTimestamp());
+        this._suiteName = suiteName;
+        this._usage = usage;
+        getClaims().put(Claim.USE, usage.stream().map(use -> use.name().toLowerCase()).collect(toList()));
         if (key != null) {
-            getClaims().put(Claim.KEY, Utility.combine(Key.headerFrom(type, KeyVariant.SECRET), key));
+            getClaims().put(Claim.KEY, Key.encodeKey(suiteName, key));
         }
         if (pub != null) {
-            getClaims().put(Claim.PUB, Utility.combine(Key.headerFrom(type, KeyVariant.PUBLIC), pub));
+            getClaims().put(Claim.PUB, Key.encodeKey(suiteName, pub));
         }
     }
 
-    /// PACKAGE-PRIVATE ///
+    Key(List<KeyUsage> usage, String key, String pub, String suiteName) {
+        this._suiteName = suiteName;
+        this._usage = usage;
+        if (key != null) {
+            getClaims().put(Claim.KEY, key);
+        }
+        if (pub != null) {
+            getClaims().put(Claim.PUB, pub);
+        }
+    }
+
+    Key(List<KeyUsage> usage, String key, Claim claim) throws DimeCryptographicException {
+        this._usage = usage;
+        getClaims().put(claim, key);
+        getClaims().remove(Claim.UID); // TODO: rewrite this so that UID is null on creation
+    }
 
     byte[] getRawSecret() {
-        if (_rawSecret == null) {
-            _rawSecret = getClaims().getBytes(Claim.KEY);
-            if (_rawSecret == null) { return null; }
-            _rawSecret = Utility.subArray(_rawSecret, Key.HEADER_SIZE, _rawSecret.length - Key.HEADER_SIZE);
+        if (this._rawSecret == null) {
+            try {
+                decodeKey(getClaims().get(Claim.KEY), Claim.KEY);
+            } catch (DimeCryptographicException ignored) { /* ignored */ }
         }
-        return _rawSecret;
+        return this._rawSecret;
     }
-    private byte[] _rawSecret;
 
     byte[] getRawPublic() {
-        if (_rawPublic == null) {
-            _rawPublic = getClaims().getBytes(Claim.PUB);
-            if (_rawPublic == null) { return null; }
-            _rawPublic = Utility.subArray(_rawPublic, Key.HEADER_SIZE, _rawPublic.length - Key.HEADER_SIZE);
+        if (this._rawPublic == null) {
+            try {
+                decodeKey(getClaims().get(Claim.PUB), Claim.PUB);
+            } catch (DimeCryptographicException ignored) { /* ignored */ }
         }
-        return _rawPublic;
-    }
-    private byte[] _rawPublic;
-
-    /// PROTECTED ///
-
-    protected Key(String base58key) {
-        if (base58key != null && base58key.length() > 0) {
-            byte[] bytes = Base58.decode(base58key);
-            if (bytes.length > 0) {
-                switch (Key.getKeyVariant(bytes)) {
-                    case SECRET:
-                        getClaims().put(Claim.KEY, bytes);
-                        break;
-                    case PUBLIC:
-                        getClaims().put(Claim.PUB, bytes);
-                        break;
-                }
-            }
-        }
+        return this._rawPublic;
     }
 
     /// PRIVATE ///
 
-    private static final int HEADER_SIZE = 6;
+    private static final int CRYPTO_SUITE_INDEX = 0;
+    private static final int ENCODED_KEY_INDEX = 1;
+    private static final int LEGACY_KEY_HEADER_SIZE = 6;
+    private String _suiteName;
+    private List<KeyUsage> _usage;
+    private byte[] _rawSecret;
+    private byte[] _rawPublic;
 
-    private static byte[] headerFrom(KeyType type, KeyVariant variant) {
-        AlgorithmFamily algorithmFamily = AlgorithmFamily.keyTypeOf(type);
-        byte[] header = new byte[Key.HEADER_SIZE];
-        header[0] = (byte)Dime.VERSION;
-        header[1] = algorithmFamily.value;
-        switch (algorithmFamily) {
+    @Deprecated
+    private static KeyType getKeyType(byte[] key) {
+        AlgorithmFamily family = AlgorithmFamily.valueOf(key[1]);
+        switch (family) {
             case AEAD:
-                header[2] = (byte) 0x01; // 0x01 == XChaCha20-Poly1305
-                header[3] = (byte) 0x02; // 0x02 == 256-bit key size
-                break;
+                return KeyType.ENCRYPTION;
             case ECDH:
-                header[2] = (byte) 0x02; // 0x02 == X25519
-                header[3] = variant.value;
-                break;
+                return KeyType.EXCHANGE;
             case EDDSA:
-                header[2] = (byte) 0x01; // 0x01 == Ed25519
-                header[3] = variant.value;
-                break;
+                return KeyType.IDENTITY;
             case HASH:
-                header[2] = (byte) 0x01; // 0x01 == Blake2b
-                header[3] = (byte) 0x02; // 0x02 == 256-bit key size
-                break;
+                return KeyType.AUTHENTICATION;
             default:
-                break;
+                return KeyType.UNDEFINED;
         }
-        return header;
     }
 
-    private static AlgorithmFamily getAlgorithmFamily(byte[] key) {
-        return AlgorithmFamily.valueOf(key[1]);
+    private static String encodeKey(String suiteName, byte[] rawKey) {
+        return suiteName + "+" + Base58.encode(rawKey, null);
     }
 
-    private static KeyVariant getKeyVariant(byte[] key) {
-        AlgorithmFamily family = Key.getAlgorithmFamily(key);
-        if (family == AlgorithmFamily.ECDH || family == AlgorithmFamily.EDDSA) {
-            return KeyVariant.valueOf(key[3]);
+    private void decodeKey(String encoded, Claim claim) throws DimeCryptographicException {
+        if (encoded == null || encoded.isEmpty()) { return; } // Do a silent return, no key to decode
+        String[] components = encoded.split("\\+");
+        String suiteName;
+        if (components.length == 2) {
+            suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
+        } else { // This will be treated as legacy
+            suiteName = Dime.LEGACY_SUITE;
         }
-        return KeyVariant.SECRET;
+        if (this._suiteName == null) {
+            this._suiteName = suiteName;
+        } else if (!this._suiteName.equals(suiteName)) {
+            throw new DimeCryptographicException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
+        }
+        byte[] rawKey;
+        if (!suiteName.equals(Dime.LEGACY_SUITE)) {
+            rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
+        } else {
+            byte[] decoded = Base58.decode(encoded);
+            rawKey = Utility.subArray(decoded, Key.LEGACY_KEY_HEADER_SIZE);
+            _type = Key.getKeyType(decoded);
+        }
+        if (claim == Claim.KEY) {
+            this._rawSecret = rawKey;
+        } else if (claim == Claim.PUB) {
+            this._rawPublic = rawKey;
+        } else {
+            throw new IllegalArgumentException("Invalid claim provided for key: " + claim);
+        }
     }
 
 }

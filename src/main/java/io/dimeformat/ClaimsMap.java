@@ -9,9 +9,8 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.crypto.CryptoSuite;
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyType;
+import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import java.time.Instant;
@@ -79,12 +78,12 @@ class ClaimsMap {
         return Base58.decode(string);
     }
 
-    public Key getKey(Claim claim) {
+    public Key getKey(Claim claim, List<KeyUsage> usage) {
         String string = get(claim);
         if (string == null || string.length() == 0) { return null; }
         try {
-            return Key.fromBase58Key(string);
-        } catch (DimeFormatException ignored) {
+            return new Key(usage, string, claim);
+        } catch (DimeCryptographicException ignored) {
             return null;
         }
     }

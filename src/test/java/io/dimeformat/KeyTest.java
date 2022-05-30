@@ -9,10 +9,12 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,6 +43,75 @@ class KeyTest {
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
+    }
+
+    @Test
+    void keyUsageTest1() {
+        Key signKey = Key.generateKey(List.of(KeyUsage.SIGN));
+        assertEquals(Dime.crypto.getDefaultSuiteName(), signKey.getCryptoSuiteName());
+        assertNotNull(signKey.getSecret());
+        assertNotNull(signKey.getPublic());
+        List<KeyUsage> usage = signKey.getKeyUsage();
+        assertNotNull(usage);
+        assertTrue(usage.contains(KeyUsage.SIGN));
+        assertEquals(1, usage.size());
+        assertTrue(signKey.hasUsage(KeyUsage.SIGN));
+        assertFalse(signKey.hasUsage(KeyUsage.EXCHANGE));
+        assertFalse(signKey.hasUsage(KeyUsage.ENCRYPT));
+    }
+
+    @Test
+    void keyUsageTest2() {
+        Key exchangeKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+        assertEquals(Dime.crypto.getDefaultSuiteName(), exchangeKey.getCryptoSuiteName());
+        assertNotNull(exchangeKey.getSecret());
+        assertNotNull(exchangeKey.getPublic());
+        List<KeyUsage> usage = exchangeKey.getKeyUsage();
+        assertNotNull(usage);
+        assertTrue(usage.contains(KeyUsage.EXCHANGE));
+        assertEquals(1, usage.size());
+        assertFalse(exchangeKey.hasUsage(KeyUsage.SIGN));
+        assertTrue(exchangeKey.hasUsage(KeyUsage.EXCHANGE));
+        assertFalse(exchangeKey.hasUsage(KeyUsage.ENCRYPT));
+    }
+
+    @Test
+    void keyUsageTest3() {
+        Key encryptionKey = Key.generateKey(List.of(KeyUsage.ENCRYPT));
+        assertEquals(Dime.crypto.getDefaultSuiteName(), encryptionKey.getCryptoSuiteName());
+        assertNotNull(encryptionKey.getSecret());
+        assertNull(encryptionKey.getPublic());
+        List<KeyUsage> usage = encryptionKey.getKeyUsage();
+        assertNotNull(usage);
+        assertTrue(usage.contains(KeyUsage.ENCRYPT));
+        assertEquals(1, usage.size());
+        assertFalse(encryptionKey.hasUsage(KeyUsage.SIGN));
+        assertFalse(encryptionKey.hasUsage(KeyUsage.EXCHANGE));
+        assertTrue(encryptionKey.hasUsage(KeyUsage.ENCRYPT));
+    }
+
+    @Test
+    void keyUsageTest4() {
+        List<KeyUsage> usage = List.of(KeyUsage.SIGN, KeyUsage.EXCHANGE);
+        try {
+            Key.generateKey(usage, -1, null, null, Dime.STANDARD_SUITE);
+            fail("Expected exception never thrown.");
+        } catch (IllegalArgumentException ignored) { /* All is well good */ }
+        catch (Exception e) {
+            fail("Unexpected exception thrown.");
+        }
+    }
+
+    @Test
+    void keyUsageTest5() {
+        try {
+            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
+            String exported1 = key1.exportToEncoded();
+            Key key2 = Item.importFromEncoded(exported1);
+            assertTrue(key2.hasUsage(KeyUsage.SIGN));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
+        }
     }
 
     @Test
@@ -97,58 +168,6 @@ class KeyTest {
         } catch (Exception e) {
             fail("Unexpected exception thrown:" + e);
         }
-    }
-
-    @Test
-    void keyHeaderTest1() {
-        byte[] aeadHeader = new byte[] { (byte)Dime.VERSION, (byte)0x10, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, AEAD, XChaCha20-Poly1305, 256-bit, extension, extension
-        Key aead = Key.generateKey(KeyType.ENCRYPTION);
-        assertNull(aead.getPublic());
-        byte[] bytes = Base58.decode(aead.getSecret());
-        assertNotNull(bytes);
-        byte[] header = Utility.subArray(bytes, 0, 6);
-        assertArrayEquals(aeadHeader, header);
-    }
-
-    @Test
-    void keyHeaderTest2() {
-        byte[] ecdhHeaderSecret = new byte[] { (byte)Dime.VERSION, (byte)0x40, (byte)0x02, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, public, extension, extension
-        byte[] ecdhHeaderPublic = new byte[] { (byte)Dime.VERSION, (byte)0x40, (byte)0x02, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, ECDH, X25519, private, extension, extension
-        Key ecdh = Key.generateKey(KeyType.EXCHANGE);
-        byte[] bytesSecret = Base58.decode(ecdh.getSecret());
-        byte[] bytesPublic = Base58.decode(ecdh.getPublic());
-        assertNotNull(bytesSecret);
-        assertNotNull(bytesPublic);
-        byte[] headerSecret = Utility.subArray(bytesSecret, 0, 6);
-        byte[] headerPublic = Utility.subArray(bytesPublic, 0, 6);
-        assertArrayEquals(ecdhHeaderSecret, headerSecret);
-        assertArrayEquals(ecdhHeaderPublic, headerPublic);
-    }
-
-    @Test
-    void keyHeaderTest3() {
-        byte[] eddsaHeaderSecret = new byte[] { (byte)Dime.VERSION, (byte)0x80, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, public, extension, extension
-        byte[] eddsaHeaderPublic = new byte[] { (byte)Dime.VERSION, (byte)0x80, (byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00 }; // version 1, EdDSA, Ed25519, private, extension, extension
-        Key eddsa = Key.generateKey(KeyType.IDENTITY);
-        byte[] bytesSecret = Base58.decode(eddsa.getSecret());
-        byte[] bytesPublic = Base58.decode(eddsa.getPublic());
-        assertNotNull(bytesSecret);
-        assertNotNull(bytesPublic);
-        byte[] headerSecret = Utility.subArray(bytesSecret, 0, 6);
-        byte[] headerPublic = Utility.subArray(bytesPublic, 0, 6);
-        assertArrayEquals(eddsaHeaderSecret, headerSecret);
-        assertArrayEquals(eddsaHeaderPublic, headerPublic);
-    }
-
-    @Test
-    void keyHeaderTest4() {
-        byte[] hashHeader = new byte[] { (byte)Dime.VERSION, (byte)0xE0, (byte)0x01, (byte)0x02, (byte)0x00, (byte)0x00 }; // version 1, Secure Hashing, Blake2b, 256-bit, extension, extension
-        Key hash = Key.generateKey(KeyType.AUTHENTICATION);
-        assertNull(hash.getPublic());
-        byte[] bytes = Base58.decode(hash.getSecret());
-        assertNotNull(bytes);
-        byte[] header = Utility.subArray(bytes, 0, 6);
-        assertArrayEquals(hashHeader, header);
     }
 
     @Test

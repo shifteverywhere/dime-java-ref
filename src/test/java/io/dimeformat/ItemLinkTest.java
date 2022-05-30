@@ -229,10 +229,9 @@ class ItemLinkTest {
             String lnk1 = new ItemLink(Key.generateKey(KeyType.IDENTITY)).toEncoded();
             String lnk2 = new ItemLink(Key.generateKey(KeyType.EXCHANGE)).toEncoded();
             String lnk3 = new ItemLink(Key.generateKey(KeyType.ENCRYPTION)).toEncoded();
-            String lnk4 = new ItemLink(Key.generateKey(KeyType.AUTHENTICATION)).toEncoded();
-            List<ItemLink> links = ItemLink.fromEncodedList(lnk1 + ":" + lnk2 + ":" + lnk3 + ":" + lnk4);
+            List<ItemLink> links = ItemLink.fromEncodedList(lnk1 + ":" + lnk2 + ":" + lnk3);
             assertNotNull(links);
-            assertEquals(4, links.size());
+            assertEquals(3, links.size());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

@@ -12,7 +12,10 @@ package io.dimeformat.enums;
 /**
  * Defines rhe variant of a key, may either be SECRET or PUBLIC.
  * Used for header information in keys.
+ * @deprecated Deprecated and will be removed in an upcoming release, and therefore not be used anymore. Replaced by
+ * {#{@link KeyUsage}}.
  */
+@Deprecated
 public enum KeyVariant {
 
     /**

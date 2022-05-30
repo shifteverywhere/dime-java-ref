@@ -9,10 +9,21 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.crypto.CryptoSuiteStandard;
+import io.dimeformat.crypto.ICryptoSuite;
+
 /**
  * Central class that handles a few important settings and constants.
  */
 public final class Dime {
+
+    public static final Crypto crypto = new Crypto();
+    static {
+        ICryptoSuite impl = new CryptoSuiteStandard();
+        Dime.crypto.registerCryptoSuite(impl, Dime.STANDARD_SUITE);
+        Dime.crypto.registerCryptoSuite(impl, Dime.LEGACY_SUITE);
+        Dime.crypto.setDefaultSuiteName(Dime.STANDARD_SUITE);
+    }
 
     /**
      * The maximum length that the context claim may hold.
@@ -27,6 +38,17 @@ public final class Dime {
      * A constant holding the number of seconds for a year (based on 365 days).
      */
     public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
+
+    /**
+     * The name for any legacy Dime keys that was created before the introduction of cryptographic suites.
+     * This is just used for internal use and should not be exported.
+     */
+    public static final String LEGACY_SUITE = "LEGACY";
+
+    /**
+     * The name of the standard cryptographic suites used for Dime keys.
+     */
+    public static final String STANDARD_SUITE = "DSTN";
 
     /**
      * Returns the currently set trusted identity. This is normally the root identity of a trust chain.

@@ -12,7 +12,10 @@ package io.dimeformat.enums;
 /**
  * Defines the family a particular algorithm belongs to.
  * Used for header information in keys.
+ * @deprecated Deprecated and will be removed in an upcoming release, and therefore not be used anymore. Replaced by
+ * {#{@link KeyUsage}}.
  */
+@Deprecated
 public enum AlgorithmFamily {
 
     /** 

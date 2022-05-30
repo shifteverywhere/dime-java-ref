@@ -234,7 +234,7 @@ public class Envelope {
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
         if (this.signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
         if (this.items == null || this.items.isEmpty()) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
-        this.signature = Crypto.generateSignature(encode(), key);
+        this.signature = Dime.crypto.generateSignature(encode(), key);
         return this;
     }
 
@@ -244,11 +244,11 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      * @throws DimeIntegrityException If the signature is invalid.
      */
-    public Envelope verify(Key key) throws DimeIntegrityException {
+    public Envelope verify(Key key) throws DimeIntegrityException, DimeCryptographicException {
         if (key == null || key.getPublic() == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         if (this.signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
-        Crypto.verifySignature(encode(), this.signature, key);
+        Dime.crypto.verifySignature(encode(), this.signature, key);
         return this;
     }
 
@@ -290,7 +290,11 @@ public class Envelope {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public static String thumbprint(String encoded) throws DimeCryptographicException {
-        return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
+        return Envelope.thumbprint(encoded, Dime.crypto.getDefaultSuiteName());
+    }
+
+    public static String thumbprint(String encoded, String suiteName) throws DimeCryptographicException {
+        return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
     /// PRIVATE ///

@@ -14,7 +14,6 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -121,7 +120,7 @@ public abstract class Item {
     public void sign(Key key) throws DimeCryptographicException {
         if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        this.signature = Crypto.generateSignature(encoded(false), key);
+        this.signature = Dime.crypto.generateSignature(encoded(false), key);
     }
 
     /**
@@ -154,7 +153,11 @@ public abstract class Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public static String thumbprint(String encoded) throws DimeCryptographicException {
-        return Utility.toHex(Crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8)));
+        return Item.thumbprint(encoded, Dime.crypto.getDefaultSuiteName());
+    }
+
+    public static String thumbprint(String encoded, String suiteName) throws DimeCryptographicException {
+        return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
     /**
@@ -270,7 +273,7 @@ public abstract class Item {
     public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
-        Crypto.verifySignature(encoded(false), this.signature, key);
+        Dime.crypto.verifySignature(encoded(false), this.signature, key);
         if (linkedItems != null) {
             if (itemLinks == null) {
                 itemLinks = claims.getItemLinks(Claim.LNK);

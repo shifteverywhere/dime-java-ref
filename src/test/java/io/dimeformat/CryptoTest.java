@@ -9,9 +9,12 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CryptoTest {
@@ -20,9 +23,9 @@ class CryptoTest {
     void generateSignatureTest1() {
         try {
             String data = "Racecar is racecar backwards.";
-            Key key = Crypto.generateKey(KeyType.IDENTITY);
-            String sig = Crypto.generateSignature(data, key);
-            Crypto.verifySignature(data, sig, key);
+            Key key = Dime.crypto.generateKey(List.of(KeyUsage.SIGN));
+            String sig = Dime.crypto.generateSignature(data, key);
+            Dime.crypto.verifySignature(data, sig, key);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -31,22 +34,22 @@ class CryptoTest {
     @Test
     void generateSignatureTest2() {
         try {
-            String sig = "Ey5hGXAXFq1WgVS0bhzmx4qfT6VdsTQtZDF4PSRTBAcWZmO/2jhFPmV2YEy5bIA8PHDwRHXtbdU5Psi3ln7cBA";
-            String encoded = "Di:KEY.eyJ1aWQiOiJmNjYxMGUyNS1jYTA1LTQzMWItODhlZS1iYzczNmZiNWQxZmUiLCJwdWIiOiIyVERYZG9Odm9NZFd4VGh4Z2FxVG5McTl0aFdWYXZFeUFWaUx2ekNrc2VxMWtlRDNrOGJ4UkY2cVciLCJpYXQiOiIyMDIxLTEyLTAyVDIwOjQ4OjAxLjEyMDUxOFoiLCJrZXkiOiJTMjFUWlNMQmFjYXhURVVBVFExVG91dENIRkI1NFA2R25vTTNLU0hXMUpvNTgxZUZzalZYajZEWHBYMjdKTFRCSFVQaWNmbUVKZ2FxNnhaeEoxeVN3TldieTQ2cUdzQ3hrUmpCIn0";
+            String sig = "3DYiduduCeMYt86jEBHJG981O1NxpYn3gBnkUxI3yG9penQxk+qR8G222asv5lLpbX7JOBS+CKouZGhR8NEdBg";
+            String encoded = "Di:KEY.eyJ1aWQiOiIzYWQ0Y2YyNi1lM2M1LTQ1YWYtYmRmNi02OGNmMDRjMTBhMWMiLCJwdWIiOiJEU1ROKzJKSGVwODZvOFl5UFU1b01MbmtpNUxZYkhHU0tOdEM3YXVrdmlOWEFyU0g5UnB0Ykt0IiwiaWF0IjoiMjAyMi0wNS0zMFQwNzoyNTowMC4wMDUxMjVaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTitTMXJxejhLWkdGenpqWkRxUVVCZUdkYmVMdVZiQUVRYnFXUmVycGZEUW1CZjJHZkpCaWdWYkhDMVViTWRBallYVHRTdWM2ZHdrdHY5cDdLcXY0U2pDZldUd3VmSjkifQ";
             Key key = Item.importFromEncoded(encoded);
-            Crypto.verifySignature("Racecar is racecar backwards.", sig, key);
+            Dime.crypto.verifySignature("Racecar is racecar backwards.", sig, key);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
     }
 
     @Test
-    void generateGenerateSharedSecretTest1() {
+    void generateSharedSecretTest1() {
         try {
             Key clientKey = Key.generateKey(KeyType.EXCHANGE);
             Key serverKey = Key.generateKey(KeyType.EXCHANGE);
-            Key shared1 = Crypto.generateSharedSecret(clientKey, serverKey.publicCopy());
-            Key shared2 = Crypto.generateSharedSecret(clientKey.publicCopy(), serverKey);
+            Key shared1 = Dime.crypto.generateSharedSecret(clientKey, serverKey.publicCopy(), List.of(KeyUsage.ENCRYPT));
+            Key shared2 = Dime.crypto.generateSharedSecret(clientKey.publicCopy(), serverKey, List.of(KeyUsage.ENCRYPT));
             assertEquals(KeyType.ENCRYPTION, shared1.getKeyType());
             assertEquals(KeyType.ENCRYPTION, shared2.getKeyType());
             assertEquals(shared1.getSecret(), shared2.getSecret());
@@ -56,16 +59,16 @@ class CryptoTest {
     }
 
     @Test
-    void generateGenerateSharedSecretTest2() {
+    void generateSharedSecretTest2() {
         try {
             String encodedClient = "Di:KEY.eyJ1aWQiOiI1ODc1YWNjZS01OTE5LTQwMzEtOWY2MS0zMzg4NGZmOTRiY2EiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjQ2ODE0OFoiLCJrZXkiOiIyREJWdDhWOWhSOTU0Mjl5MWdja3lXaVBoOXhVRVBxb2hFUTFKQjRnSjlodmpaV1hheE0zeWVURXYiLCJwdWIiOiIyREJWdG5NYUZ6ZkpzREIyTGtYS2hjV3JHanN2UG1TMXlraXdCTjVvZXF2eExLaDRBMllIWFlUc1EifQ";
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMyWiIsInB1YiI6IjJEQlZ0bk1aUDc5aEpWTUpwVnlIR29rRU1QWEM2cXkzOHNoeVRIaEpBekY5TlVRdlFmUWRxNGRjMyJ9";
-            String encodedShared = "22etZANAXYDE4m15ZtofRnMn81dUwBzN1s7QcoKF2yo8my84Hd5vecQUe";
+            String encodedShared = "LEGACY+2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
             Key clientKey = Item.importFromEncoded(encodedClient);
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
             assertNotNull(serverKey);
-            Key shared = Crypto.generateSharedSecret(clientKey, serverKey);
+            Key shared = Dime.crypto.generateSharedSecret(clientKey, serverKey, List.of(KeyUsage.ENCRYPT));
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -73,16 +76,16 @@ class CryptoTest {
     }
 
     @Test
-    void generateGenerateSharedSecretTest3() {
+    void generateSharedSecretTest3() {
         try {
             String encodedClient = "Di:KEY.eyJ1aWQiOiI1ODc1YWNjZS01OTE5LTQwMzEtOWY2MS0zMzg4NGZmOTRiY2EiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDE1MloiLCJwdWIiOiIyREJWdG5NYUZ6ZkpzREIyTGtYS2hjV3JHanN2UG1TMXlraXdCTjVvZXF2eExLaDRBMllIWFlUc1EifQ";
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMxNloiLCJrZXkiOiIyREJWdDhWOWJ4R2pGS0xoa2FodEo0UUtRc3F6Y1ZjNGFqeWNxSnQ4eFZQTlZkYnBveHBLdkFZaUoiLCJwdWIiOiIyREJWdG5NWlA3OWhKVk1KcFZ5SEdva0VNUFhDNnF5MzhzaHlUSGhKQXpGOU5VUXZRZlFkcTRkYzMifQ";
-            String encodedShared = "22etZANAXYDE4m15ZtofRnMn81dUwBzN1s7QcoKF2yo8my84Hd5vecQUe";
+            String encodedShared = "LEGACY+2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
             Key clientKey = Item.importFromEncoded(encodedClient);
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
             assertNotNull(serverKey);
-            Key shared = Crypto.generateSharedSecret(clientKey, serverKey);
+            Key shared = Dime.crypto.generateSharedSecret(clientKey, serverKey, List.of(KeyUsage.ENCRYPT));
             assertEquals(encodedShared, shared.getSecret());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
@@ -94,9 +97,9 @@ class CryptoTest {
         try {
             String data = "Racecar is racecar backwards.";
             Key key = Key.generateKey(KeyType.ENCRYPTION);
-            byte[] cipherText = Crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
+            byte[] cipherText = Dime.crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
-            byte[] plainText = Crypto.decrypt(cipherText, key);
+            byte[] plainText = Dime.crypto.decrypt(cipherText, key);
             assertNotNull(plainText);
             assertEquals(data, new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -110,9 +113,9 @@ class CryptoTest {
             String data = "Racecar is racecar backwards.";
             String encoded = "Di:KEY.eyJ1aWQiOiI3ZmM1ODcxMi0xYzY3LTQ4YmItODRmMS1kYjlkOGYyZWM2ZTMiLCJpYXQiOiIyMDIxLTEyLTAyVDIwOjI2OjU4LjQ2ODQ2MloiLCJrZXkiOiIyMmV0WkFOOHlQZmtNQkxpem83WE13S0Zrd29UTVJDeXpNdG9uMVV6RUVRODZqWGRjQmtTdTV0d1EifQ";
             Key key = Item.importFromEncoded(encoded);
-            byte[] cipherText = Crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
+            byte[] cipherText = Dime.crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
-            byte[] plainText = Crypto.decrypt(cipherText, key);
+            byte[] plainText = Dime.crypto.decrypt(cipherText, key);
             assertNotNull(plainText);
             assertEquals(data, new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -126,7 +129,7 @@ class CryptoTest {
             String cipherText = "NHubU8GAScHW7Re7+Ne8UPBB9xVEJX3WGUO4dMNNtR0VB9T5gJ8OZIpfgpURRkhuJD/7g+flZofsaP8NTVkhGrUFcZ4b";
             String encoded = "Di:KEY.eyJ1aWQiOiI3ZmM1ODcxMi0xYzY3LTQ4YmItODRmMS1kYjlkOGYyZWM2ZTMiLCJpYXQiOiIyMDIxLTEyLTAyVDIwOjI2OjU4LjQ2ODQ2MloiLCJrZXkiOiIyMmV0WkFOOHlQZmtNQkxpem83WE13S0Zrd29UTVJDeXpNdG9uMVV6RUVRODZqWGRjQmtTdTV0d1EifQ";
             Key key = Item.importFromEncoded(encoded);
-             byte[] plainText = Crypto.decrypt(Utility.fromBase64(cipherText), key);
+             byte[] plainText = Dime.crypto.decrypt(Utility.fromBase64(cipherText), key);
             assertNotNull(plainText);
             assertEquals("Racecar is racecar backwards.", new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -139,7 +142,7 @@ class CryptoTest {
         try {
             String ref = "b9f050dd8bfbf027ea9fc729e9e764fda64c2bca20030a5d25264c35c486d892";
             byte[] data = "Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8);
-            byte[] hash = Crypto.generateHash(data);
+            byte[] hash = Dime.crypto.generateHash(data);
             assertNotNull(hash);
             String hex = Utility.toHex(hash);
             assertEquals(ref, hex);

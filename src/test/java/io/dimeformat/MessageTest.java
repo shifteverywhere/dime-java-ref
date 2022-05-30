@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeKeyMismatchException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import io.dimeformat.exceptions.DimeDateException;
@@ -392,7 +391,7 @@ class MessageTest {
             Key key = Key.generateKey(KeyType.IDENTITY);
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
-        } catch (DimeKeyMismatchException e) {
+        } catch (IllegalArgumentException e) {
             return; // All is well
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

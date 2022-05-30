@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
+import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -62,7 +63,7 @@ public class Identity extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = getClaims().getKey(Claim.PUB);
+            _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
         }
         return _publicKey;
     }

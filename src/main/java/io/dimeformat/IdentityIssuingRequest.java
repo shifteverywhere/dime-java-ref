@@ -12,6 +12,7 @@ package io.dimeformat;
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyType;
+import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import java.time.Instant;
 import java.util.*;
@@ -50,7 +51,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = getClaims().getKey(Claim.PUB);
+            _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
         }
         return _publicKey;
     }
@@ -118,7 +119,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
-        if (key.getKeyType() != KeyType.IDENTITY) { throw new IllegalArgumentException("Key of invalid type."); }
+        if (!key.getKeyUsage().contains(KeyUsage.SIGN)) { throw new IllegalArgumentException("Key most have SIGN usage set."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
@@ -132,7 +133,7 @@ public class IdentityIssuingRequest extends Item {
         if (principles != null && !principles.isEmpty()) {
             iir.getClaims().put(Claim.PRI, principles);
         }
-        iir.signature = Crypto.generateSignature(iir.encoded(false), key);
+        iir.signature = Dime.crypto.generateSignature(iir.encoded(false), key);
         return iir;
     }
 
