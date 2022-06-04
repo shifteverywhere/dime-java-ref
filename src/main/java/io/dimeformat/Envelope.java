@@ -44,7 +44,7 @@ public class Envelope {
      * @deprecated Will be removed in the future, use {#{@link Dime#VERSION} instead
      */
     @Deprecated
-    public static final int DIME_VERSION = Dime.VERSION;
+    public static final int DIME_VERSION = 0x01;
 
     /**
      * Returns the identifier of the issuer of the envelope.
@@ -138,8 +138,20 @@ public class Envelope {
     public static Envelope importFromEncoded(String encoded) throws DimeFormatException {
         if (!encoded.startsWith(Envelope.HEADER)) { throw new DimeFormatException("Not a Dime envelope object, invalid header."); }
         String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
-        // 0: HEADER
+        // 0: ENVELOPE
         String[] components = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
+        boolean isLegacy = false;
+        try {
+            String meta = components[0].split("\\" + Dime.META_DELIMITER)[1];
+            if (Integer.parseInt(meta.substring(0,1)) != Dime.VERSION) {
+                throw new DimeFormatException("Unsupported Dime version.");
+            }
+            if (!meta.substring(1).equalsIgnoreCase(Dime.DEFAULT_FORMAT)) {
+                throw new DimeFormatException("Unsupported Dime encoding format.");
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            isLegacy = true;
+        }
         Envelope envelope;
         if (components.length == 2) {
             byte[] json = Utility.fromBase64(components[1]);
@@ -147,13 +159,17 @@ public class Envelope {
         } else if (components.length == 1) {
             envelope = new Envelope();
         } else {
-            throw new DimeFormatException("Not a valid Di:ME envelope object, unexpected number of components in header, got: " + components.length + ", expected: 1 or 2.");
+            throw new DimeFormatException("Not a valid Dime envelope object, unexpected number of components in header, got: " + components.length + ", expected: 1 or 2.");
         }
+        envelope.isLegacy = isLegacy;
         // 1 to LAST or LAST - 1
         int endIndex = (envelope.isAnonymous()) ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
         ArrayList<Item> items = new ArrayList<>(endIndex - 1);
-        for (int index = 1; index < endIndex; index++)
-            items.add(Item.fromEncoded(sections[index]));
+        for (int index = 1; index < endIndex; index++) {
+            Item item = Item.fromEncoded(sections[index]);
+            item.isLegacy = isLegacy;
+            items.add(item);
+        }
         envelope.items = items;
         if (envelope.isAnonymous()) {
             envelope.encoded = encoded;
@@ -265,6 +281,17 @@ public class Envelope {
         }
     }
 
+    public void convertToLegacy() {
+        isLegacy = true;
+        encoded = null;
+        signature = null;
+        if (items != null) {
+            for (Item item: items) {
+                item.convertToLegacy();
+            }
+        }
+    }
+
     /**
      * Returns the thumbprint of the envelope. This may be used to easily identify an envelope or detect if an
      * envelope has been changed. This is created by securely hashing the envelope and will be unique and change as
@@ -303,6 +330,7 @@ public class Envelope {
     private ArrayList<Item> items;
     private String encoded;
     private String signature;
+    private boolean isLegacy = false;
 
     private Envelope(String json) {
         this.claims = new ClaimsMap(json);
@@ -312,6 +340,11 @@ public class Envelope {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
+            if (!isLegacy) {
+                builder.append(Dime.META_DELIMITER);
+                builder.append(Dime.VERSION);
+                builder.append(Dime.DEFAULT_FORMAT);
+            }
             if (!this.isAnonymous()) {
                 builder.append(Dime.COMPONENT_DELIMITER);
                 builder.append(Utility.toBase64(claims.toJSON()));

@@ -15,6 +15,8 @@ import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Handles claims for Di:ME items.
@@ -29,6 +31,12 @@ class ClaimsMap {
     public ClaimsMap(UUID uid) {
         this._claims = new HashMap<>();
         put(Claim.UID, uid);
+    }
+
+    public List<String> sort() {
+        Set<String> keys = this._claims.keySet();
+        Stream<String> sorted = keys.stream().sorted();
+        return sorted.collect(Collectors.toList());
     }
 
     public ClaimsMap(String encoded) {

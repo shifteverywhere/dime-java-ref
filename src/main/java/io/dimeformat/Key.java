@@ -12,6 +12,9 @@ package io.dimeformat;
 import io.dimeformat.crypto.ICryptoSuite;
 import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.DimeFormatException;
+
+import javax.security.auth.kerberos.KeyTab;
 import java.util.List;
 import java.util.UUID;
 import static java.util.stream.Collectors.toList;
@@ -38,7 +41,7 @@ public class Key extends Item {
      */
     @Deprecated
     public int getVersion() {
-        return 1;
+        return Dime.VERSION;
     }
 
     /**
@@ -49,13 +52,25 @@ public class Key extends Item {
     @Deprecated
     public KeyType getKeyType() {
         if (_type == null) {
-            if (!getCryptoSuiteName().equals(Dime.LEGACY_SUITE)) { // This will force key decode
+            if (isLegacy) {
+                try {
+                    String key = getClaims().get(Claim.KEY);
+                    if (key == null) {
+                        key = getClaims().get(Claim.PUB);
+                        decodeKey(key, Claim.PUB);
+                    } else {
+                        decodeKey(key, Claim.KEY);
+                    }
+                } catch (DimeCryptographicException e) {
+                    throw new IllegalStateException("Invalid legacy key, missing key type.");
+                }
+            } else {
                 if (hasUsage(KeyUsage.SIGN)) {
-                    return KeyType.IDENTITY;
+                    _type = KeyType.IDENTITY;
                 } else if (hasUsage(KeyUsage.EXCHANGE)) {
-                    return KeyType.EXCHANGE;
+                    _type = KeyType.EXCHANGE;
                 } else if (hasUsage(KeyUsage.ENCRYPT)) {
-                    return KeyType.ENCRYPTION;
+                    _type = KeyType.ENCRYPTION;
                 }
             }
         }
@@ -125,11 +140,13 @@ public class Key extends Item {
      */
     public List<KeyUsage> getKeyUsage() {
         if (_usage == null) {
-            if (getCryptoSuiteName().equals(Dime.LEGACY_SUITE)) {
+            List<String> usage = getClaims().get(Claim.USE);
+            if (usage != null) {
+                _usage = usage.stream().map(cap -> KeyUsage.valueOf(cap.toUpperCase())).collect(toList());
+            } else if (isLegacy) {
                 _usage = List.of(KeyUsage.fromKeyType(getKeyType()));
             } else {
-                List<String> usage = getClaims().get(Claim.USE);
-                _usage = usage.stream().map(cap -> KeyUsage.valueOf(cap.toUpperCase())).collect(toList());
+                throw new IllegalStateException("Invalid key, missing key usage.");
             }
         }
         return _usage;
@@ -340,6 +357,22 @@ public class Key extends Item {
         getClaims().remove(Claim.UID); // TODO: rewrite this so that UID is null on creation
     }
 
+    /// PROTECTED ///
+
+
+    @Override
+    protected void customEncoding(StringBuilder builder) {
+        if (isLegacy) {
+
+        }
+        super.customEncoding(builder);
+    }
+
+    @Override
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        super.customDecoding(components);
+    }
+
     /// PRIVATE ///
 
     private static final int CRYPTO_SUITE_INDEX = 0;
@@ -367,6 +400,31 @@ public class Key extends Item {
         }
     }
 
+    @Override
+    public void convertToLegacy() {
+        if (isLegacy) { return; }
+        super.convertToLegacy();
+        Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.KEY);
+        Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.PUB);
+    }
+
+    static void convertKeyToLegacy(Item item, KeyUsage usage, Claim claim) {
+        String key = item.getClaims().get(claim);
+        if (key == null) { return; }
+        byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        String b58 = key.substring(key.indexOf("+") + 1);
+        byte[] rawKey = Base58.decode(b58);
+        byte[] legacyKey = Utility.combine(header, rawKey);
+        legacyKey[1] = usage == KeyUsage.ENCRYPT ? 0x10 : usage == KeyUsage.EXCHANGE ? (byte)0x40 : (byte)0x80;
+        legacyKey[2] = usage == KeyUsage.EXCHANGE ? (byte)0x02 : (byte)0x01;
+        if (claim == Claim.PUB) {
+            legacyKey[3] = 0x01;
+        } else if (usage == KeyUsage.ENCRYPT) {
+            legacyKey[3] = 0x02;
+        }
+        item.getClaims().put(claim, Base58.encode(legacyKey, null));
+    }
+
     private static String encodeKey(String suiteName, byte[] rawKey) {
         return suiteName + "+" + Base58.encode(rawKey, null);
     }
@@ -378,7 +436,8 @@ public class Key extends Item {
         if (components.length == 2) {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
         } else { // This will be treated as legacy
-            suiteName = Dime.LEGACY_SUITE;
+            suiteName = Dime.STANDARD_SUITE;
+            isLegacy = true;
         }
         if (this._suiteName == null) {
             this._suiteName = suiteName;
@@ -386,7 +445,7 @@ public class Key extends Item {
             throw new DimeCryptographicException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
         }
         byte[] rawKey;
-        if (!suiteName.equals(Dime.LEGACY_SUITE)) {
+        if (!isLegacy) {
             rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
         } else {
             byte[] decoded = Base58.decode(encoded);

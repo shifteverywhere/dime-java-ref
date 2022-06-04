@@ -22,7 +22,6 @@ public final class Dime {
     static {
         ICryptoSuite impl = new CryptoSuiteStandard();
         Dime.crypto.registerCryptoSuite(impl, Dime.STANDARD_SUITE);
-        Dime.crypto.registerCryptoSuite(impl, Dime.LEGACY_SUITE);
         Dime.crypto.setDefaultSuiteName(Dime.STANDARD_SUITE);
     }
 
@@ -33,18 +32,14 @@ public final class Dime {
     /**
      * The current version of the implemented Di:ME specification.
      */
-    public static final int VERSION = 0x01;
+    public static final int VERSION = 1;
+
+    public static final String DEFAULT_FORMAT = "j";
 
     /**
      * A constant holding the number of seconds for a year (based on 365 days).
      */
     public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
-
-    /**
-     * The name for any legacy Dime keys that was created before the introduction of cryptographic suites.
-     * This is just used for internal use and should not be exported.
-     */
-    public static final String LEGACY_SUITE = "LEGACY";
 
     /**
      * The name of the standard cryptographic suites used for Dime keys.
@@ -89,6 +84,7 @@ public final class Dime {
 
     static final String COMPONENT_DELIMITER = ".";
     static final String SECTION_DELIMITER = ":";
+    static final String META_DELIMITER = "/";
 
     /// PRIVATE ///
 

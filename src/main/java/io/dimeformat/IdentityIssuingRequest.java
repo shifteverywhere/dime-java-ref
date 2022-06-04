@@ -326,6 +326,13 @@ public class IdentityIssuingRequest extends Item {
 
     }
 
+    @Override
+    public void convertToLegacy() {
+        if (isLegacy) { return; }
+        super.convertToLegacy();
+        Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
+    }
+
     /// PROTECTED ///
 
     @Override

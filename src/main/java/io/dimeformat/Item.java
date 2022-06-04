@@ -108,6 +108,9 @@ public abstract class Item {
      */
     public String exportToEncoded() {
         Envelope envelope = new Envelope();
+        if (isLegacy) {
+            envelope.convertToLegacy();
+        }
         envelope.addItem(this);
         return envelope.exportToEncoded();
     }
@@ -331,6 +334,14 @@ public abstract class Item {
         claims.remove(Claim.LNK);
     }
 
+    public void convertToLegacy() {
+        if (!isLegacy && isSigned()) { throw new IllegalStateException("Unable to mark item as legacy, already signed."); }
+        encoded = null;
+        isLegacy = true;
+    }
+
+    public boolean isSetAsLegacy() { return isLegacy; }
+
     /// PACKAGE-PRIVATE ///
 
     static final int MINIMUM_NBR_COMPONENTS = 2;
@@ -364,6 +375,7 @@ public abstract class Item {
     protected List<String> components;
     protected String signature;
     protected List<ItemLink> itemLinks;
+    protected boolean isLegacy = false;
 
     protected final ClaimsMap getClaims() {
         if (this.claims == null) {

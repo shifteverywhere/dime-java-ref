@@ -259,6 +259,13 @@ public class Identity extends Item {
         return false;
     }
 
+    @Override
+    public void convertToLegacy() {
+        if (isLegacy) { return; }
+        super.convertToLegacy();
+        Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
+    }
+
     /// PACKAGE-PRIVATE ///
 
     /**

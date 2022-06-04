@@ -59,7 +59,7 @@ public final class Crypto {
     public String generateSignature(String data, Key key) throws DimeCryptographicException {
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Unable to sign, data must not be null or of length zero."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
-        if (!key.getKeyUsage().contains(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
+        if (!key.hasUsage(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         byte[] rawSignature = impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getKeyBytes(Claim.KEY));
         return Utility.toBase64(rawSignature);
@@ -136,7 +136,7 @@ public final class Crypto {
     public byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
         if (plainText == null || plainText.length == 0) { throw new IllegalArgumentException("Plain text to encrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        if (!key.hasUsage(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         return impl.encrypt(plainText, key.getKeyBytes(Claim.KEY));
     }
@@ -151,7 +151,7 @@ public final class Crypto {
     public byte[] decrypt(byte[] cipherText, Key key) throws DimeCryptographicException {
         if (cipherText == null ||cipherText.length == 0) { throw new IllegalArgumentException("Cipher text to decrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (!key.getKeyUsage().contains(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        if (!key.hasUsage(KeyUsage.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         return impl.decrypt(cipherText, key.getKeyBytes(Claim.KEY));
     }
