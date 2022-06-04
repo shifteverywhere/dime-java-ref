@@ -554,4 +554,32 @@ class MessageTest {
         }
     }
 
+    @Test
+    void messagePlatformExchangeTest1() {
+        try {
+            String text = "Racecar is racecar backwards.";
+            Key clientKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiIzOWYxMzkzMC0yYTJhLTQzOWEtYjBkNC1lMzJkMzc4ZDgyYzciLCJwdWIiOiIyREJWdG5NWlVjb0dZdHd3dmtjYnZBSzZ0Um1zOUZwNGJ4dHBlcWdha041akRVYkxvOXdueWRCUG8iLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0LjQ0NDA0MVoiLCJrZXkiOiIyREJWdDhWOEF4UWR4UFZVRkJKOWdScFA1WDQzNnhMbVBrWW9RNzE1cTFRd2ZFVml1NFM3RExza20ifQ");
+            Key serverKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiJjY2U1ZDU1Yi01NDI4LTRhMDUtOTZmYi1jZmU4ZTE4YmM3NWIiLCJwdWIiOiIyREJWdG5NYTZrcjNWbWNOcXNMSmRQMW90ZGtUMXlIMTZlMjV0QlJiY3pNaDFlc3J3a2hqYTdaWlEiLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0Ljg0NjEyMVoiLCJrZXkiOiIyREJWdDhWOTV5N2lvb1A0bmRDajd6d3dqNW1MVExydVhaaGg0RTJuMUE0SHoxQkIycHB5WXY1blIifQ");
+
+            // This is received by the client //
+            Message message = Item.importFromEncoded("Di:MSG.eyJpc3MiOiIzOTA3MWIyNC04MGRmLTQyYzEtYWQwZS1jNmQ2ZmNmMjg5YmIiLCJ1aWQiOiJjNjExOWYxMC0wZDE3LTQ3NTItYTkwZS1lODlhOGI2OGIyY2MiLCJpYXQiOiIyMDIyLTA2LTAzVDEzOjU0OjM2Ljg4MDM3MVoifQ.8sdEJ3CuHLaA/DmYcCce+8iflhQwESkDwIF8xu69R4h6Pvt+k6HfDJjK+sYm4goKoA04hb8Zaq9wMGiuxXoqqBHAGqd/.WorEis9t8WdQiOW+yK2F8gLfBfrnlFk/W7FMmjBhPWpp7SAddq2UPvE0nRo1TvWdqonhb2gm2TPMp0O0X4ULAQ");
+            byte[] payload = message.getPayload(serverKey.publicCopy(), clientKey);
+            assertEquals(text, new String(payload, StandardCharsets.UTF_8));
+
+            // Client generate a response (to be sent to the server) //
+            Message response = new Message(UUID.randomUUID());
+            response.setPayload(text.getBytes(StandardCharsets.UTF_8), serverKey.publicCopy(), clientKey);
+            response.sign(Key.generateKey(List.of(KeyUsage.SIGN)));
+            String exported = response.exportToEncoded();
+
+            // This would really happen on the server side //
+            Message received = Item.importFromEncoded(exported);
+            byte[] payload2 = received.getPayload(serverKey, clientKey.publicCopy());
+            assertEquals(text, new String(payload2, StandardCharsets.UTF_8));
+
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 }
