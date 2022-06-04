@@ -160,7 +160,7 @@ class IdentityIssuingRequestTest {
             String exported = iir.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
-            assertTrue(exported.startsWith(Envelope.HEADER + ":" + IdentityIssuingRequest.ITEM_IDENTIFIER));
+            assertTrue(exported.startsWith(Commons.fullHeaderFor(IdentityIssuingRequest.ITEM_IDENTIFIER)));
             assertEquals(3, exported.split("\\" + ".").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

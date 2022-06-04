@@ -86,7 +86,7 @@ class MessageTest {
             String encoded = message.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Message.ITEM_IDENTIFIER));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Message.ITEM_IDENTIFIER)));
             assertEquals(4, encoded.split("\\.").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 

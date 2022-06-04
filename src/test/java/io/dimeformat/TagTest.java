@@ -173,7 +173,7 @@ class TagTest {
             String encoded = tag.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Tag.ITEM_IDENTIFIER));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Tag.ITEM_IDENTIFIER)));
             assertEquals(3, encoded.split("\\.").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

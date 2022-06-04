@@ -63,7 +63,7 @@ public class DataTest {
             String encoded = data.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Envelope.HEADER + ":" + Data.ITEM_IDENTIFIER));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Data.ITEM_IDENTIFIER)));
             assertEquals(3, encoded.split("\\.").length);
             data.sign(Commons.getIssuerKey());
             encoded = data.exportToEncoded();

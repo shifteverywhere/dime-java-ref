@@ -92,14 +92,4 @@ public enum Claim {
         return super.toString().toLowerCase();
     }
 
-    /**
-     * Returns a Capability that matches the provided name.
-     * @param name The name to match.
-     * @return The matching Capability.
-     * @throws IllegalArgumentException If no match could be done.
-     */
-    public static Capability from(String name) throws IllegalArgumentException {
-        return Capability.valueOf(name.trim().toUpperCase());
-    }
-
 }

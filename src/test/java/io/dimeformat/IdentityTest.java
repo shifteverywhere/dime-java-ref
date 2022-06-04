@@ -279,7 +279,7 @@ class IdentityTest {
             Dime.setTimeModifier(-2);
             identity.isTrusted();
         } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
+            fail("(Note this may happen if running tests in parallel) Unexpected exception thrown: " + e);
         }
     }
 
@@ -309,7 +309,7 @@ class IdentityTest {
             String exported = identity.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
-            assertTrue(exported.startsWith(Envelope.HEADER + ":" + Identity.ITEM_IDENTIFIER));
+            assertTrue(exported.startsWith(Commons.fullHeaderFor(Identity.ITEM_IDENTIFIER)));
             assertEquals(4, exported.split("\\.").length);
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 

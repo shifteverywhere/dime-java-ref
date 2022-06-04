@@ -11,12 +11,14 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
+import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -199,6 +201,63 @@ public class DimeTest {
             assertEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
             assertEquals(Instant.parse("2021-11-18T18:05:52.974395Z"), message.getIssuedAt());
             assertEquals(Instant.parse("2021-11-18T18:06:02.974395Z"), message.getExpiresAt());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyKeyConvertToLegacyTest1() {
+        try {
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Message message = new Message(UUID.randomUUID());
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.sign(key);
+            String currentExport = key.exportToEncoded();
+            assertNotNull(currentExport);
+            assertTrue(currentExport.startsWith("Di/1j:KEY."));
+            key.convertToLegacy();
+            String legacyExport = key.exportToEncoded();
+            assertNotNull(legacyExport);
+            assertFalse(legacyExport.startsWith("Di/1j:KEY."));
+            Key legacyKey = Item.importFromEncoded(legacyExport);
+            assertNotNull(legacyKey);
+            assertTrue(legacyKey.isLegacy);
+            message.verify(legacyKey);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyIIRConvertToLegacyTest1() {
+        try {
+            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
+            String exported = iir.exportToEncoded();
+            assertNotNull(exported);
+            assertTrue(exported.startsWith("Di/1j:IIR."));
+            iir.strip();
+            iir.convertToLegacy();
+            iir.sign(key);
+            String legacyExported = iir.exportToEncoded();
+            assertNotNull(legacyExported);
+            assertFalse(legacyExported.startsWith("Di/1j:IIR."));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyIdentityImportTest2() {
+        try {
+            String exported = "Di:ID.eyJzeXMiOiJkaW1lLWRvdG5ldC1yZWYiLCJ1aWQiOiI1NjZkYjliZC03M2Q5LTQ0NmMtODlmZC00ZmU2OTA3NDk3Y2UiLCJzdWIiOiI1MjNiZWZmNC1mYzE1LTRiNzctODNiNC05NzdkNWY1YzZkYTEiLCJpc3MiOiJlODQ5YWQ5OS05YWM4LTQ2ZTktYjUyNS1lZWNiMWEwNjE3NDUiLCJpYXQiOiIyMDIyLTA2LTAyVDE3OjQ0OjU2LjgyNDA4N1oiLCJleHAiOiIyMDIyLTA2LTAyVDE5OjA4OjE2LjgyNDA4N1oiLCJwdWIiOiIyVERYZG9OdzVrOHJpZlVwV3ROMjFKdlJhUHRlcjJ6amIxMjJ6ZHdxOTVnZWJxRHhQM2pZZlhLcWEiLCJjYXAiOlsiZ2VuZXJpYyJdfQ.SUQuZXlKemVYTWlPaUprYVcxbExXUnZkRzVsZEMxeVpXWWlMQ0oxYVdRaU9pSTNNV1k1TkdGa055MDNaakF6TFRRMk5EVXRPVEl3WWkwd1pEaGtPV0V5WVRGa01XSWlMQ0p6ZFdJaU9pSmxPRFE1WVdRNU9TMDVZV000TFRRMlpUa3RZalV5TlMxbFpXTmlNV0V3TmpFM05EVWlMQ0pwYzNNaU9pSTRNVGN4TjJWa09DMDNOMkZsTFRRMk16TXRZVEE1WVMwMllXTTFaRGswWldZeU9HUWlMQ0pwWVhRaU9pSXlNREl4TFRFeUxUQXlWREl5T2pJMU9qQTRMakE0TnpNeU1Wb2lMQ0psZUhBaU9pSXlNREkyTFRFeUxUQXhWREl5T2pJMU9qQTRMakE0TnpNeU1Wb2lMQ0p3ZFdJaU9pSXlWRVJZWkc5T2RsWnpSMVpJT0VNNVZWcDFaSEJpUW5aV1Uwc3hSbVZwTlhJMFdWUmFUWGhoUW1GNmIzTnZNbkJNY0ZCWFZFMW1ZMDRpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFgwLjc5SjlldTNxZXJqMW4xdEpSaUJQenNURHNBNWlqWG41REs3ZlVuNEpRcmhzZUJXN0lrYWRBekNFRGtQcktoUG1lMGtzanVhMjhUQitVTGh4bGEybkNB.AIdmgrX5nsOD8Uo5wdS2tUzcNqTeyG2f8XlCxO20jn+7DSqABMREBqBPlFTD9oO4jcWNDAV4oE2hVaPN+PwFDA";
+            Identity identity = Item.importFromEncoded(exported);
+            assertNotNull(identity);
+            assertTrue(identity.isLegacy);
+            String pub = identity.getPublicKey().getPublic();
+            assertNotNull(pub);
+            assertFalse(pub.startsWith(Dime.STANDARD_SUITE));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
