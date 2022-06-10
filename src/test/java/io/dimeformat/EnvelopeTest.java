@@ -376,11 +376,11 @@ class EnvelopeTest {
     @Test
     void dataImportTest1() {
         try {
-            String exported = "Di.eyJpc3MiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJ1aWQiOiJmNjdhNGRmOS1jZTJkLTQ1NjctYTZkOC1jMzRiZTA2ZDE5NTIiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjMzOjUyLjQ5MDkxMVoiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiNjQ5NDY5OTEtOTBkNi00M2JhLWI2MjMtNmE3NjA5OWEyY2I4IiwidWlkIjoiYjRhZWQzYjAtYTdhZi00NTcxLTkzY2QtYjkwMzBlZmY5NzE1IiwiZXhwIjoiMjAyMi0wNS0zMFQwNzozNTozMi45MTM0MzZaIiwiaWF0IjoiMjAyMi0wNS0zMFQwNzozMzo1Mi45MTM0MzZaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.foxqMrA7TRCtF9abKuVpFsZe9jpIuniVD99Vz8eb5gnuAm36V9038LnXo5/OaF0zs8XJBuGZPVYDOXVqk+4ABg:EpQ7dWvirzs7j+ABFl1nwOPHnh1UPxguvswVHPVKueOCOA6tbkFV+p3p9ri1rYtlvFgbmtYrLa8geFGz04aoCw";
+            String exported = "Di/1j.eyJpc3MiOiI4ZWYyODljMy0wYzJjLTRlZjktYjNlMy00NTQ4MDExYTFhMWUiLCJ1aWQiOiIzYTBiMzFmNC02OTcyLTRkMTgtYmQ3ZC02NDhhNzcxZjk3YmEiLCJpYXQiOiIyMDIyLTA2LTEwVDE5OjEzOjI5LjgyMzQ3MloiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiOWY1MDM0N2EtYmJlOS00NDg1LTk2NzQtNThiZmQwMGJiNjQ0IiwidWlkIjoiMDJjM2JhMDItODJmMS00MjgzLTlmZTMtOTkyZjIyYmJhYjkyIiwiZXhwIjoiMjAyMi0wNi0xMFQxOToxNToxMC4xMjU0MDFaIiwiaWF0IjoiMjAyMi0wNi0xMFQxOToxMzozMC4xMjU0MDFaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.uOtSa6wHtAlXZyCC1mcj4Q2ZFoWbu569A8Z8fKRF7wvLg11p89ZqY4DIPwXsJ1R7/6/orXQmYj8H2VikMQEDCg:vSQV9/iCsxa45v+eR+eTy7I5Zl4nMIws7e443TkJYwaUUT+gxOssm2SoS3BncqNn2qDV7t8kS1+fSgslRheIBA";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-05-30T07:33:52.490911Z"), envelope.getIssuedAt());
+            assertEquals(Instant.parse("2022-06-10T19:13:29.823472Z"), envelope.getIssuedAt());
             assertEquals(Commons.CONTEXT, envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Data.class, envelope.getItems().get(0).getClass());

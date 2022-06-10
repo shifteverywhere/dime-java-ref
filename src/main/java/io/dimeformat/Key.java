@@ -412,7 +412,7 @@ public class Key extends Item {
         String key = item.getClaims().get(claim);
         if (key == null) { return; }
         byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
-        String b58 = key.substring(key.indexOf("+") + 1);
+        String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
         byte[] rawKey = Base58.decode(b58);
         byte[] legacyKey = Utility.combine(header, rawKey);
         legacyKey[1] = usage == KeyUsage.ENCRYPT ? 0x10 : usage == KeyUsage.EXCHANGE ? (byte)0x40 : (byte)0x80;
@@ -426,12 +426,12 @@ public class Key extends Item {
     }
 
     private static String encodeKey(String suiteName, byte[] rawKey) {
-        return suiteName + "+" + Base58.encode(rawKey, null);
+        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey, null);
     }
 
     private void decodeKey(String encoded, Claim claim) throws DimeCryptographicException {
         if (encoded == null || encoded.isEmpty()) { return; } // Do a silent return, no key to decode
-        String[] components = encoded.split("\\+");
+        String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         String suiteName;
         if (components.length == 2) {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
