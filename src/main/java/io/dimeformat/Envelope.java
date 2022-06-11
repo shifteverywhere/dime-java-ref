@@ -11,8 +11,10 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -25,7 +27,7 @@ import java.util.*;
  * can contain one or more items and is itself also signed, it also has a small number of claims
  * attached to it.
  */
-public class Envelope {
+public class Envelope extends Item {
 
     /// PUBLIC ///
 
@@ -39,6 +41,12 @@ public class Envelope {
 
     /** The standard envelope header. */
     public static final String HEADER = "Di";
+
+    @Override
+    public String getItemIdentifier() {
+        return Envelope.HEADER;
+    }
+
     /**
      * The current version of the implemented Di:ME specification.
      * @deprecated Will be removed in the future, use {#{@link Dime#VERSION} instead
@@ -52,7 +60,7 @@ public class Envelope {
      * @return A UUID instance.
      */
     public UUID getIssuerId() {
-        return (claims != null) ? claims.getUUID(Claim.ISS) : null;
+        return getClaims().getUUID(Claim.ISS);
     }
 
     /**
@@ -61,7 +69,7 @@ public class Envelope {
      * @return An Instant instance.
      */
     public Instant getIssuedAt() {
-        return (claims != null) ? claims.getInstant(Claim.IAT) : null;
+        return getClaims().getInstant(Claim.IAT);
     }
 
     /**
@@ -70,7 +78,7 @@ public class Envelope {
      * @return A String instance.
      */
     public String getContext() {
-        return (claims != null) ? claims.get(Claim.CTX) : null;
+        return getClaims().get(Claim.CTX);
     }
 
     /**
@@ -79,17 +87,7 @@ public class Envelope {
      * @return An array of Item instance
      */
     public List<Item> getItems() {
-        return (this.items != null) ? Collections.unmodifiableList(this.items) : null;
-    }
-
-    /**
-     * Indicates if the envelope has a signature attached to it. This does not indicate
-     * if the envelope is signed or anonymous, as a tobe signed envelope will return
-     * false here before it is signed.
-     * @return true or false
-     */
-    public boolean isSigned() {
-        return (this.signature != null);
+        return this.items != null ? Collections.unmodifiableList(this.items) : null;
     }
 
     /**
@@ -97,7 +95,7 @@ public class Envelope {
      * @return true or false
      */
     public boolean isAnonymous() {
-        return (this.claims == null);
+        return !hasClaims();
     }
 
     /**
@@ -122,10 +120,9 @@ public class Envelope {
     public Envelope(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer id may not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        this.claims = new ClaimsMap();
-        this.claims.put(Claim.ISS, issuerId);
-        this.claims.put(Claim.IAT, Utility.createTimestamp());
-        this.claims.put(Claim.CTX, context);
+        getClaims().put(Claim.ISS, issuerId);
+        getClaims().put(Claim.IAT, Utility.createTimestamp());
+        getClaims().put(Claim.CTX, context);
     }
 
     /**
@@ -139,10 +136,10 @@ public class Envelope {
         if (!encoded.startsWith(Envelope.HEADER)) { throw new DimeFormatException("Not a Dime envelope object, invalid header."); }
         String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
         // 0: ENVELOPE
-        String[] components = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
-        boolean isLegacy = false;
+        String[] array = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
+        int version = Dime.VERSION; // Assume it is the current version
         try {
-            String meta = components[0].split("\\" + Dime.META_DELIMITER)[1];
+            String meta = array[0].split("\\" + Dime.META_DELIMITER)[1];
             if (Integer.parseInt(meta.substring(0,1)) != Dime.VERSION) {
                 throw new DimeFormatException("Unsupported Dime version.");
             }
@@ -150,32 +147,26 @@ public class Envelope {
                 throw new DimeFormatException("Unsupported Dime encoding format.");
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            isLegacy = true;
+            version = 0; // 0 equals legacy version (no version)
         }
-        Envelope envelope;
-        if (components.length == 2) {
-            byte[] json = Utility.fromBase64(components[1]);
-            envelope = new Envelope(new String(json, StandardCharsets.UTF_8));
-        } else if (components.length == 1) {
-            envelope = new Envelope();
-        } else {
-            throw new DimeFormatException("Not a valid Dime envelope object, unexpected number of components in header, got: " + components.length + ", expected: 1 or 2.");
-        }
-        envelope.isLegacy = isLegacy;
+        Envelope envelope = new Envelope();
+        envelope.components = new ArrayList(Arrays.asList(array));
+        envelope.setVersion(version);
         // 1 to LAST or LAST - 1
-        int endIndex = (envelope.isAnonymous()) ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
+        int endIndex = envelope.isAnonymous() ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
         ArrayList<Item> items = new ArrayList<>(endIndex - 1);
         for (int index = 1; index < endIndex; index++) {
             Item item = Item.fromEncoded(sections[index]);
-            item.isLegacy = isLegacy;
+            item.setVersion(version);;
             items.add(item);
         }
         envelope.items = items;
         if (envelope.isAnonymous()) {
             envelope.encoded = encoded;
         } else {
+            envelope.components.add(sections[sections.length -1]);
             envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.SECTION_DELIMITER));
-            envelope.signature = sections[sections.length - 1];
+            envelope.isSigned = true;
         }
         return envelope;
     }
@@ -187,7 +178,8 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      */
     public Envelope addItem(Item item) {
-        if (this.signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (item instanceof Envelope) { throw new IllegalArgumentException("Not allowed to add an envelope to another envelope."); }
         if (this.items == null) {
             this.items = new ArrayList<>();
         }
@@ -202,7 +194,10 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      */
     public Envelope setItems(List<Item> items) {
-        if (this.signature != null) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (items.stream().filter(item -> item instanceof Envelope).findAny().orElse(null) != null) {
+            throw new IllegalArgumentException("Not allowed to add an envelope to another envelope.");
+        }
         this.items = new ArrayList<>(items);
         return this;
     }
@@ -246,12 +241,14 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public Envelope sign(Key key) throws DimeCryptographicException {
-        if (this.isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
-        if (this.signature != null) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
+    @Override
+    public void sign(Key key) throws DimeCryptographicException {
+        if (isLegacy()) {
+            if (isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
+            if (isSigned()) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
+        }
         if (this.items == null || this.items.isEmpty()) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
-        this.signature = Dime.crypto.generateSignature(encode(), key);
-        return this;
+        super.sign(key);
     }
 
     /**
@@ -260,12 +257,12 @@ public class Envelope {
      * @return Returns the Envelope instance for convenience.
      * @throws DimeIntegrityException If the signature is invalid.
      */
-    public Envelope verify(Key key) throws DimeIntegrityException, DimeCryptographicException {
-        if (key == null || key.getPublic() == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
-        if (this.signature == null) { throw new IllegalStateException("Unable to verify, envelope is not signed."); }
-        Dime.crypto.verifySignature(encode(), this.signature, key);
-        return this;
+    @Override
+    public void verify(Key key) throws DimeIntegrityException, DimeCryptographicException, DimeDateException {
+        if (isLegacy()) {
+            if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
+        }
+        super.verify(key);
     }
 
     /**
@@ -273,18 +270,13 @@ public class Envelope {
      * @return The Di:ME encoded representation of the envelope.
      */
     public String exportToEncoded() {
-        if (!this.isAnonymous()) {
-            if (this.signature == null) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
-            return encode() + Dime.SECTION_DELIMITER + this.signature;
-        } else {
-            return encode();
-        }
+        if (!isAnonymous() && !isSigned()) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
+        return encoded(!isAnonymous());
     }
 
+    @Override
     public void convertToLegacy() {
-        isLegacy = true;
-        encoded = null;
-        signature = null;
+        super.convertToLegacy();
         if (items != null) {
             for (Item item: items) {
                 item.convertToLegacy();
@@ -300,11 +292,7 @@ public class Envelope {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public String thumbprint() throws DimeCryptographicException {
-        String enc = encode();
-        if (!this.isAnonymous()) {
-            enc += Dime.SECTION_DELIMITER + this.signature;
-        }
-        return Envelope.thumbprint(enc);
+        return Envelope.thumbprint(encoded(!isAnonymous()));
     }
 
     /**
@@ -324,30 +312,21 @@ public class Envelope {
         return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
-    /// PRIVATE ///
+    /// PROTECTED ///
 
-    private ClaimsMap claims;
-    private ArrayList<Item> items;
-    private String encoded;
-    private String signature;
-    private boolean isLegacy = false;
-
-    private Envelope(String json) {
-        this.claims = new ClaimsMap(json);
-    }
-
-    private String encode() {
+    @Override
+    protected String encoded(boolean withSignature) {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
-            if (!isLegacy) {
+            if (!isLegacy()) {
                 builder.append(Dime.META_DELIMITER);
                 builder.append(Dime.VERSION);
                 builder.append(Dime.DEFAULT_FORMAT);
             }
             if (!this.isAnonymous()) {
                 builder.append(Dime.COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(claims.toJSON()));
+                builder.append(Utility.toBase64(getClaims().toJSON()));
             }
             for (Item item : this.items) {
                 builder.append(Dime.SECTION_DELIMITER);
@@ -355,7 +334,19 @@ public class Envelope {
             }
             this.encoded = builder.toString();
         }
+        if (withSignature && isSigned()) {
+            return this.encoded + Dime.SECTION_DELIMITER + Signature.toEncoded(getSignatures());
+        }
         return this.encoded;
     }
+
+    @Override
+    protected void customDecoding(List<String> components) {
+        /* ignored */
+    }
+
+    /// PRIVATE ///
+
+    private ArrayList<Item> items;
 
 }

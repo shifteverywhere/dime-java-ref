@@ -52,6 +52,7 @@ public class IdentityIssuingRequest extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
+            _publicKey.setVersion(getVersion());
         }
         return _publicKey;
     }
@@ -123,6 +124,7 @@ public class IdentityIssuingRequest extends Item {
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
+        iir.getClaims().put(Claim.UID, UUID.randomUUID());
         iir.getClaims().put(Claim.IAT, Utility.createTimestamp());
         iir.getClaims().put(Claim.PUB, key.getPublic());
         if (capabilities == null || capabilities.length == 0) {
@@ -133,7 +135,7 @@ public class IdentityIssuingRequest extends Item {
         if (principles != null && !principles.isEmpty()) {
             iir.getClaims().put(Claim.PRI, principles);
         }
-        iir.signature = Dime.crypto.generateSignature(iir.encoded(false), key);
+        iir.sign(key);
         return iir;
     }
 
@@ -295,12 +297,12 @@ public class IdentityIssuingRequest extends Item {
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param ambit A list of ambits that will apply to the issued identity.
      * @return A self-issued Identity instance.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits) throws DimeCryptographicException {
-        return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, ambits, null);
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws DimeCryptographicException {
+        return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, ambit, null);
     }
 
     /**
@@ -311,15 +313,15 @@ public class IdentityIssuingRequest extends Item {
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param ambit A list of ambits that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return A self-issued Identity instance.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambits, String[] methods) throws DimeCryptographicException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit, String[] methods) throws DimeCryptographicException {
         try {
             if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-            return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, false, null, null, ambits, methods);
+            return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, false, null, null, ambit, methods);
         } catch (DimeDateException | DimeCapabilityException | DimeUntrustedIdentityException | DimeIntegrityException e) {
             return null; // These exceptions will not be thrown when issuing a self-issued identity.
         }
@@ -328,7 +330,7 @@ public class IdentityIssuingRequest extends Item {
 
     @Override
     public void convertToLegacy() {
-        if (isLegacy) { return; }
+        if (isLegacy()) { return; }
         super.convertToLegacy();
         Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
     }
@@ -337,15 +339,17 @@ public class IdentityIssuingRequest extends Item {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() != IdentityIssuingRequest.NBR_COMPONENTS_WITH_SIGNATURE) {
-            throw new DimeFormatException("Unexpected number of components found in identity issuing request item.");
-        }
-        super.customDecoding(components);
+        this.isSigned = true; // Identity issuing requests are always signed
+    }
+
+    @Override
+    protected int getMinNbrOfComponents() {
+        return IdentityIssuingRequest.MINIMUM_NBR_COMPONENTS;
     }
 
     /// PRIVATE ///
 
-    private static final int NBR_COMPONENTS_WITH_SIGNATURE = 3;
+    private static final int MINIMUM_NBR_COMPONENTS = 3;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());

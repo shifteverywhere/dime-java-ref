@@ -136,13 +136,10 @@ class IdentityTest {
             Key key = Key.generateKey(List.of(KeyUsage.SIGN));
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isSelfIssued());
-            identity.isTrusted();
-        } catch (IllegalStateException e) {
-            return; // All is well 
-        } catch (Exception e) { 
+            assertFalse(identity.isTrusted());
+        } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
-        fail("Should not happen.");
     }
 
     @Test

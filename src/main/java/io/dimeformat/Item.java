@@ -79,7 +79,7 @@ public abstract class Item {
      * @return true or false.
      */
     public boolean isSigned() {
-        return this.signature != null;
+        return this.isSigned;
     }
 
     /**
@@ -108,7 +108,7 @@ public abstract class Item {
      */
     public String exportToEncoded() {
         Envelope envelope = new Envelope();
-        if (isLegacy) {
+        if (isLegacy()) {
             envelope.convertToLegacy();
         }
         envelope.addItem(this);
@@ -121,18 +121,35 @@ public abstract class Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public void sign(Key key) throws DimeCryptographicException {
-        if (this.isSigned()) { throw new IllegalStateException("Unable to sign item, it is already signed. (I1003)"); }
+        if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        this.signature = Dime.crypto.generateSignature(encoded(false), key);
+        if (isSigned() && Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided kye."); }
+        byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
+        String identifier = isLegacy() ? null : Dime.crypto.generateKeyIdentifier(key);
+        getSignatures().add(new Signature(signature, identifier));
+        this.isSigned = true;
     }
 
     /**
      * Will remove a signature from an item.
      */
-    public void strip() {
+    public boolean strip() {
         this.encoded = null;
         this.components = null;
-        this.signature = null;
+        this.signatures = null;
+        this.isSigned = false;
+        return true;
+    }
+
+    public boolean strip(Key key) {
+        if (!isLegacy() && isSigned()) {
+           String identifier = Dime.crypto.generateKeyIdentifier(key);
+            Signature signature = Signature.find(identifier, getSignatures());
+            if (signature != null) {
+                return getSignatures().remove(signature);
+            }
+        }
+        return false;
     }
 
     /**
@@ -276,7 +293,16 @@ public abstract class Item {
     public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
-        Dime.crypto.verifySignature(encoded(false), this.signature, key);
+        if (isLegacy()) {
+            Dime.crypto.verifySignature(encoded(false), getSignatures().get(0).bytes, key);
+        } else {
+            Signature signature = Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures());
+            if (signature != null) {
+                Dime.crypto.verifySignature(encoded(false), signature.bytes, key);
+            } else {
+                throw new DimeIntegrityException("Unable to verify signature, item not signed with provided key.");
+            }
+        }
         if (linkedItems != null) {
             if (itemLinks == null) {
                 itemLinks = claims.getItemLinks(Claim.LNK);
@@ -294,9 +320,8 @@ public abstract class Item {
     /**
      * Will cryptographically link a tag to another Di:ME item.
      * @param item The item to link to the tag.
-     * @throws DimeCryptographicException If anything goes wrong.
      */
-    public void addItemLink(Item item) throws DimeCryptographicException {
+    public void addItemLink(Item item) {
         throwIfSigned();
         if (item == null) { throw new IllegalArgumentException("Item to link with must not be null."); }
         if (this.itemLinks == null) {
@@ -305,7 +330,7 @@ public abstract class Item {
         this.itemLinks.add(new ItemLink(item));
     }
 
-    public void setItemLinks(List<Item> items) throws DimeCryptographicException {
+    public void setItemLinks(List<Item> items) {
         throwIfSigned();
         if (items == null) { throw new IllegalArgumentException("Items to link with must not be null."); }
         this.itemLinks = new ArrayList<>();
@@ -335,12 +360,11 @@ public abstract class Item {
     }
 
     public void convertToLegacy() {
-        if (!isLegacy && isSigned()) { throw new IllegalStateException("Unable to mark item as legacy, already signed."); }
-        encoded = null;
-        isLegacy = true;
+        strip();
+        version = 0;
     }
 
-    public boolean isSetAsLegacy() { return isLegacy; }
+    public boolean isLegacy() { return version < Dime.VERSION; }
 
     /// PACKAGE-PRIVATE ///
 
@@ -369,17 +393,24 @@ public abstract class Item {
         return encoded(true);
     }
 
+    void setVersion(int version) {
+        this.version = version;
+    }
+
+    int getVersion() {
+        return this.version;
+    }
+
     /// PROTECTED ///
 
     protected String encoded;
     protected List<String> components;
-    protected String signature;
     protected List<ItemLink> itemLinks;
-    protected boolean isLegacy = false;
+    protected boolean isSigned = false;
 
     protected final ClaimsMap getClaims() {
         if (this.claims == null) {
-            if (this.components != null) {
+            if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
                 byte[] jsonBytes = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
                 this.claims = new ClaimsMap(new String(jsonBytes, StandardCharsets.UTF_8));
             } else {
@@ -387,6 +418,24 @@ public abstract class Item {
             }
         }
         return this.claims;
+    }
+
+    protected final boolean hasClaims() {
+        if (this.claims == null && this.components != null) {
+            return this.components.size() >= Item.MINIMUM_NBR_COMPONENTS;
+        }
+        return this.claims != null && this.claims.size() > 0;
+    }
+
+    protected final List<Signature> getSignatures() {
+        if (this.signatures == null) {
+            if (isSigned()) {
+                this.signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1), isLegacy());
+            } else {
+               this.signatures = new ArrayList<>();
+            }
+        }
+        return this.signatures;
     }
 
     protected void verifyDates(long gracePeriod) throws DimeDateException {
@@ -407,7 +456,7 @@ public abstract class Item {
             this.encoded = builder.toString();
         }
         if (withSignature && isSigned()) {
-            return this.encoded + Dime.COMPONENT_DELIMITER + this.signature;
+            return this.encoded + Dime.COMPONENT_DELIMITER + Signature.toEncoded(getSignatures());
         }
         return this.encoded;
     }
@@ -423,7 +472,7 @@ public abstract class Item {
 
     protected final void decode(String encoded) throws DimeFormatException {
         String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (array.length < Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("Unexpected number of components for Dime item, expected at least " + Item.MINIMUM_NBR_COMPONENTS + ", got " + array.length +"."); }
+        if (array.length < getMinNbrOfComponents()) { throw new DimeFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
         if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
         this.components = new ArrayList(Arrays.asList(array));
         customDecoding(this.components);
@@ -434,14 +483,14 @@ public abstract class Item {
         }
     }
 
-    protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Item.MINIMUM_NBR_COMPONENTS) {
-            this.signature = components.get(components.size() - 1);
-        }
+    protected abstract void customDecoding(List<String> components) throws DimeFormatException;
+
+    protected int getMinNbrOfComponents() {
+        return Item.MINIMUM_NBR_COMPONENTS;
     }
 
-    protected void throwIfSigned() {
-        if (this.isSigned()) {
+    protected final void throwIfSigned() {
+        if (isSigned()) {
             throw new IllegalStateException("Unable to complete operation, Di:ME item already signed.");
         }
     }
@@ -449,6 +498,8 @@ public abstract class Item {
     /// PRIVATE ///
 
     private ClaimsMap claims;
+    private List<Signature> signatures;
+    private int version = Dime.VERSION;
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {

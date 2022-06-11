@@ -36,8 +36,10 @@ public class Tag extends Item {
     public Tag(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        getClaims().put(Claim.ISS, issuerId);
-        getClaims().put(Claim.CTX, context);
+        ClaimsMap claims = getClaims();
+        claims.put(Claim.UID, UUID.randomUUID());
+        claims.put(Claim.ISS, issuerId);
+        claims.put(Claim.CTX, context);
     }
 
     public Tag(UUID issuerId, String context, List<Item> items) throws DimeCryptographicException {
@@ -59,5 +61,20 @@ public class Tag extends Item {
         if (!isSigned()) { throw new IllegalStateException("Unable to export tag, must be signed first."); }
         return super.forExport();
     }
+
+    @Override
+    protected void customDecoding(List<String> components) throws DimeFormatException {
+        this.isSigned = true; // Tags are always signed
+    }
+
+    @Override
+    protected int getMinNbrOfComponents() {
+        return Tag.MINIMUM_NBR_COMPONENTS;
+    }
+
+    /// PRIVATE ///
+
+    private static final int MINIMUM_NBR_COMPONENTS = 3;
+
 
 }

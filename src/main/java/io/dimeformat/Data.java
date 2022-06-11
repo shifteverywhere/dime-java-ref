@@ -76,6 +76,7 @@ public class Data extends Item {
     public Data(UUID issuerId, long validFor, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
+        getClaims().put(Claim.UID, UUID.randomUUID());
         getClaims().put(Claim.ISS, issuerId);
         Instant iat = Utility.createTimestamp();
         getClaims().put(Claim.IAT, iat);
@@ -135,9 +136,9 @@ public class Data extends Item {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() < Data.NBR_EXPECTED_COMPONENTS_UNSIGNED) { throw new DimeFormatException("Unexpected number of components for data item."); }
+        if (components.size() > Data.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Data.MAXIMUM_NBR_COMPONENTS); }
         this.payload = components.get(COMPONENTS_PAYLOAD_INDEX);
-        super.customDecoding(components);
+        this.isSigned = components.size() == Data.MAXIMUM_NBR_COMPONENTS;
     }
 
     @Override
@@ -147,10 +148,15 @@ public class Data extends Item {
         builder.append(this.payload);
     }
 
+    @Override
+    protected int getMinNbrOfComponents() {
+        return Data.MINIMUM_NBR_COMPONENTS;
+    }
+
     /// PRIVATE ///
 
-    private static final int NBR_EXPECTED_COMPONENTS_UNSIGNED = 3;
-    private static final int NBR_EXPECTED_COMPONENTS_SIGNED = NBR_EXPECTED_COMPONENTS_UNSIGNED + 1;
+    private static final int MINIMUM_NBR_COMPONENTS = 3;
+    private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_PAYLOAD_INDEX = 2;
 
 }

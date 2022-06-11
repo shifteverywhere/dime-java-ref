@@ -36,15 +36,6 @@ public class Key extends Item {
     }
 
     /**
-     * Returns the version of the Di:ME specification for which this key was generated.
-     * @return The Di:ME specification version of the key.
-     */
-    @Deprecated
-    public int getVersion() {
-        return Dime.VERSION;
-    }
-
-    /**
      * Returns the type of the key. The type determines what the key may be used for, this since it is also closely
      * associated with the cryptographic algorithm the key is generated for.
      * @return The type of the key.
@@ -52,7 +43,7 @@ public class Key extends Item {
     @Deprecated
     public KeyType getKeyType() {
         if (_type == null) {
-            if (isLegacy) {
+            if (isLegacy()) {
                 try {
                     String key = getClaims().get(Claim.KEY);
                     if (key == null) {
@@ -143,7 +134,7 @@ public class Key extends Item {
             List<String> usage = getClaims().get(Claim.USE);
             if (usage != null) {
                 _usage = usage.stream().map(cap -> KeyUsage.valueOf(cap.toUpperCase())).collect(toList());
-            } else if (isLegacy) {
+            } else if (isLegacy()) {
                 _usage = List.of(KeyUsage.fromKeyType(getKeyType()));
             } else {
                 throw new IllegalStateException("Invalid key, missing key usage.");
@@ -283,6 +274,7 @@ public class Key extends Item {
             if (validFor != -1) {
                 key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
             }
+            key.getClaims().put(Claim.UID, UUID.randomUUID());
             key.getClaims().put(Claim.ISS, issuerId);
             key.getClaims().put(Claim.CTX, context);
             return key;
@@ -303,6 +295,7 @@ public class Key extends Item {
         copyKey.getClaims().put(Claim.EXP, getExpiresAt());
         copyKey.getClaims().put(Claim.ISS, getIssuerId());
         copyKey.getClaims().put(Claim.CTX, getContext());
+        copyKey.setVersion(getVersion());
         return copyKey;
     }
 
@@ -359,18 +352,10 @@ public class Key extends Item {
 
     /// PROTECTED ///
 
-
-    @Override
-    protected void customEncoding(StringBuilder builder) {
-        if (isLegacy) {
-
-        }
-        super.customEncoding(builder);
-    }
-
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        super.customDecoding(components);
+        if (components.size() > Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Item.MINIMUM_NBR_COMPONENTS); }
+        this.isSigned = components.size() > Item.MINIMUM_NBR_COMPONENTS;
     }
 
     /// PRIVATE ///
@@ -402,7 +387,7 @@ public class Key extends Item {
 
     @Override
     public void convertToLegacy() {
-        if (isLegacy) { return; }
+        if (isLegacy()) { return; }
         super.convertToLegacy();
         Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.KEY);
         Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.PUB);
@@ -437,7 +422,6 @@ public class Key extends Item {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
         } else { // This will be treated as legacy
             suiteName = Dime.STANDARD_SUITE;
-            isLegacy = true;
         }
         if (this._suiteName == null) {
             this._suiteName = suiteName;
@@ -445,7 +429,7 @@ public class Key extends Item {
             throw new DimeCryptographicException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
         }
         byte[] rawKey;
-        if (!isLegacy) {
+        if (!isLegacy()) {
             rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
         } else {
             byte[] decoded = Base58.decode(encoded);

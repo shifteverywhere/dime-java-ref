@@ -91,16 +91,16 @@ public class DataTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di/1j:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiOGVmMjg5YzMtMGMyYy00ZWY5LWIzZTMtNDU0ODAxMWExYTFlIiwidWlkIjoiNmRmZjk4NjQtNjgzYy00MGNjLTg5NjAtODZiOTI0MTA2NzU0IiwiZXhwIjoiMjAyMi0wNi0xMFQxOTowNTozNy42Nzg3MDdaIiwiaWF0IjoiMjAyMi0wNi0xMFQxOTowMzozNy42Nzg3MDdaIiwiY3R4IjoiaW8uZGltZWZvcm1hdC50ZXN0In0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
+            String exported = "Di/1j:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiNTJlMWYwNTMtN2FmOS00NjE5LTk5MGItZWVjZTk0NjQzMjk1IiwidWlkIjoiN2E1MjQ0ZTMtNDJmMS00MDYzLTlkZWMtZTY2NGQ4ODQzMDdhIiwiZXhwIjoiMjAyMi0wNi0xMVQxMToyNzowOC45ODQyMTBaIiwiaWF0IjoiMjAyMi0wNi0xMVQxMToyNTowOC45ODQyMTBaIiwiY3R4IjoiaW8uZGltZWZvcm1hdC50ZXN0In0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
             Data data = Item.importFromEncoded(exported);
             assertNotNull(data);
-            assertEquals(UUID.fromString("6dff9864-683c-40cc-8960-86b924106754"), data.getUniqueId());
+            assertEquals(UUID.fromString("7a5244e3-42f1-4063-9dec-e664d884307a"), data.getUniqueId());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), data.getIssuerId());
             assertEquals(Commons.MIMETYPE, data.getMIMEType());
             assertEquals(Commons.CONTEXT, data.getContext());
             assertEquals(Commons.PAYLOAD, new String(data.getPayload(), StandardCharsets.UTF_8));
-            assertEquals(Instant.parse("2022-06-10T19:03:37.678707Z"), data.getIssuedAt());
-            assertEquals(Instant.parse("2022-06-10T19:05:37.678707Z"), data.getExpiresAt());
+            assertEquals(Instant.parse("2022-06-11T11:25:08.984210Z"), data.getIssuedAt());
+            assertEquals(Instant.parse("2022-06-11T11:27:08.984210Z"), data.getExpiresAt());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

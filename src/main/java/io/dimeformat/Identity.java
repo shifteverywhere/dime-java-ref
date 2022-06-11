@@ -64,6 +64,7 @@ public class Identity extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
+            _publicKey.setVersion(getVersion());
         }
         return _publicKey;
     }
@@ -202,6 +203,7 @@ public class Identity extends Item {
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted(long gracePeriod) throws DimeDateException, DimeCryptographicException {
+        if (this.isSelfIssued()) { return false; }
         Identity trustedIdentity = Dime.getTrustedIdentity();
         if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
         return isTrusted(trustedIdentity, gracePeriod);
@@ -261,7 +263,7 @@ public class Identity extends Item {
 
     @Override
     public void convertToLegacy() {
-        if (isLegacy) { return; }
+        if (isLegacy()) { return; }
         super.convertToLegacy();
         Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
     }
@@ -275,34 +277,42 @@ public class Identity extends Item {
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        getClaims().put(Claim.SYS, systemName);
-        getClaims().put(Claim.SUB, subjectId);
-        getClaims().put(Claim.ISS, issuerId);
-        getClaims().put(Claim.IAT, issuedAt);
-        getClaims().put(Claim.EXP, expiresAt);
-        getClaims().put(Claim.PUB, subjectKey.getPublic());
-        getClaims().put(Claim.CAP, capabilities);
-        getClaims().put(Claim.PRI, principles);
-        getClaims().put(Claim.AMB, ambits);
-        getClaims().put(Claim.MTD, methods);
+        ClaimsMap claims = getClaims();
+        claims.put(Claim.UID, UUID.randomUUID());
+        claims.put(Claim.SYS, systemName);
+        claims.put(Claim.SUB, subjectId);
+        claims.put(Claim.ISS, issuerId);
+        claims.put(Claim.IAT, issuedAt);
+        claims.put(Claim.EXP, expiresAt);
+        claims.put(Claim.PUB, subjectKey.getPublic());
+        claims.put(Claim.CAP, capabilities);
+        claims.put(Claim.PRI, principles);
+        claims.put(Claim.AMB, ambits);
+        claims.put(Claim.MTD, methods);
     }
 
     void setTrustChain(Identity trustChain) {
         this.trustChain = trustChain;
     }
 
+    @Override
+    void setVersion(int version) {
+        super.setVersion(version);
+        if (this.trustChain != null) {
+            this.trustChain.setVersion(version);
+        }
+    }
+
     /// PROTECTED ///
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() < Identity.NBR_EXPECTED_COMPONENTS_MIN) {
-            throw new DimeFormatException("Unexpected number of components for identity item.");
-        } else if (components.size() == Identity.NBR_EXPECTED_COMPONENTS_MAX) {
-            // There is also a trust chain identity
+        if (components.size() > Identity.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Identity.MAXIMUM_NBR_COMPONENTS); }
+        if (components.size() == Identity.MAXIMUM_NBR_COMPONENTS) { // There is also a trust chain identity
             byte[] issuer = Utility.fromBase64(components.get(Identity.COMPONENTS_CHAIN_INDEX));
             this.trustChain = Identity.fromEncodedIdentity(new String(issuer, StandardCharsets.UTF_8));
         }
-        super.customDecoding(components);
+        this.isSigned = true; // Identities are always signed
     }
 
     @Override
@@ -314,10 +324,15 @@ public class Identity extends Item {
         }
     }
 
+    @Override
+    protected int getMinNbrOfComponents() {
+        return Identity.MINIMUM_NBR_COMPONENTS;
+    }
+
     /// PRIVATE ///
 
-    private static final int NBR_EXPECTED_COMPONENTS_MIN = 3;
-    private static final int NBR_EXPECTED_COMPONENTS_MAX = 4;
+    private static final int MINIMUM_NBR_COMPONENTS = 3;
+    private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_CHAIN_INDEX = 2;
     private Identity trustChain;
 

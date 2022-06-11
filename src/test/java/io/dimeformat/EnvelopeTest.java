@@ -376,11 +376,11 @@ class EnvelopeTest {
     @Test
     void dataImportTest1() {
         try {
-            String exported = "Di/1j.eyJpc3MiOiI4ZWYyODljMy0wYzJjLTRlZjktYjNlMy00NTQ4MDExYTFhMWUiLCJ1aWQiOiIzYTBiMzFmNC02OTcyLTRkMTgtYmQ3ZC02NDhhNzcxZjk3YmEiLCJpYXQiOiIyMDIyLTA2LTEwVDE5OjEzOjI5LjgyMzQ3MloiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiOWY1MDM0N2EtYmJlOS00NDg1LTk2NzQtNThiZmQwMGJiNjQ0IiwidWlkIjoiMDJjM2JhMDItODJmMS00MjgzLTlmZTMtOTkyZjIyYmJhYjkyIiwiZXhwIjoiMjAyMi0wNi0xMFQxOToxNToxMC4xMjU0MDFaIiwiaWF0IjoiMjAyMi0wNi0xMFQxOToxMzozMC4xMjU0MDFaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.uOtSa6wHtAlXZyCC1mcj4Q2ZFoWbu569A8Z8fKRF7wvLg11p89ZqY4DIPwXsJ1R7/6/orXQmYj8H2VikMQEDCg:vSQV9/iCsxa45v+eR+eTy7I5Zl4nMIws7e443TkJYwaUUT+gxOssm2SoS3BncqNn2qDV7t8kS1+fSgslRheIBA";
+            String exported = "Di/1j.eyJpc3MiOiI1MmUxZjA1My03YWY5LTQ2MTktOTkwYi1lZWNlOTQ2NDMyOTUiLCJpYXQiOiIyMDIyLTA2LTExVDEzOjU4OjUwLjcwOTI5M1oiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiYmVmNzk3YzctZjViNy00NjlkLWEwMDQtMGU0YzhmN2E5N2YxIiwidWlkIjoiOWQ5NjgxZWQtMTY2NS00ZjZmLWEwNzUtZjFiNmVkYmZhYzQ1IiwiZXhwIjoiMjAyMi0wNi0xMVQxNDowMDozMS40MTQ4MTNaIiwiaWF0IjoiMjAyMi0wNi0xMVQxMzo1ODo1MS40MTQ4MTNaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.NmZhZGFmMzQxYzg0YzhlYi42MzY3OTEyYTZiMWYyYTc3ZTdlMGVjYTVhYmNkMGU3NGJhM2M3MjNhNjU1YTU2ZmNjOWYxMGJlYWVmNjk4MjRjOGQ5NTM0ZDBhYzBhYjk5ZmMyZmFkZmU5MmJlODQ5ZmFjMmEzYmQ0NWVjZjEyYmNhNTljMjZmZjExYjJhMWQwNg:NmZhZGFmMzQxYzg0YzhlYi5mODMyZDE3Y2M0YjA3MDEzZGYwM2FkNTBlNmQ3MWIwNjhjN2UxMjI3Zjk5NzIyYWJiY2M2ODc5YWM3MmRlYjA1ODBmZDA1YjM0YjkzODFkZTUwOTIzNTdiMTRjODNkYWVmZWZhZDYwYTc3NTg3MTU2NmUwMjNhNTIwODY5YzgwOA";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-06-10T19:13:29.823472Z"), envelope.getIssuedAt());
+            assertEquals(Instant.parse("2022-06-11T13:58:50.709293Z"), envelope.getIssuedAt());
             assertEquals(Commons.CONTEXT, envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Data.class, envelope.getItems().get(0).getClass());

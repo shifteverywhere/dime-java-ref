@@ -159,11 +159,13 @@ public class Message extends Data {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Utility.createTimestamp();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        getClaims().put(Claim.AUD, audienceId);
-        getClaims().put(Claim.ISS, issuerId);
-        getClaims().put(Claim.IAT, iat);
-        getClaims().put(Claim.EXP, exp);
-        getClaims().put(Claim.CTX, context);
+        ClaimsMap claims = getClaims();
+        claims.put(Claim.UID, UUID.randomUUID());
+        claims.put(Claim.AUD, audienceId);
+        claims.put(Claim.ISS, issuerId);
+        claims.put(Claim.IAT, iat);
+        claims.put(Claim.EXP, exp);
+        claims.put(Claim.CTX, context);
     }
 
     @Override
@@ -269,15 +271,18 @@ public class Message extends Data {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() != Message.NBR_EXPECTED_COMPONENTS) {
-            throw new DimeFormatException("Unexpected number of components for message item, expected: " + Message.NBR_EXPECTED_COMPONENTS + ", got " + components.size() +".");
-        }
-        super.customDecoding(components);
+       super.customDecoding(components);
+       this.isSigned = true; // Messages are always signed
+    }
+
+    @Override
+    protected int getMinNbrOfComponents() {
+        return Message.MINIMUM_NBR_COMPONENTS;
     }
 
     /// PRIVATE ///
 
-    private static final int NBR_EXPECTED_COMPONENTS = 4;
+    private static final int MINIMUM_NBR_COMPONENTS = 4;
     private static final int LINK_UID_INDEX = 1;
 
 }

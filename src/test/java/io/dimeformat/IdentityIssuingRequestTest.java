@@ -170,13 +170,13 @@ class IdentityIssuingRequestTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di/1j:IIR.eyJ1aWQiOiJmODFiNjE0My0xOWRmLTQ5ZWItYjE0Mi02NDc2NWIzODljZGEiLCJjYXAiOlsiZ2VuZXJpYyJdLCJwdWIiOiJEU1ROLkJmVjd3U0hNRExQcUtBRTdMN1lqMXdtbm1jRHd0QzJTVTRoNjc0SndvZmpyblo1R2ciLCJpYXQiOiIyMDIyLTA2LTEwVDE5OjE0OjI5LjEwNzEwMVoifQ.qjyorBIiRnIf7EmlRU7Tax+IS0jTjUzB4eL3hVtV3c1NZ+mV/eP8jF3CwKVnqYldBVWt1cvcF91cGoVYt7s0AA";
+            String exported = "Di/1j:IIR.eyJ1aWQiOiJhNjQwNmVkNC02NTA3LTQ0NTAtOWI5Ny04MDg4MzBmZGI3MGUiLCJjYXAiOlsiZ2VuZXJpYyJdLCJwdWIiOiJEU1ROLjJXeXEyUnM5VkdqNlYxd0RNREJCOG5wZ2NVSDlIQzNOWjRoWXRBQzNESFBQbmIxWUIxIiwiaWF0IjoiMjAyMi0wNi0xMVQxMzo0NTozNC43OTIwNzNaIn0.NDcxNjVjM2QyMGU2YjQ1My44MWNlMzYzNjM4N2U4YTJiNzJiNGIzZGY1NjRmNDQ2MjU3MzcxYWM2YTM1ZjkzMTY3MzJmNDgyZjljY2QzNmI4OWRhZTg4ZjAyZWQzNjAxOGZkMTE0ZTQzMGE0MmM1MmI1YzBiMmY2OWNmODcyNTczOTQyYTk5MjgzYjNiZmEwOQ";
             IdentityIssuingRequest iir = Item.importFromEncoded(exported);
             assertNotNull(iir);
-            assertEquals(UUID.fromString("f81b6143-19df-49eb-b142-64765b389cda"), iir.getUniqueId());
-            assertEquals(Instant.parse("2022-06-10T19:14:29.107101Z"), iir.getIssuedAt());
+            assertEquals(UUID.fromString("a6406ed4-6507-4450-9b97-808830fdb70e"), iir.getUniqueId());
+            assertEquals(Instant.parse("2022-06-11T13:45:34.792073Z"), iir.getIssuedAt());
             assertTrue(iir.wantsCapability(Capability.GENERIC));
-            assertEquals("DSTN.BfV7wSHMDLPqKAE7L7Yj1wmnmcDwtC2SU4h674JwofjrnZ5Gg", iir.getPublicKey().getPublic());
+            assertEquals("DSTN.2Wyq2Rs9VGj6V1wDMDBB8npgcUH9HC3NZ4hYtAC3DHPPnb1YB1", iir.getPublicKey().getPublic());
             iir.verify();
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
