@@ -407,11 +407,11 @@ public class Key extends Item {
         } else if (usage == KeyUsage.ENCRYPT) {
             legacyKey[3] = 0x02;
         }
-        item.getClaims().put(claim, Base58.encode(legacyKey, null));
+        item.getClaims().put(claim, Base58.encode(legacyKey));
     }
 
     private static String encodeKey(String suiteName, byte[] rawKey) {
-        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey, null);
+        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey);
     }
 
     private void decodeKey(String encoded, Claim claim) throws DimeCryptographicException {

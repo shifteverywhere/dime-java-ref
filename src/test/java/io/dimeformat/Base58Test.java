@@ -18,24 +18,23 @@ class Base58Test {
     @Test
     void encodeTest1() {
         String ref = "1424C2F4bC9JidNjjTUZCbUxv6Sa1Mt62x";
-        byte[] bytes = new byte[]{ (byte)0x21, (byte)0x1b, (byte)0x74, (byte)0xca, (byte)0x46, (byte)0x86, (byte)0xf8, (byte)0x1e, (byte)0xfd, (byte)0xa5, (byte)0x64, (byte)0x17, (byte)0x67, (byte)0xfc, (byte)0x84, (byte)0xef, (byte)0x16, (byte)0xda, (byte)0xfe, (byte)0x0b };
-        String b58 = Base58.encode(bytes, new byte[]{ (byte)0x00 });
+        byte[] bytes = new byte[]{ (byte)0x00, (byte)0x21, (byte)0x1b, (byte)0x74, (byte)0xca, (byte)0x46, (byte)0x86, (byte)0xf8, (byte)0x1e, (byte)0xfd, (byte)0xa5, (byte)0x64, (byte)0x17, (byte)0x67, (byte)0xfc, (byte)0x84, (byte)0xef, (byte)0x16, (byte)0xda, (byte)0xfe, (byte)0x0b };
+        String b58 = Base58.encode(bytes);
         assertEquals(ref, b58);
     }
 
     @Test
     void encodeTest2() {
-        String ref = "Racecar is racecar backwards.";
-        String b58 = Base58.encode(ref.getBytes(StandardCharsets.UTF_8), new byte[]{ (byte)0x00 });
-        assertEquals("1RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDCQndpL", b58);
+        String ref = Commons.PAYLOAD;
+        String b58 = Base58.encode(ref.getBytes(StandardCharsets.UTF_8));
+        assertEquals("RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDACaR79", b58);
     }
 
     @Test
     void decodeTest1() {
-        String base58 = "1RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDCQndpL"; //"4jummFx8watBhHhr7pW1u32g8JGPipX5qCJvMMxR";
+        String base58 = "RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDACaR79";
         byte[] bytes = Base58.decode(base58);
-        assertEquals(bytes[0], (byte) 0x00);
-        String decoded = new String(Utility.subArray(bytes, 1), StandardCharsets.UTF_8);
-       assertEquals("Racecar is racecar backwards.", decoded);
+        String decoded = new String(bytes, StandardCharsets.UTF_8);
+       assertEquals(Commons.PAYLOAD, decoded);
     }
 }

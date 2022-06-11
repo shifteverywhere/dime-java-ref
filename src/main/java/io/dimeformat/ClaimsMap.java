@@ -107,7 +107,7 @@ class ClaimsMap {
     public void put(Claim claim, Object value) {
         if (value != null) {
             if (value instanceof byte[]) {
-                _claims.put(claim.toString(), Base58.encode((byte[])value, null));
+                _claims.put(claim.toString(), Base58.encode((byte[])value));
             } else {
                 _claims.put(claim.toString(), value);
             }

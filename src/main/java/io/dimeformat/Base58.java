@@ -25,19 +25,13 @@ public final class Base58 {
      * Encodes a byte array and an optional prefix to base 58. The prefix will be added to
      * the front of the data array.
      * @param data The main byte array to encode.
-     * @param prefix A byte array that will be added to the front of data before encoding.
      * @return Base 58 encoded string
      */
-    public static String encode(byte[] data, byte[] prefix) {
+    public static String encode(byte[] data) {
         if (data != null && data.length > 0) {
-            int length = (prefix != null) ? prefix.length + data.length : data.length;
+            int length = data.length;
             byte[] bytes = new byte[length + Base58.NBR_CHECKSUM_BYTES];
-            if (prefix != null) {
-                System.arraycopy(prefix, 0, bytes, 0, prefix.length);
-                System.arraycopy(data, 0, bytes, prefix.length, data.length);
-            } else {
-                System.arraycopy(data, 0, bytes, 0, length);
-            }
+            System.arraycopy(data, 0, bytes, 0, length);
             byte[] checksum = Base58.doubleHash(bytes, length);
             if (checksum.length > 0) {
                 System.arraycopy(checksum, 0, bytes, length, Base58.NBR_CHECKSUM_BYTES);
@@ -52,7 +46,7 @@ public final class Base58 {
                 StringBuilder builder = new StringBuilder();
                 bytes = Arrays.copyOf(bytes, bytes.length);
                 for(int index = start; index < bytes.length;) {
-                    builder.insert(0, _indexTable[calculateIndex(bytes, index, 256, 58)]);
+                    builder.insert(0, _indexTable[calculateIndex(bytes, index, BASE_256, BASE_58)]);
                     if (bytes[index] == 0) {
                         ++index;
                     }
@@ -90,7 +84,7 @@ public final class Base58 {
         byte[] decoded = new byte[encoded.length()];
         int position = decoded.length;
         for (int index = start; index < input58.length; ) {
-            decoded[--position] = calculateIndex(input58, index, 58, 256);
+            decoded[--position] = calculateIndex(input58, index, BASE_58, BASE_256);
             if (input58[index] == 0) {
                 ++index;
             }
@@ -110,6 +104,8 @@ public final class Base58 {
 
     /// PRIVATE //
 
+    private static final int BASE_58 = 58;
+    private static final int BASE_256 = 256;
     private static final int NBR_CHECKSUM_BYTES = 4;
     private static final char[] _indexTable = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
     private static final int[] _reverseTable = new int[128];
