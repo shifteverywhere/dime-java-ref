@@ -25,12 +25,6 @@ class ClaimsMap {
 
     public ClaimsMap() {
         this._claims = new HashMap<>();
-        put(Claim.UID, UUID.randomUUID());
-    }
-
-    public ClaimsMap(UUID uid) {
-        this._claims = new HashMap<>();
-        put(Claim.UID, uid);
     }
 
     public List<String> sort() {
