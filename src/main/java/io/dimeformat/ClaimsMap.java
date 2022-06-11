@@ -42,6 +42,10 @@ class ClaimsMap {
         return jsonObject.toString();
     }
 
+    public int size() {
+        return _claims != null ? _claims.size() : 0;
+    }
+
     public <T> T get(Claim claim) {
         return (T)_claims.get(claim.toString());
     }
