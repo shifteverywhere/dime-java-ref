@@ -49,6 +49,19 @@ public final class Crypto {
         return _defaultSuiteName;
     }
 
+
+    public String generateKeyIdentifier(Key key) {
+        if (key == null) { throw new IllegalArgumentException("Unable to generate key identifier, key must not be null."); }
+        try {
+            ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
+            byte[] id = impl.generateKeyIdentifier(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
+            if (id != null) {
+                return Utility.toHex(id);
+            }
+        } catch (DimeCryptographicException e) { /* ignored */ }
+        return null;
+    }
+
     /**
      * Generates a cryptographic signature from a data string.
      * @param data The string to sign.
@@ -56,13 +69,12 @@ public final class Crypto {
      * @return The signature that was generated, encoded in Base 64.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public String generateSignature(String data, Key key) throws DimeCryptographicException {
+    public byte[] generateSignature(String data, Key key) throws DimeCryptographicException {
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Unable to sign, data must not be null or of length zero."); }
-        if (key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
+        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
         if (!key.hasUsage(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        byte[] rawSignature = impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getKeyBytes(Claim.KEY));
-        return Utility.toBase64(rawSignature);
+        return impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getKeyBytes(Claim.KEY));
     }
 
     /**
@@ -72,15 +84,14 @@ public final class Crypto {
      * @param key The key that should be used for the verification.
      * @throws DimeIntegrityException If something goes wrong.
      */
-    public void verifySignature(String data, String signature, Key key) throws DimeCryptographicException, DimeIntegrityException {
+    public void verifySignature(String data, byte[] signature, Key key) throws DimeCryptographicException, DimeIntegrityException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
-        if (signature == null || signature.length() == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
+        if (signature == null || signature.length == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify, public key in key must not be null."); }
         if (!key.hasUsage(KeyUsage.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        byte[] rawSignature = Utility.fromBase64(signature);
-        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), rawSignature, key.getKeyBytes(Claim.PUB))) {
+        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB))) {
             throw new DimeIntegrityException("Unable to verify signature (C1002).");
         }
     }

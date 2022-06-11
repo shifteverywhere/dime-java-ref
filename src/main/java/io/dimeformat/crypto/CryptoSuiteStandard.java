@@ -29,6 +29,19 @@ public class CryptoSuiteStandard implements ICryptoSuite {
         this.sodium = new SodiumJava();
     }
 
+    public byte[] generateKeyIdentifier(byte[][] key) {
+        // This only supports key identifier for public keys, may be different for other crypto suites
+        byte[] identifier = null;
+        byte[] bytes = key[ICryptoSuite.PUBLIC_KEY_INDEX];;
+        if (bytes != null && bytes.length > 0) {
+            try {
+                byte[] hash = generateHash(bytes);
+                identifier = Utility.subArray(hash, 0, 8);
+            } catch (DimeCryptographicException e) { /* ignored */ }
+        }
+        return identifier;
+    }
+
     public byte[] generateSignature(byte[] data, byte[] key) throws DimeCryptographicException {
         byte[] signature = new byte[CryptoSuiteStandard.NBR_SIGNATURE_BYTES];
         if (this.sodium.crypto_sign_detached(signature, null, data, data.length, key) != 0) {

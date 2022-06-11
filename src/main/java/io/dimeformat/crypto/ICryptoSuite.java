@@ -36,6 +36,8 @@ public interface ICryptoSuite {
      */
     String getName();
 
+    byte[] generateKeyIdentifier(byte[][] key);
+
     /**
      * Generates a cryptographic signature from a data byte array using the provided key.
      * @param data The data that should be signed.
