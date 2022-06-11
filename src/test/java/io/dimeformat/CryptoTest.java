@@ -19,6 +19,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class CryptoTest {
 
     @Test
+    void generateKeyIdentifierTest1() {
+        Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+        String identifier = Dime.crypto.generateKeyIdentifier(key);
+        assertNotNull(identifier);
+        assertEquals(16, identifier.length());
+    }
+
+    @Test
+    void generateKeyIdentifierTest2() {
+        try {
+            String hex = "506f85299f6a2a4b";
+            String encoded = "Di/1j:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJEU1ROLjJCOFc2QjY0UU05QXg0b3czY29WNE5Sa01veTFjV1M0eDdBWGE0c3Z3eXVSZUFrUDRvIiwiaWF0IjoiMjAyMi0wNi0xMVQxMDoyNzozNC45OTYyMzhaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5BeHBndnY3QVhLaWFqU0RCUEJnRkJud3NKSjJReldIYVRpakVjb0twTHphSjlVWWk4ZUo0aDRuQkVCdVI3Y2V1a1VCbnBpZTU2TFlBbkR0dDdjZXdpVzN3QUZMN0UifQ";
+            Key key = Item.importFromEncoded(encoded);
+            String identifier = Dime.crypto.generateKeyIdentifier(key);
+            assertEquals(hex, identifier);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void generateSignatureTest1() {
         try {
             String data = "Racecar is racecar backwards.";

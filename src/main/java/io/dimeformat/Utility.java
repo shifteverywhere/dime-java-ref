@@ -47,6 +47,15 @@ public final class Utility {
         return new String(hexChars);
     }
 
+    public static byte[] fromHex(String string) {
+        int len = string.length();
+        byte[] bytes = new byte[len >>> 1];
+        for (int i = 0; i <= len - 2; i += 2) {
+            bytes[i >>> 1] = (byte) (Integer.parseInt(string.substring(i, i + 2).trim(), 16) & 0xFF);
+        }
+        return bytes;
+    }
+
     /**
      * Encode a byte array as a base 64 string.
      * @param bytes Byte array to encode.
