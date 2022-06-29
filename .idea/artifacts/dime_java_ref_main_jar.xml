@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="dime-java-ref.main:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/dime_java_ref_main_jar</output-path>
+    <root id="archive" name="dime-java-ref.main.jar">
+      <element id="module-output" name="dime-java-ref.main" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.json/json/20220320/6df2c050972619466f6dcef7654ef9bcc01dfd0/json-20220320.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.11.0/27770efb6329f092f895c7329662d1aa8ee8c0ac/jna-5.11.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.30/b5a4b6d16ab13e34a88fae84c35cd5d68cac922c/slf4j-api-1.7.30.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.goterl/resource-loader/2.0.1/9a7ece414939a13c660fddc5fecdf1f7f06fcd1c/resource-loader-2.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.goterl/lazysodium-java/5.1.1/a424f707d0469232b4bb4c1089a1fddda4b45b38/lazysodium-java-5.1.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

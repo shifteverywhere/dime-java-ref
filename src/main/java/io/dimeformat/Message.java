@@ -264,7 +264,7 @@ public class Message extends Data {
     /// PROTECTED ///
 
     @Override
-    protected String forExport() {
+    protected String forExport() throws DimeFormatException {
         if (!isSigned()) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
         return super.forExport();
     }

@@ -56,7 +56,7 @@ public class Tag extends Item {
     /// PROTECTED ///
 
     @Override
-    protected String forExport() {
+    protected String forExport() throws DimeFormatException {
         if (this.itemLinks == null || this.itemLinks.isEmpty()) { throw new IllegalStateException("Unable to export tag, must contain at least 1 linked item."); }
         if (!isSigned()) { throw new IllegalStateException("Unable to export tag, must be signed first."); }
         return super.forExport();

@@ -316,7 +316,7 @@ public class Identity extends Item {
     }
 
     @Override
-    protected void customEncoding(StringBuilder builder) {
+    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
         super.customEncoding(builder);
         if (this.trustChain != null) {
             builder.append(Dime.COMPONENT_DELIMITER);

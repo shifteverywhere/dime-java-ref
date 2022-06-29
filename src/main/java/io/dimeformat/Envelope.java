@@ -271,7 +271,11 @@ public class Envelope extends Item {
      */
     public String exportToEncoded() {
         if (!isAnonymous() && !isSigned()) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
-        return encoded(!isAnonymous());
+        try {
+            return encoded(!isAnonymous());
+        } catch (DimeFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -292,7 +296,11 @@ public class Envelope extends Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public String thumbprint() throws DimeCryptographicException {
-        return Envelope.thumbprint(encoded(!isAnonymous()));
+        try {
+            return Envelope.thumbprint(encoded(!isAnonymous()));
+        } catch (DimeFormatException e) {
+            throw new DimeCryptographicException("Unable to generate thumbprint for item, data invalid.");
+        }
     }
 
     /**
@@ -315,7 +323,7 @@ public class Envelope extends Item {
     /// PROTECTED ///
 
     @Override
-    protected String encoded(boolean withSignature) {
+    protected String encoded(boolean withSignature) throws DimeFormatException {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
@@ -326,7 +334,11 @@ public class Envelope extends Item {
             }
             if (!this.isAnonymous()) {
                 builder.append(Dime.COMPONENT_DELIMITER);
-                builder.append(Utility.toBase64(getClaims().toJSON()));
+                try {
+                    builder.append(Utility.toBase64(getClaims().toJSON()));
+                } catch (IOException e) {
+                    throw new DimeFormatException("Unexpected exception while encoding item: " + e);
+                }
             }
             for (Item item : this.items) {
                 builder.append(Dime.SECTION_DELIMITER);

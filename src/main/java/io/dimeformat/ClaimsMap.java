@@ -13,6 +13,9 @@ import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
+import org.webpki.jcs.JsonCanonicalizer;
+
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,19 +30,14 @@ class ClaimsMap {
         this._claims = new HashMap<>();
     }
 
-    public List<String> sort() {
-        Set<String> keys = this._claims.keySet();
-        Stream<String> sorted = keys.stream().sorted();
-        return sorted.collect(Collectors.toList());
-    }
-
     public ClaimsMap(String encoded) {
         this._claims = ClaimsMap.fromJSON(encoded);
     }
 
-    public String toJSON() {
-        JSONObject jsonObject = new JSONObject(_claims);
-        return jsonObject.toString();
+    public String toJSON() throws IOException {
+        JSONObject jsonObject = new JSONObject(this._claims);
+        JsonCanonicalizer jsonCanonicalizer = new JsonCanonicalizer(jsonObject.toString());
+        return jsonCanonicalizer.getEncodedString();
     }
 
     public int size() {

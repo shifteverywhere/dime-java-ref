@@ -354,7 +354,7 @@ public class Key extends Item {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Item.MINIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Item.MINIMUM_NBR_COMPONENTS); }
+        if (components.size() > Item.MINIMUM_NBR_COMPONENTS + 1) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + (Item.MINIMUM_NBR_COMPONENTS + 1)); }
         this.isSigned = components.size() > Item.MINIMUM_NBR_COMPONENTS;
     }
 

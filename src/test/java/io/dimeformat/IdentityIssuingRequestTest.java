@@ -67,7 +67,7 @@ class IdentityIssuingRequestTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
-            Capability[] caps = new Capability[] { Capability.GENERIC};
+            Capability[] caps = new Capability[] { Capability.GENERIC };
             IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(key1, caps, null);
             String[] components = iir1.exportToEncoded().split("\\.");
             JSONObject json = new JSONObject(new String(Utility.fromBase64(components[1]), StandardCharsets.UTF_8));

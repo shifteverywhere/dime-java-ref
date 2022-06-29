@@ -142,7 +142,7 @@ public class Data extends Item {
     }
 
     @Override
-    protected void customEncoding(StringBuilder builder) {
+    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
         super.customEncoding(builder);
         builder.append(Dime.COMPONENT_DELIMITER);
         builder.append(this.payload);
