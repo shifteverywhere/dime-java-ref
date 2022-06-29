@@ -388,9 +388,9 @@ public class Key extends Item {
     @Override
     public void convertToLegacy() {
         if (isLegacy()) { return; }
-        super.convertToLegacy();
         Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.KEY);
         Key.convertKeyToLegacy(this, getKeyUsage().get(0), Claim.PUB);
+        super.convertToLegacy();
     }
 
     static void convertKeyToLegacy(Item item, KeyUsage usage, Claim claim) {

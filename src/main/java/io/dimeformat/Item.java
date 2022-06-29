@@ -124,10 +124,14 @@ public abstract class Item {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
         if (isSigned() && Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided kye."); }
-        byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
-        String identifier = isLegacy() ? null : Dime.crypto.generateKeyIdentifier(key);
-        getSignatures().add(new Signature(signature, identifier));
-        this.isSigned = true;
+        try {
+            byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
+            String identifier = isLegacy() ? null : Dime.crypto.generateKeyIdentifier(key);
+            getSignatures().add(new Signature(signature, identifier));
+            this.isSigned = true;
+        } catch (DimeFormatException e) {
+            throw new DimeCryptographicException("Unable to sign item, invalid data.");
+        }
     }
 
     /**
@@ -160,7 +164,11 @@ public abstract class Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public String thumbprint() throws DimeCryptographicException {
-        return Item.thumbprint(encoded(true));
+        try {
+            return Item.thumbprint(encoded(true));
+        } catch (DimeFormatException e) {
+            throw new DimeCryptographicException("Unable to generate thumbprint for item, data invalid.");
+        }
     }
 
     /**
@@ -293,15 +301,19 @@ public abstract class Item {
     public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
         verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
-        if (isLegacy()) {
-            Dime.crypto.verifySignature(encoded(false), getSignatures().get(0).bytes, key);
-        } else {
-            Signature signature = Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures());
-            if (signature != null) {
-                Dime.crypto.verifySignature(encoded(false), signature.bytes, key);
+        try {
+            if (isLegacy()) {
+                Dime.crypto.verifySignature(encoded(false), getSignatures().get(0).bytes, key);
             } else {
-                throw new DimeIntegrityException("Unable to verify signature, item not signed with provided key.");
+                Signature signature = Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures());
+                if (signature != null) {
+                    Dime.crypto.verifySignature(encoded(false), signature.bytes, key);
+                } else {
+                    throw new DimeIntegrityException("Unable to verify signature, item not signed with provided key.");
+                }
             }
+        } catch (DimeFormatException e) {
+            throw new DimeIntegrityException("Unable to verify signature, data invalid.");
         }
         if (linkedItems != null) {
             if (itemLinks == null) {
@@ -389,7 +401,7 @@ public abstract class Item {
         }
     }
 
-    String forExport() {
+    String forExport() throws DimeFormatException {
         return encoded(true);
     }
 
@@ -449,7 +461,7 @@ public abstract class Item {
 
     /// --- ENCODING/DECODING --- ///
 
-    protected String encoded(boolean withSignature) {
+    protected String encoded(boolean withSignature) throws DimeFormatException {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             customEncoding(builder);
@@ -461,13 +473,18 @@ public abstract class Item {
         return this.encoded;
     }
 
-    protected void customEncoding(StringBuilder builder) {
+    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
             this.claims.put(Claim.LNK, ItemLink.toEncoded(itemLinks));
         }
-        builder.append(Utility.toBase64(this.claims.toJSON()));
+        try {
+            builder.append(Utility.toBase64(this.claims.toJSON()));
+        } catch (IOException e) {
+            throw new DimeFormatException("Unexpected exception while encoding item: " + e);
+        }
+
     }
 
     protected final void decode(String encoded) throws DimeFormatException {
