@@ -14,7 +14,7 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -137,36 +137,25 @@ public class Envelope extends Item {
         String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
         // 0: ENVELOPE
         String[] array = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
-        int version = Dime.VERSION; // Assume it is the current version
-        try {
-            String meta = array[0].split("\\" + Dime.META_DELIMITER)[1];
-            if (Integer.parseInt(meta.substring(0,1)) != Dime.VERSION) {
-                throw new DimeFormatException("Unsupported Dime version.");
-            }
-            if (!meta.substring(1).equalsIgnoreCase(Dime.DEFAULT_FORMAT)) {
-                throw new DimeFormatException("Unsupported Dime encoding format.");
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            version = 0; // 0 equals legacy version (no version)
-        }
         Envelope envelope = new Envelope();
         envelope.components = new ArrayList(Arrays.asList(array));
-        envelope.setVersion(version);
         // 1 to LAST or LAST - 1
         int endIndex = envelope.isAnonymous() ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
         ArrayList<Item> items = new ArrayList<>(endIndex - 1);
         for (int index = 1; index < endIndex; index++) {
             Item item = Item.fromEncoded(sections[index]);
-            item.setVersion(version);;
             items.add(item);
         }
         envelope.items = items;
         if (envelope.isAnonymous()) {
             envelope.encoded = encoded;
         } else {
+            envelope.isSigned = true;
             envelope.components.add(sections[sections.length -1]);
             envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.SECTION_DELIMITER));
-            envelope.isSigned = true;
+            if (envelope.getSignatures().get(0).isLegacy()) {
+                envelope.markAsLegacy();
+            }
         }
         return envelope;
     }
@@ -195,9 +184,6 @@ public class Envelope extends Item {
      */
     public Envelope setItems(List<Item> items) {
         if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
-        if (items.stream().filter(item -> item instanceof Envelope).findAny().orElse(null) != null) {
-            throw new IllegalArgumentException("Not allowed to add an envelope to another envelope.");
-        }
         this.items = new ArrayList<>(items);
         return this;
     }
@@ -238,7 +224,6 @@ public class Envelope extends Item {
      * anonymous envelope. It is also not possible to sign an envelope if it already has been signed or does not
      * contain any Di:ME items.
      * @param key The key to use when signing.
-     * @return Returns the Envelope instance for convenience.
      * @throws DimeCryptographicException If something goes wrong.
      */
     @Override
@@ -254,7 +239,6 @@ public class Envelope extends Item {
     /**
      * Verifies the signature of the envelope using a provided key.
      * @param key The key to used to verify the signature, must not be null.
-     * @return Returns the Envelope instance for convenience.
      * @throws DimeIntegrityException If the signature is invalid.
      */
     @Override
@@ -275,16 +259,6 @@ public class Envelope extends Item {
             return encoded(!isAnonymous());
         } catch (DimeFormatException e) {
             return null;
-        }
-    }
-
-    @Override
-    public void convertToLegacy() {
-        super.convertToLegacy();
-        if (items != null) {
-            for (Item item: items) {
-                item.convertToLegacy();
-            }
         }
     }
 
@@ -327,11 +301,6 @@ public class Envelope extends Item {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
-            if (!isLegacy()) {
-                builder.append(Dime.META_DELIMITER);
-                builder.append(Dime.VERSION);
-                builder.append(Dime.DEFAULT_FORMAT);
-            }
             if (!this.isAnonymous()) {
                 builder.append(Dime.COMPONENT_DELIMITER);
                 try {

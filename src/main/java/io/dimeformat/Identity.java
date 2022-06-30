@@ -64,7 +64,6 @@ public class Identity extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
-            _publicKey.setVersion(getVersion());
         }
         return _publicKey;
     }
@@ -177,7 +176,7 @@ public class Identity extends Item {
      * {@link #isTrusted()} or {@link #isTrusted(Identity)} instead.
      */
     @Deprecated
-    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException, DimeCryptographicException {
+    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
         if (!isTrusted()) {
             throw new DimeUntrustedIdentityException("Unable to verify trust of entity.");
         }
@@ -190,7 +189,7 @@ public class Identity extends Item {
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted() throws DimeDateException, DimeCryptographicException {
+    public boolean isTrusted() throws DimeDateException {
         return isTrusted(0);
     }
 
@@ -202,7 +201,7 @@ public class Identity extends Item {
      * @return True if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(long gracePeriod) throws DimeDateException, DimeCryptographicException {
+    public boolean isTrusted(long gracePeriod) throws DimeDateException {
         if (this.isSelfIssued()) { return false; }
         Identity trustedIdentity = Dime.getTrustedIdentity();
         if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
@@ -218,7 +217,7 @@ public class Identity extends Item {
      * @return Tur if the identity is trusted.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException, DimeCryptographicException {
+    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
         if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
         if (verifyChain(trustedIdentity, gracePeriod) == null) {
             return false;
@@ -295,14 +294,6 @@ public class Identity extends Item {
         this.trustChain = trustChain;
     }
 
-    @Override
-    void setVersion(int version) {
-        super.setVersion(version);
-        if (this.trustChain != null) {
-            this.trustChain.setVersion(version);
-        }
-    }
-
     /// PROTECTED ///
 
     @Override
@@ -342,7 +333,7 @@ public class Identity extends Item {
         return identity;
     }
 
-    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException, DimeCryptographicException {
+    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
         Identity verifyingIdentity;
         if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
             verifyingIdentity = trustChain.verifyChain(trustedIdentity, gracePeriod);
@@ -353,7 +344,7 @@ public class Identity extends Item {
         try {
             super.verify(verifyingIdentity.getPublicKey(), gracePeriod);
             return this;
-        } catch (DimeIntegrityException e) {
+        } catch (DimeIntegrityException | DimeCryptographicException e) {
             return null;
         }
     }

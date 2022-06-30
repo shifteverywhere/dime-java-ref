@@ -130,7 +130,7 @@ public final class Crypto {
      */
     public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<KeyUsage> usage) throws DimeCryptographicException {
         if (!clientKey.getKeyUsage().contains(KeyUsage.EXCHANGE) || !serverKey.getKeyUsage().contains(KeyUsage.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
-        if (clientKey.getCryptoSuiteName() != serverKey.getCryptoSuiteName()) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
+        if (!clientKey.getCryptoSuiteName().equals(serverKey.getCryptoSuiteName())) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
         ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
         byte[][] rawClientKeys = new byte[][] { clientKey.getKeyBytes(Claim.KEY), clientKey.getKeyBytes(Claim.PUB) };
         byte[][] rawServerKeys = new byte[][] { serverKey.getKeyBytes(Claim.KEY), serverKey.getKeyBytes(Claim.PUB) };

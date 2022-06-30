@@ -52,7 +52,6 @@ public class IdentityIssuingRequest extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
-            _publicKey.setVersion(getVersion());
         }
         return _publicKey;
     }

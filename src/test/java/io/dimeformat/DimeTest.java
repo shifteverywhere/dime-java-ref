@@ -157,7 +157,7 @@ public class DimeTest {
             String legacyExported = "Di:ID.eyJ1aWQiOiIyYTdkNDJhMy02YjQ1LTRhNGEtYmIzZC1lYzk0ZWMzNzlmMWYiLCJzdWIiOiJiZTRhZjVmMy1lODM4LTQ3MzItYTBmYy1mZmEyYzMyOGVhMTAiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2NTI1OVoiLCJwdWIiOiIyVERYZG9OdzF3WlF0ZVU1MzI1czZSbVJYVnBUa1lXdlR1RXpSMWpOZFZ2WWpFUjZiNmJZYUR6dEYiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NTI1OVoifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.7H3RwTTeDcI3pGMIWMPbAjpDnCN2O91JG4lKu3JJbxlLNwTbgTB/03xrwi28wl0iMReJ4zUPc3cCqbymAlxwAw";
             Identity identity = Item.importFromEncoded(legacyExported);
             assertNotNull(identity);
-            assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
+            assertEquals("dime-java-ref", identity.getSystemName());
             assertEquals(UUID.fromString("2a7d42a3-6b45-4a4a-bb3d-ec94ec379f1f"), identity.getUniqueId());
             assertEquals(UUID.fromString("be4af5f3-e838-4732-a0fc-ffa2c328ea10"), identity.getSubjectId());
             assertEquals(Instant.parse("2021-11-20T12:11:02.765259Z"), identity.getIssuedAt());
@@ -215,11 +215,9 @@ public class DimeTest {
             message.sign(key);
             String currentExport = key.exportToEncoded();
             assertNotNull(currentExport);
-            assertTrue(currentExport.startsWith("Di/1j:KEY."));
             key.convertToLegacy();
             String legacyExport = key.exportToEncoded();
             assertNotNull(legacyExport);
-            assertFalse(legacyExport.startsWith("Di/1j:KEY."));
             Key legacyKey = Item.importFromEncoded(legacyExport);
             assertNotNull(legacyKey);
             assertTrue(legacyKey.isLegacy());
@@ -236,13 +234,11 @@ public class DimeTest {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
             String exported = iir.exportToEncoded();
             assertNotNull(exported);
-            assertTrue(exported.startsWith("Di/1j:IIR."));
             iir.strip();
             iir.convertToLegacy();
             iir.sign(key);
             String legacyExported = iir.exportToEncoded();
             assertNotNull(legacyExported);
-            assertFalse(legacyExported.startsWith("Di/1j:IIR."));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

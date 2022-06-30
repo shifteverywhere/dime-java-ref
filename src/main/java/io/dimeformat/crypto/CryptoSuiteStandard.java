@@ -36,7 +36,7 @@ public class CryptoSuiteStandard implements ICryptoSuite {
         if (bytes != null && bytes.length > 0) {
             try {
                 byte[] hash = generateHash(bytes);
-                identifier = Utility.subArray(hash, 0, 8);
+                identifier = Utility.subArray(hash, 0, 8); // First 8 bytes are used as an identifier
             } catch (DimeCryptographicException e) { /* ignored */ }
         }
         return identifier;

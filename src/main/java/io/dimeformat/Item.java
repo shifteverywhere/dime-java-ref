@@ -14,6 +14,7 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -373,10 +374,14 @@ public abstract class Item {
 
     public void convertToLegacy() {
         strip();
-        version = 0;
+        legacy = true;
     }
 
-    public boolean isLegacy() { return version < Dime.VERSION; }
+    public boolean isLegacy() { return this.legacy; }
+
+    void markAsLegacy() {
+        legacy = true;
+    }
 
     /// PACKAGE-PRIVATE ///
 
@@ -403,14 +408,6 @@ public abstract class Item {
 
     String forExport() throws DimeFormatException {
         return encoded(true);
-    }
-
-    void setVersion(int version) {
-        this.version = version;
-    }
-
-    int getVersion() {
-        return this.version;
     }
 
     /// PROTECTED ///
@@ -442,7 +439,7 @@ public abstract class Item {
     protected final List<Signature> getSignatures() {
         if (this.signatures == null) {
             if (isSigned()) {
-                this.signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1), isLegacy());
+                this.signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1));
             } else {
                this.signatures = new ArrayList<>();
             }
@@ -494,6 +491,9 @@ public abstract class Item {
         this.components = new ArrayList(Arrays.asList(array));
         customDecoding(this.components);
         if (isSigned()) {
+            if (getSignatures().get(0).isLegacy()) {
+                markAsLegacy();
+            }
             this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
         } else {
             this.encoded = encoded;
@@ -516,7 +516,7 @@ public abstract class Item {
 
     private ClaimsMap claims;
     private List<Signature> signatures;
-    private int version = Dime.VERSION;
+    private boolean legacy = false;
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {

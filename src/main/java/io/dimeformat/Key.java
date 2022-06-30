@@ -134,10 +134,11 @@ public class Key extends Item {
             List<String> usage = getClaims().get(Claim.USE);
             if (usage != null) {
                 _usage = usage.stream().map(cap -> KeyUsage.valueOf(cap.toUpperCase())).collect(toList());
-            } else if (isLegacy()) {
-                _usage = List.of(KeyUsage.fromKeyType(getKeyType()));
             } else {
-                throw new IllegalStateException("Invalid key, missing key usage.");
+                // This may be legacy
+                getKeyBytes(Claim.PUB);
+                getKeyBytes(Claim.KEY);
+                _usage = List.of(KeyUsage.fromKeyType(getKeyType()));
             }
         }
         return _usage;
@@ -295,7 +296,6 @@ public class Key extends Item {
         copyKey.getClaims().put(Claim.EXP, getExpiresAt());
         copyKey.getClaims().put(Claim.ISS, getIssuerId());
         copyKey.getClaims().put(Claim.CTX, getContext());
-        copyKey.setVersion(getVersion());
         return copyKey;
     }
 
@@ -393,6 +393,14 @@ public class Key extends Item {
         super.convertToLegacy();
     }
 
+    @Override
+    public boolean isLegacy() {
+        // Get the keys (if needed) to check if this is legacy
+        getKeyBytes(Claim.PUB);
+        getKeyBytes(Claim.KEY);
+        return super.isLegacy();
+    }
+
     static void convertKeyToLegacy(Item item, KeyUsage usage, Claim claim) {
         String key = item.getClaims().get(claim);
         if (key == null) { return; }
@@ -418,10 +426,14 @@ public class Key extends Item {
         if (encoded == null || encoded.isEmpty()) { return; } // Do a silent return, no key to decode
         String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         String suiteName;
+        boolean legacyKey = false;
         if (components.length == 2) {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
-        } else { // This will be treated as legacy
+        } else {
+            // This will be treated as legacy
             suiteName = Dime.STANDARD_SUITE;
+            legacyKey = true;
+            markAsLegacy();
         }
         if (this._suiteName == null) {
             this._suiteName = suiteName;
@@ -429,7 +441,7 @@ public class Key extends Item {
             throw new DimeCryptographicException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
         }
         byte[] rawKey;
-        if (!isLegacy()) {
+        if (!legacyKey) {
             rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
         } else {
             byte[] decoded = Base58.decode(encoded);
@@ -442,6 +454,9 @@ public class Key extends Item {
             this._publicBytes = rawKey;
         } else {
             throw new IllegalArgumentException("Invalid claim provided for key: " + claim);
+        }
+        if (legacyKey) {
+            markAsLegacy();
         }
     }
 

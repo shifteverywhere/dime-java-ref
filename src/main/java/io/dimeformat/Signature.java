@@ -23,16 +23,27 @@ class Signature {
         this.identifier = identifier;
     }
 
-    public static List<Signature> fromEncoded(String encoded, boolean isLegacy) {
+    public boolean isLegacy() {
+        return identifier == null;
+    }
+
+    public static List<Signature> fromEncoded(String encoded) {
         if (encoded == null || encoded.isEmpty()) { throw new IllegalArgumentException("Encoded list of signatures must not be null or empty."); }
         ArrayList<Signature> signatures = new ArrayList<>();
-        if (isLegacy) {
-            signatures.add(new Signature(Utility.fromBase64(encoded), null));
-        } else {
-            String decoded = new String(Utility.fromBase64(encoded), StandardCharsets.UTF_8);
-            String[] items = decoded.split("\\" + Dime.SECTION_DELIMITER);
-            for (String item: items) {
-                signatures.add(Signature.fromCombined(item));
+        String decoded = new String(Utility.fromBase64(encoded), StandardCharsets.UTF_8);
+        String[] items = decoded.split("\\" + Dime.SECTION_DELIMITER);
+        for (String combined: items) {
+            String[] components = combined.split("\\" + Dime.COMPONENT_DELIMITER);
+            if (components.length == 1) {
+                // This is a legacy signature
+                signatures.add(new Signature(Utility.fromBase64(encoded), null));
+            } else {
+                try {
+                    signatures.add(new Signature(Utility.fromHex(components[Signature.INDEX_SIGNATURE]), components[Signature.INDEX_KEY_IDENTIFIER]));
+                } catch (Exception e) {
+                    // This is a legacy signature
+                    signatures.add(new Signature(Utility.fromBase64(encoded), null));
+                }
             }
         }
         return signatures;
@@ -58,13 +69,8 @@ class Signature {
                 .orElse(null);
     }
 
-    private static Signature fromCombined(String combined) {
-        String[] components = combined.split("\\" + Dime.COMPONENT_DELIMITER);
-        return new Signature(Utility.fromHex(components[Signature.INDEX_SIGNATURE]), components[Signature.INDEX_KEY_IDENTIFIER]);
-    }
-
     private void toEncoded(StringBuilder builder) {
-        if (this.identifier == null) { // This is legacy
+        if (this.isLegacy()) {
             builder.append(Utility.toBase64(this.bytes));
         } else {
             builder.append(this.identifier);

@@ -557,7 +557,7 @@ class MessageTest {
     @Test
     void messagePlatformExchangeTest1() {
         try {
-            String text = "Racecar is racecar backwards.";
+            String text = Commons.PAYLOAD;
             Key clientKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiIzOWYxMzkzMC0yYTJhLTQzOWEtYjBkNC1lMzJkMzc4ZDgyYzciLCJwdWIiOiIyREJWdG5NWlVjb0dZdHd3dmtjYnZBSzZ0Um1zOUZwNGJ4dHBlcWdha041akRVYkxvOXdueWRCUG8iLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0LjQ0NDA0MVoiLCJrZXkiOiIyREJWdDhWOEF4UWR4UFZVRkJKOWdScFA1WDQzNnhMbVBrWW9RNzE1cTFRd2ZFVml1NFM3RExza20ifQ");
             Key serverKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiJjY2U1ZDU1Yi01NDI4LTRhMDUtOTZmYi1jZmU4ZTE4YmM3NWIiLCJwdWIiOiIyREJWdG5NYTZrcjNWbWNOcXNMSmRQMW90ZGtUMXlIMTZlMjV0QlJiY3pNaDFlc3J3a2hqYTdaWlEiLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0Ljg0NjEyMVoiLCJrZXkiOiIyREJWdDhWOTV5N2lvb1A0bmRDajd6d3dqNW1MVExydVhaaGg0RTJuMUE0SHoxQkIycHB5WXY1blIifQ");
 
@@ -576,6 +576,22 @@ class MessageTest {
             Message received = Item.importFromEncoded(exported);
             byte[] payload2 = received.getPayload(serverKey, clientKey.publicCopy());
             assertEquals(text, new String(payload2, StandardCharsets.UTF_8));
+
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void testEncoding() {
+        try {
+
+            String exported1 = "Di:MSG.eyJpc3MiOiI1MWRjN2QwMS04N2RjLTQ0YzUtOWQyNy0wZWYyNmQyN2I4NWYiLCJ1aWQiOiJmODBlNDgxMC01Yzk2LTQzMTItYjhhMC02ZWU5YTIzNzFkOTEiLCJhdWQiOiJiYjNkNjZkYy02YTI2LTQxY2EtODI1NS1iY2FiN2M1NTA3YTIiLCJleHAiOiIyMDIyLTA2LTIwVDAzOjI2OjQ0LjE1NDE1MTgwMFoiLCJpYXQiOiIyMDIyLTA2LTIwVDAzOjI0OjQ0LjE1NDE1MTgwMFoiLCJjdHgiOiJtZXNzYWdlLXJlcXVlc3QifQ.xUZbewSDMYyyD/cPi1d0E06pK5KsXKk2Pt3Cy/cR8UmeqXqBOiuyRb/S1r1oo7zTKRU60WpvyAOnzMOfQuXAulf+oT/l+Ts1ObFISzspVdoHQClHuZQkctB5W0H/DxFapfXMs8HiDvqa6jBtOL3pVzXvvZWSITKAIjlgPveJ5yXelLwnZH4OpF+Fuugulp5bGJcrr87jzERCvZMmyaFMCOPQnIxgY2pjNzAqfSE1yEHulijOpkxE5OQLsxvCYDaExlCJZ/aCsS12RKn0Xm6EKZzX0vjxtVjD60Z0/fQrO1smLMtyazegZ7CS5QWstU9z/95nPpxHHhNRATTXf/Ns3wW7swno6RVpXChg9+K82gDFeEeOklp0hoBvjBDYkFUF7mO1tVxHP0Ub+fB7bT+SRAvSUVtTMKZlcYmXBU4G0xA.qcp5mh4YvoMq/Hu7pPUgXXKBXZrlF0Akrkwon7HsTieHovEKu+apBpStLK6axlCZcvV2bd981Orw16ElS1Q9DA";
+            Message message = Item.importFromEncoded(exported1);
+
+            String exported2 = message.exportToEncoded();
+
+            assertEquals(exported1, exported2);
 
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

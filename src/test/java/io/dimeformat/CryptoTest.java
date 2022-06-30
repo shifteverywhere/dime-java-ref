@@ -30,7 +30,7 @@ class CryptoTest {
     void generateKeyIdentifierTest2() {
         try {
             String hex = "506f85299f6a2a4b";
-            String encoded = "Di/1j:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJEU1ROLjJCOFc2QjY0UU05QXg0b3czY29WNE5Sa01veTFjV1M0eDdBWGE0c3Z3eXVSZUFrUDRvIiwiaWF0IjoiMjAyMi0wNi0xMVQxMDoyNzozNC45OTYyMzhaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5BeHBndnY3QVhLaWFqU0RCUEJnRkJud3NKSjJReldIYVRpakVjb0twTHphSjlVWWk4ZUo0aDRuQkVCdVI3Y2V1a1VCbnBpZTU2TFlBbkR0dDdjZXdpVzN3QUZMN0UifQ";
+            String encoded = "Di:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJEU1ROLjJCOFc2QjY0UU05QXg0b3czY29WNE5Sa01veTFjV1M0eDdBWGE0c3Z3eXVSZUFrUDRvIiwiaWF0IjoiMjAyMi0wNi0xMVQxMDoyNzozNC45OTYyMzhaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5BeHBndnY3QVhLaWFqU0RCUEJnRkJud3NKSjJReldIYVRpakVjb0twTHphSjlVWWk4ZUo0aDRuQkVCdVI3Y2V1a1VCbnBpZTU2TFlBbkR0dDdjZXdpVzN3QUZMN0UifQ";
             Key key = Item.importFromEncoded(encoded);
             String identifier = Dime.crypto.generateKeyIdentifier(key);
             assertEquals(hex, identifier);
@@ -55,7 +55,7 @@ class CryptoTest {
     void generateSignatureTest2() {
         try {
             byte[] sig = Utility.fromBase64("3DYiduduCeMYt86jEBHJG981O1NxpYn3gBnkUxI3yG9penQxk+qR8G222asv5lLpbX7JOBS+CKouZGhR8NEdBg");
-            String encoded = "Di/1j:KEY.eyJ1aWQiOiIzYWQ0Y2YyNi1lM2M1LTQ1YWYtYmRmNi02OGNmMDRjMTBhMWMiLCJwdWIiOiJEU1ROLjJKSGVwODZvOFl5UFU1b01MbmtpNUxZYkhHU0tOdEM3YXVrdmlOWEFyU0g5UnB0Ykt0IiwiaWF0IjoiMjAyMi0wNS0zMFQwNzoyNTowMC4wMDUxMjVaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5TMXJxejhLWkdGenpqWkRxUVVCZUdkYmVMdVZiQUVRYnFXUmVycGZEUW1CZjJHZkpCaWdWYkhDMVViTWRBallYVHRTdWM2ZHdrdHY5cDdLcXY0U2pDZldUd3VmSjkifQ";
+            String encoded = "Di:KEY.eyJ1aWQiOiIzYWQ0Y2YyNi1lM2M1LTQ1YWYtYmRmNi02OGNmMDRjMTBhMWMiLCJwdWIiOiJEU1ROLjJKSGVwODZvOFl5UFU1b01MbmtpNUxZYkhHU0tOdEM3YXVrdmlOWEFyU0g5UnB0Ykt0IiwiaWF0IjoiMjAyMi0wNS0zMFQwNzoyNTowMC4wMDUxMjVaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5TMXJxejhLWkdGenpqWkRxUVVCZUdkYmVMdVZiQUVRYnFXUmVycGZEUW1CZjJHZkpCaWdWYkhDMVViTWRBallYVHRTdWM2ZHdrdHY5cDdLcXY0U2pDZldUd3VmSjkifQ";
             Key key = Item.importFromEncoded(encoded);
             Dime.crypto.verifySignature("Racecar is racecar backwards.", sig, key);
         } catch (Exception e) {

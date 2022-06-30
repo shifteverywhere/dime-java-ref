@@ -359,7 +359,7 @@ class EnvelopeTest {
         try {
             Envelope envelope = new Envelope(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT);
             Data data = new Data(Commons.getAudienceIdentity().getSubjectId(),100);
-            data.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             data.sign(Commons.getIssuerKey());
             envelope.addItem(data);
             envelope.sign(Commons.getIssuerKey());
@@ -376,11 +376,11 @@ class EnvelopeTest {
     @Test
     void dataImportTest1() {
         try {
-            String exported = "Di/1j.eyJpc3MiOiI1MmUxZjA1My03YWY5LTQ2MTktOTkwYi1lZWNlOTQ2NDMyOTUiLCJpYXQiOiIyMDIyLTA2LTExVDEzOjU4OjUwLjcwOTI5M1oiLCJjdHgiOiJpby5kaW1lZm9ybWF0LnRlc3QifQ:DAT.eyJtaW0iOiJ0ZXh0L3BsYWluIiwiaXNzIjoiYmVmNzk3YzctZjViNy00NjlkLWEwMDQtMGU0YzhmN2E5N2YxIiwidWlkIjoiOWQ5NjgxZWQtMTY2NS00ZjZmLWEwNzUtZjFiNmVkYmZhYzQ1IiwiZXhwIjoiMjAyMi0wNi0xMVQxNDowMDozMS40MTQ4MTNaIiwiaWF0IjoiMjAyMi0wNi0xMVQxMzo1ODo1MS40MTQ4MTNaIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.NmZhZGFmMzQxYzg0YzhlYi42MzY3OTEyYTZiMWYyYTc3ZTdlMGVjYTVhYmNkMGU3NGJhM2M3MjNhNjU1YTU2ZmNjOWYxMGJlYWVmNjk4MjRjOGQ5NTM0ZDBhYzBhYjk5ZmMyZmFkZmU5MmJlODQ5ZmFjMmEzYmQ0NWVjZjEyYmNhNTljMjZmZjExYjJhMWQwNg:NmZhZGFmMzQxYzg0YzhlYi5mODMyZDE3Y2M0YjA3MDEzZGYwM2FkNTBlNmQ3MWIwNjhjN2UxMjI3Zjk5NzIyYWJiY2M2ODc5YWM3MmRlYjA1ODBmZDA1YjM0YjkzODFkZTUwOTIzNTdiMTRjODNkYWVmZWZhZDYwYTc3NTg3MTU2NmUwMjNhNTIwODY5YzgwOA";
+            String exported = "Di.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJpYXQiOiIyMDIyLTA2LTMwVDA3OjExOjU1LjEyMzA0NloiLCJpc3MiOiIyZmMyMTA4NC1iNWVkLTQ5MjAtODlmMy03MTZiNGZmMmJmM2IifQ:DAT.eyJleHAiOiIyMDIyLTA2LTMwVDA3OjEzOjM1LjEyNDM0M1oiLCJpYXQiOiIyMDIyLTA2LTMwVDA3OjExOjU1LjEyNDM0M1oiLCJpc3MiOiJiZmI0NTViOC0zYTc0LTRiYWYtYWRkMS1lNDEwNzZkNWZmZTQiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiYjVjNjJiN2ItNTIzMC00MzQxLTg4MTYtMDk0NDE3M2M4ZjFjIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.MTJhMTE3OTM1OTgwNDgzMC43ODgyMTI4NDc0Y2VhYzhmZDY5NjE0MTU2ZmVkY2RjNDEyZmU5NDBjMjAxNDk2MWRmM2JiZmZlYTkwODkyZDFlNTZkZDJlZjU5NTRlZGRkMDQxNWZjODZiN2Q2ZWQ4YjQzZWViZjdjYTUwYjVkYmE5YjNlZTUxNTI4ZWNmZWQwMw:MTJhMTE3OTM1OTgwNDgzMC4xYTVhMmViNGE0ZjZhOGMzZDU4OGI2MTc3YjdjNGM3M2UzZGU3ODEyNjg5ZDY2NzI4ZWZkNGMyZTZjYzNlZjI2Zjk1ZTEzN2ExMjY2NDFkYTczNzg3OGIxM2MyZDFjOThkODljNDdjNDVkYWRkZGQyMTllYTZlOTlkMTA1ODEwZA";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-06-11T13:58:50.709293Z"), envelope.getIssuedAt());
+            assertEquals(Instant.parse("2022-06-30T07:11:55.123046Z"), envelope.getIssuedAt());
             assertEquals(Commons.CONTEXT, envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Data.class, envelope.getItems().get(0).getClass());
@@ -394,7 +394,7 @@ class EnvelopeTest {
         try {
             Envelope envelope = new Envelope(Commons.getIssuerIdentity().getSubjectId(), "Di:ME");
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             envelope.addItem(message);
             envelope.sign(Commons.getIssuerKey());

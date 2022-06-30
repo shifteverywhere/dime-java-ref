@@ -128,7 +128,7 @@ class KeyTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di/1j:KEY.eyJ1aWQiOiJjMjhkOTY2OC1hNzU5LTQ4YjQtYmEzYi0zMTE0MWZmZjM0MTUiLCJwdWIiOiJEU1ROKzJkdGFnSm5ISlBxdFNkeEZrVnVCZWRaR2s2UHVIRkZKd1pEUVoyaWpzbWlyb0FDZmR0IiwiaWF0IjoiMjAyMi0wNS0zMFQxODoyNzozNS42NzI4OTJaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTis1MVdnNlVOakFxMnZodURERTRNdEoxNXVOTnBNbjVVRnR1OXVQTUphVlMzamhadnl5MThvcEpBU0haeUR0UE0yTmZvOTRROXhhaVlNdGZOSmZBcnNzVTc0S2Fkd2gifQ";
+            String exported = "Di:KEY.eyJ1aWQiOiJjMjhkOTY2OC1hNzU5LTQ4YjQtYmEzYi0zMTE0MWZmZjM0MTUiLCJwdWIiOiJEU1ROKzJkdGFnSm5ISlBxdFNkeEZrVnVCZWRaR2s2UHVIRkZKd1pEUVoyaWpzbWlyb0FDZmR0IiwiaWF0IjoiMjAyMi0wNS0zMFQxODoyNzozNS42NzI4OTJaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTis1MVdnNlVOakFxMnZodURERTRNdEoxNXVOTnBNbjVVRnR1OXVQTUphVlMzamhadnl5MThvcEpBU0haeUR0UE0yTmZvOTRROXhhaVlNdGZOSmZBcnNzVTc0S2Fkd2gifQ";
             Key key = Item.importFromEncoded(exported);
             assertNotNull(key);
             assertEquals(1, key.getKeyUsage().size());
