@@ -35,6 +35,23 @@ class Base58Test {
         String base58 = "RUP8qykPEgwU7tFVRBorfw2BdwmQX9q9VR5oELDACaR79";
         byte[] bytes = Base58.decode(base58);
         String decoded = new String(bytes, StandardCharsets.UTF_8);
-       assertEquals(Commons.PAYLOAD, decoded);
+        assertEquals(Commons.PAYLOAD, decoded);
     }
+
+    @Test
+    void decodeTest2() {
+        String base64 = Utility.toBase64(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = Base58.decode(base64);
+        String decoded = new String(bytes, StandardCharsets.UTF_8);
+        assertTrue(decoded.isEmpty());
+    }
+
+    @Test
+    void decodeTest3() {
+        String base64 = Utility.toHex(Utility.randomBytes(256));
+        byte[] bytes = Base58.decode(base64);
+        String decoded = new String(bytes, StandardCharsets.UTF_8);
+        assertTrue(decoded.isEmpty());
+    }
+
 }

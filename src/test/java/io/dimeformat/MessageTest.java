@@ -9,11 +9,15 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyType;
 import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
+
+import javax.swing.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -555,44 +559,54 @@ class MessageTest {
     }
 
     @Test
-    void messagePlatformExchangeTest1() {
+    void alienMessageEncryptionTest1() {
         try {
             String text = Commons.PAYLOAD;
             Key clientKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiIzOWYxMzkzMC0yYTJhLTQzOWEtYjBkNC1lMzJkMzc4ZDgyYzciLCJwdWIiOiIyREJWdG5NWlVjb0dZdHd3dmtjYnZBSzZ0Um1zOUZwNGJ4dHBlcWdha041akRVYkxvOXdueWRCUG8iLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0LjQ0NDA0MVoiLCJrZXkiOiIyREJWdDhWOEF4UWR4UFZVRkJKOWdScFA1WDQzNnhMbVBrWW9RNzE1cTFRd2ZFVml1NFM3RExza20ifQ");
             Key serverKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiJjY2U1ZDU1Yi01NDI4LTRhMDUtOTZmYi1jZmU4ZTE4YmM3NWIiLCJwdWIiOiIyREJWdG5NYTZrcjNWbWNOcXNMSmRQMW90ZGtUMXlIMTZlMjV0QlJiY3pNaDFlc3J3a2hqYTdaWlEiLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0Ljg0NjEyMVoiLCJrZXkiOiIyREJWdDhWOTV5N2lvb1A0bmRDajd6d3dqNW1MVExydVhaaGg0RTJuMUE0SHoxQkIycHB5WXY1blIifQ");
-
             // This is received by the client //
             Message message = Item.importFromEncoded("Di:MSG.eyJpc3MiOiIzOTA3MWIyNC04MGRmLTQyYzEtYWQwZS1jNmQ2ZmNmMjg5YmIiLCJ1aWQiOiJjNjExOWYxMC0wZDE3LTQ3NTItYTkwZS1lODlhOGI2OGIyY2MiLCJpYXQiOiIyMDIyLTA2LTAzVDEzOjU0OjM2Ljg4MDM3MVoifQ.8sdEJ3CuHLaA/DmYcCce+8iflhQwESkDwIF8xu69R4h6Pvt+k6HfDJjK+sYm4goKoA04hb8Zaq9wMGiuxXoqqBHAGqd/.WorEis9t8WdQiOW+yK2F8gLfBfrnlFk/W7FMmjBhPWpp7SAddq2UPvE0nRo1TvWdqonhb2gm2TPMp0O0X4ULAQ");
             byte[] payload = message.getPayload(serverKey.publicCopy(), clientKey);
             assertEquals(text, new String(payload, StandardCharsets.UTF_8));
-
             // Client generate a response (to be sent to the server) //
             Message response = new Message(UUID.randomUUID());
             response.setPayload(text.getBytes(StandardCharsets.UTF_8), serverKey.publicCopy(), clientKey);
             response.sign(Key.generateKey(List.of(KeyUsage.SIGN)));
             String exported = response.exportToEncoded();
-
             // This would really happen on the server side //
             Message received = Item.importFromEncoded(exported);
             byte[] payload2 = received.getPayload(serverKey, clientKey.publicCopy());
             assertEquals(text, new String(payload2, StandardCharsets.UTF_8));
-
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
     }
 
     @Test
-    void testEncoding() {
+    void alienMessageEncryptionTest2() {
         try {
+            Key clientLegacyKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiI1MTllNWE5Mi01Yjc1LTQxMTctODZjMS1jMTFjZjI0MDY1YmUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc3MTQ2OFoiLCJwdWIiOiIyREJWdG5NYTFZM1B6a25FN3ZXTnJybkgyM0JVVlJROXVwRGM1Umd0MnloVFNEMUZoOFNiMXBhR3cifQ");
+            Key serverKey = Item.importFromEncoded("Di:KEY.eyJpYXQiOiIyMDIyLTA3LTAxVDA4OjM2OjIwLjI2ODQ1M1oiLCJrZXkiOiJEU1ROLjh2djVlSnNkN3V1WVI5ajVIZW53Qmd2N2VVZlpXaTlRN1NpeERzWFVaaG1qdGs5elciLCJwdWIiOiJEU1ROLjJNZmtyOGpMTEd4a0w3Y1BpS2JkYzhTcmplN2dIMTh2anNtR1pFcGVCU1pKRmI2UDZkIiwidWlkIjoiOWU5MzMxNGMtNmYwMC00MWMwLWI0MTAtZDI4YjViM2I5ZTVlIiwidXNlIjpbImV4Y2hhbmdlIl19");
+            Message legacyMessage = Item.importFromEncoded("Di:MSG.eyJ1aWQiOiJiOTMxOWNiZS0xNzAzLTQ4MTQtYjQ2OC0wMzdmODJmYjNlNDAiLCJpc3MiOiJlODQ5YWQ5OS05YWM4LTQ2ZTktYjUyNS1lZWNiMWEwNjE3NDUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc4MDAzN1oifQ.fS10Cu3KBf/J+cKw6guu6cCO+NBdjrTsJudXNjmgoC4TtX4+HsHY8vmUMYuTLPwKYAQ7dNSchz52l7edgESIuemW1yzA.9bzv07SHm2Hd89iyjjUYLCY3LbvD/+Jw5drKqWnpZNGZRgK2VwWKJTLM0ffQcrvm2P572RBJ5mWhpPnZxLoPCA");
+            assertNotNull(legacyMessage);
+            assertEquals(Commons.PAYLOAD, new String(legacyMessage.getPayload(clientLegacyKey, serverKey), StandardCharsets.UTF_8));
+            Identity clientLegacyIdentity = Item.importFromEncoded("Di:ID.eyJzeXMiOiJkaW1lLWRvdG5ldC1yZWYiLCJ1aWQiOiIyYzZmYTYwMS1mOWIyLTQxNGQtOThhNy00YWY5MDVkY2U1NzIiLCJzdWIiOiI1YzhmODBiNS0wNjA2LTRhZjctOGZlMi03MjcxM2VkZDcwMGYiLCJpc3MiOiJlODQ5YWQ5OS05YWM4LTQ2ZTktYjUyNS1lZWNiMWEwNjE3NDUiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjI1OjA4LjA4NzcwM1oiLCJleHAiOiIyMDIyLTEyLTAyVDIyOjI1OjA4LjA4NzcwM1oiLCJwdWIiOiIyVERYZG9OdU1GaThqd0MzRE43WDJacW1aa0ZmNWE3cWV0elhUV0Fmbmt5aDZncnFZUHE5NE5lbm4iLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il19.SUQuZXlKemVYTWlPaUprYVcxbExXUnZkRzVsZEMxeVpXWWlMQ0oxYVdRaU9pSTNNV1k1TkdGa055MDNaakF6TFRRMk5EVXRPVEl3WWkwd1pEaGtPV0V5WVRGa01XSWlMQ0p6ZFdJaU9pSmxPRFE1WVdRNU9TMDVZV000TFRRMlpUa3RZalV5TlMxbFpXTmlNV0V3TmpFM05EVWlMQ0pwYzNNaU9pSTRNVGN4TjJWa09DMDNOMkZsTFRRMk16TXRZVEE1WVMwMllXTTFaRGswWldZeU9HUWlMQ0pwWVhRaU9pSXlNREl4TFRFeUxUQXlWREl5T2pJMU9qQTRMakE0TnpNeU1Wb2lMQ0psZUhBaU9pSXlNREkyTFRFeUxUQXhWREl5T2pJMU9qQTRMakE0TnpNeU1Wb2lMQ0p3ZFdJaU9pSXlWRVJZWkc5T2RsWnpSMVpJT0VNNVZWcDFaSEJpUW5aV1Uwc3hSbVZwTlhJMFdWUmFUWGhoUW1GNmIzTnZNbkJNY0ZCWFZFMW1ZMDRpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFgwLjc5SjlldTNxZXJqMW4xdEpSaUJQenNURHNBNWlqWG41REs3ZlVuNEpRcmhzZUJXN0lrYWRBekNFRGtQcktoUG1lMGtzanVhMjhUQitVTGh4bGEybkNB.pdZhvANop6iCyBvAmWqUFnviqTZRlw/mF4fjLj4MdbVRdsJDF8eOUYQJk+HoqAXE4i9NV18uAioVkKR1LM1WDw");
+            assertNotNull(clientLegacyIdentity);
+            legacyMessage.verify(clientLegacyIdentity.getPublicKey());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
 
-            String exported1 = "Di:MSG.eyJpc3MiOiI1MWRjN2QwMS04N2RjLTQ0YzUtOWQyNy0wZWYyNmQyN2I4NWYiLCJ1aWQiOiJmODBlNDgxMC01Yzk2LTQzMTItYjhhMC02ZWU5YTIzNzFkOTEiLCJhdWQiOiJiYjNkNjZkYy02YTI2LTQxY2EtODI1NS1iY2FiN2M1NTA3YTIiLCJleHAiOiIyMDIyLTA2LTIwVDAzOjI2OjQ0LjE1NDE1MTgwMFoiLCJpYXQiOiIyMDIyLTA2LTIwVDAzOjI0OjQ0LjE1NDE1MTgwMFoiLCJjdHgiOiJtZXNzYWdlLXJlcXVlc3QifQ.xUZbewSDMYyyD/cPi1d0E06pK5KsXKk2Pt3Cy/cR8UmeqXqBOiuyRb/S1r1oo7zTKRU60WpvyAOnzMOfQuXAulf+oT/l+Ts1ObFISzspVdoHQClHuZQkctB5W0H/DxFapfXMs8HiDvqa6jBtOL3pVzXvvZWSITKAIjlgPveJ5yXelLwnZH4OpF+Fuugulp5bGJcrr87jzERCvZMmyaFMCOPQnIxgY2pjNzAqfSE1yEHulijOpkxE5OQLsxvCYDaExlCJZ/aCsS12RKn0Xm6EKZzX0vjxtVjD60Z0/fQrO1smLMtyazegZ7CS5QWstU9z/95nPpxHHhNRATTXf/Ns3wW7swno6RVpXChg9+K82gDFeEeOklp0hoBvjBDYkFUF7mO1tVxHP0Ub+fB7bT+SRAvSUVtTMKZlcYmXBU4G0xA.qcp5mh4YvoMq/Hu7pPUgXXKBXZrlF0Akrkwon7HsTieHovEKu+apBpStLK6axlCZcvV2bd981Orw16ElS1Q9DA";
-            Message message = Item.importFromEncoded(exported1);
-
-            String exported2 = message.exportToEncoded();
-
-            assertEquals(exported1, exported2);
-
+    @Test
+    void alienMessageEncodingTest1() {
+        try {
+            // UUID are capital letters in alien message (encoding should be respected)
+            String alienEncoded = "Di:MSG.eyJpc3MiOiI1MWRjN2QwMS04N2RjLTQ0YzUtOWQyNy0wZWYyNmQyN2I4NWYiLCJ1aWQiOiJmODBlNDgxMC01Yzk2LTQzMTItYjhhMC02ZWU5YTIzNzFkOTEiLCJhdWQiOiJiYjNkNjZkYy02YTI2LTQxY2EtODI1NS1iY2FiN2M1NTA3YTIiLCJleHAiOiIyMDIyLTA2LTIwVDAzOjI2OjQ0LjE1NDE1MTgwMFoiLCJpYXQiOiIyMDIyLTA2LTIwVDAzOjI0OjQ0LjE1NDE1MTgwMFoiLCJjdHgiOiJtZXNzYWdlLXJlcXVlc3QifQ.xUZbewSDMYyyD/cPi1d0E06pK5KsXKk2Pt3Cy/cR8UmeqXqBOiuyRb/S1r1oo7zTKRU60WpvyAOnzMOfQuXAulf+oT/l+Ts1ObFISzspVdoHQClHuZQkctB5W0H/DxFapfXMs8HiDvqa6jBtOL3pVzXvvZWSITKAIjlgPveJ5yXelLwnZH4OpF+Fuugulp5bGJcrr87jzERCvZMmyaFMCOPQnIxgY2pjNzAqfSE1yEHulijOpkxE5OQLsxvCYDaExlCJZ/aCsS12RKn0Xm6EKZzX0vjxtVjD60Z0/fQrO1smLMtyazegZ7CS5QWstU9z/95nPpxHHhNRATTXf/Ns3wW7swno6RVpXChg9+K82gDFeEeOklp0hoBvjBDYkFUF7mO1tVxHP0Ub+fB7bT+SRAvSUVtTMKZlcYmXBU4G0xA.qcp5mh4YvoMq/Hu7pPUgXXKBXZrlF0Akrkwon7HsTieHovEKu+apBpStLK6axlCZcvV2bd981Orw16ElS1Q9DA";
+            Message alienMessage = Item.importFromEncoded(alienEncoded);
+            assertNotNull(alienMessage);
+            String localExported = alienMessage.exportToEncoded();
+            assertEquals(alienEncoded, localExported);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

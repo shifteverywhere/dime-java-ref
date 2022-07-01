@@ -338,4 +338,20 @@ class IdentityIssuingRequestTest {
         }
     }
 
+    @Test
+    void alienIdentityIssuingRequestTest1() {
+        try {
+            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Capability[] caps = new Capability[] { Capability.GENERIC };
+            String exported = "Di:IIR.eyJ1aWQiOiJmMGMzYTUxZC01MTdlLTQ3ZGQtODJhMy03Y2I2MmJlNDkzNzgiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjU4OjU5LjAxMzE3N1oiLCJwdWIiOiIyVERYZG9OdVFpQ0o4YWdLckJtRnFNWEF2ZUxBWWNLUVNrY0ZVUkpWSGhvVlB2UkR5M2dNS0xLdnQiLCJjYXAiOlsiZ2VuZXJpYyJdfQ.QCln/lBn5vZa6VvCTo/3IwvUbZXxDGJK4ZUtc9pW5nBHyAMhIz5w2bifuzxCLMHIl1uN3CLR/uFFxpJKG2X6Aw";
+            IdentityIssuingRequest iir = Item.importFromEncoded(exported);
+            assertNotNull(iir);
+            iir.verify();
+            Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null);
+            assertNotNull(identity);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 }
