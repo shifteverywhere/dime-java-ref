@@ -124,7 +124,7 @@ public abstract class Item {
     public void sign(Key key) throws DimeCryptographicException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        if (isSigned() && Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided kye."); }
+        if (isSigned() && Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
         try {
             byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
             String identifier = isLegacy() ? null : Dime.crypto.generateKeyIdentifier(key);

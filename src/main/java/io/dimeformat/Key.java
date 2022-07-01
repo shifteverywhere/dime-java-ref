@@ -296,6 +296,7 @@ public class Key extends Item {
         copyKey.getClaims().put(Claim.EXP, getExpiresAt());
         copyKey.getClaims().put(Claim.ISS, getIssuerId());
         copyKey.getClaims().put(Claim.CTX, getContext());
+        copyKey.getClaims().put(Claim.USE, getKeyUsage().stream().map(use -> use.name().toLowerCase()).collect(toList()));
         return copyKey;
     }
 
