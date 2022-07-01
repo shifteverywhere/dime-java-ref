@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'io.dimeformat'
-version '1.0.3'
+version '1.1'
 
 repositories {
     mavenCentral()
