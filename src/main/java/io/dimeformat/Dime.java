@@ -13,6 +13,8 @@ import io.dimeformat.crypto.Crypto;
 import io.dimeformat.crypto.CryptoSuiteStandard;
 import io.dimeformat.crypto.ICryptoSuite;
 
+import java.time.Instant;
+
 /**
  * Central class that handles a few important settings and constants.
  */
@@ -80,16 +82,30 @@ public final class Dime {
         Dime.timeModifier = modifier;
     }
 
+    public static synchronized void setOverrideTime(Instant time) {
+        Dime.overrideTime = time;
+    }
+
     /// PACKAGE-PRIVATE ///
 
     static final String COMPONENT_DELIMITER = ".";
     static final String SECTION_DELIMITER = ":";
     static final String META_DELIMITER = "/";
 
+    static Instant getTime() {
+
+        if (Dime.overrideTime != null) {
+            return overrideTime;
+        }
+        return Instant.now();
+
+    }
+
     /// PRIVATE ///
 
     private static Identity trustedIdentity;
     private static long timeModifier = 0;
+    private static Instant overrideTime = null;
 
     private Dime() {
         throw new IllegalStateException("Not intended to be instantiated.");

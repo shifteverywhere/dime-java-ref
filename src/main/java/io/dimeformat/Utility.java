@@ -125,7 +125,7 @@ public final class Utility {
      * @return An Instant timestamp
      */
     public static Instant createTimestamp() {
-        Instant now = Instant.now();
+        Instant now = Dime.getTime();
         long modifier = Dime.getTimeModifier();
         if (modifier == 0) { return now; }
         return now.plusSeconds(modifier);
