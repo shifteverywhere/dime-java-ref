@@ -37,12 +37,14 @@ class Signature {
             if (components.length == 1) {
                 // This is a legacy signature
                 signatures.add(new Signature(Utility.fromBase64(encoded), null));
+                break; // No need to continue, legacy only supports one signature per item
             } else {
                 try {
                     signatures.add(new Signature(Utility.fromHex(components[Signature.INDEX_SIGNATURE]), components[Signature.INDEX_KEY_IDENTIFIER]));
                 } catch (Exception e) {
                     // This is a legacy signature
                     signatures.add(new Signature(Utility.fromBase64(encoded), null));
+                    break; // No need to continue, legacy only supports one signature per item
                 }
             }
         }
