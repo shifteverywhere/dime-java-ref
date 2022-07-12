@@ -307,6 +307,28 @@ class MessageTest {
     }
 
     @Test
+    void signTest3() {
+        // Multiple signatures
+        try {
+            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key2 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key3 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Message message = new Message(Commons.getIssuerIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.sign(key1);
+            message.verify(key1);
+            message.sign(key2);
+            message.verify(key1);
+            message.verify(key2);
+            try {
+                message.verify(key3);
+            } catch (DimeIntegrityException e) { /* ignored */ }
+        } catch (Exception e) {
+            fail("Should not happen.");
+        }
+    }
+
+    @Test
     void isSignedTest1() {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
