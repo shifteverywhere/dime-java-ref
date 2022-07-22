@@ -10,8 +10,8 @@
 package io.dimeformat.crypto;
 
 import com.goterl.lazysodium.SodiumJava;
+import io.dimeformat.Key;
 import io.dimeformat.Utility;
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.DimeCryptographicException;
 
 import java.util.List;
@@ -54,17 +54,17 @@ public class CryptoSuiteStandard implements ICryptoSuite {
         return (this.sodium.crypto_sign_verify_detached(signature, data, data.length, key) == 0);
     }
 
-    public byte[][] generateKey(List<KeyUsage> usage) throws DimeCryptographicException {
-        if (usage == null || usage.size() != 1) { throw new IllegalArgumentException("Invalid key usage requested."); }
-        KeyUsage use = usage.get(0);
-        if (use == KeyUsage.ENCRYPT) {
+    public byte[][] generateKey(List<Key.Use> use) throws DimeCryptographicException {
+        if (use == null || use.size() != 1) { throw new IllegalArgumentException("Invalid key usage requested."); }
+        Key.Use firstUse = use.get(0);
+        if (firstUse == Key.Use.ENCRYPT) {
             byte[] secretKey = new byte[CryptoSuiteStandard.NBR_S_KEY_BYTES];
             this.sodium.crypto_secretbox_keygen(secretKey);
             return new byte[][] { secretKey };
         } else {
             byte[] publicKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
             byte[] secretKey;
-            switch (usage.get(0)) {
+            switch (use.get(0)) {
                 case SIGN:
                     secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES * 2];
                     this.sodium.crypto_sign_keypair(publicKey, secretKey);
@@ -74,15 +74,15 @@ public class CryptoSuiteStandard implements ICryptoSuite {
                     this.sodium.crypto_kx_keypair(publicKey, secretKey);
                     break;
                 default:
-                    throw new DimeCryptographicException("Unable to generate keypair for key type " + usage + ".");
+                    throw new DimeCryptographicException("Unable to generate keypair for key type " + use + ".");
             }
             return new byte[][] { secretKey, publicKey };
         }
     }
 
-    public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyUsage> usage) throws DimeCryptographicException {
-        if (!usage.contains(KeyUsage.ENCRYPT)) { throw new IllegalArgumentException("Key usage for shared secret must be ENCRYPT"); }
-        if (usage.size() > 1) { throw new IllegalArgumentException("Key usage for shared secret may only be ENCRYPT"); }
+    public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<Key.Use> use) throws DimeCryptographicException {
+        if (!use.contains(Key.Use.ENCRYPT)) { throw new IllegalArgumentException("Key usage for shared secret must be ENCRYPT"); }
+        if (use.size() > 1) { throw new IllegalArgumentException("Key usage for shared secret may only be ENCRYPT"); }
         byte[] shared = new byte[CryptoSuiteStandard.NBR_X_KEY_BYTES];
         if (clientKey[0] != null && clientKey.length == 2) { // has both private and public key
             byte[] secret = Utility.combine(clientKey[0], clientKey[1]);

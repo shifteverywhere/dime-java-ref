@@ -10,8 +10,6 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 
 import java.time.Instant;
@@ -77,7 +75,7 @@ public class Message extends Data {
         String pub = getClaims().get(Claim.PUB);
         if (pub != null && pub.length() > 0) {
             try {
-                return new Key(List.of(KeyUsage.EXCHANGE), pub, Claim.PUB);
+                return new Key(List.of(Key.Use.EXCHANGE), pub, Claim.PUB);
             } catch (DimeCryptographicException ignored) { /* ignored */ }
         }
         return null;
@@ -187,7 +185,7 @@ public class Message extends Data {
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
         if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
         if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
-        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyUsage.ENCRYPT));
+        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(Key.Use.ENCRYPT));
         setPayload(Dime.crypto.encrypt(payload, sharedKey));
     }
 
@@ -201,7 +199,7 @@ public class Message extends Data {
     public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeCryptographicException {
         if (issuerKey == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
         if (audienceKey == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
-        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyUsage.ENCRYPT));
+        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(Key.Use.ENCRYPT));
         return Dime.crypto.decrypt(getPayload(), sharedKey);
     }
 

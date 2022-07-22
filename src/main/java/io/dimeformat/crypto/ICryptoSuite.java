@@ -9,8 +9,8 @@
 //
 package io.dimeformat.crypto;
 
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.Key;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public interface ICryptoSuite {
     /**
      * Returns the name of the cryptographic suite, usually a short series of letters, i.e. DDCS for Dime Default
      * Cryptography Suite.
-     * @return
+     * @return Identifier of the cryptographic suite.
      */
     String getName();
 
@@ -58,23 +58,23 @@ public interface ICryptoSuite {
 
     /**
      * Generates a cryptographic key for the provided usage, if possible.
-     * @param usage The intended usage of the generated key, i.e. {#{@link KeyUsage#SIGN}}.
+     * @param use The intended usage of the generated key, i.e. {#{@link Key.Use#SIGN}}.
      * @return The generated key.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
-    byte[][] generateKey(List<KeyUsage> usage) throws DimeCryptographicException;
+    byte[][] generateKey(List<Key.Use> use) throws DimeCryptographicException;
 
     /**
-     *  Generates a shared secret from two keys or key pars. These keys must have {#{@link KeyUsage#EXCHANGE}} listad as
+     *  Generates a shared secret from two keys or key pars. These keys must have {#{@link Key.Use#EXCHANGE}} listad as
      *  usage. The server/issuer of a key exchange is always the initiator and the client/audience is always the
      *  receiver (no matter on which side this method is called).
      * @param clientKey The key or key pair from the client (usually the audience).
      * @param serverKey The key or key pair from the server (usually the issuer).
-     * @param usage The intended usage of the generated key, i.e. {#{@link KeyUsage#ENCRYPT}}.
+     * @param use The intended use of the generated key, i.e. {#{@link Key.Use#ENCRYPT}}.
      * @return The generated shared key.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
-    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyUsage> usage) throws DimeCryptographicException;
+    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<Key.Use> use) throws DimeCryptographicException;
 
     /**
      * Encrypts a plain text byte array using the provided key.
@@ -95,9 +95,9 @@ public interface ICryptoSuite {
     byte[] decrypt(byte[] data, byte[] key) throws DimeCryptographicException;
 
     /**
-     *
-     * @param data
-     * @return
+     * Generates a secure hash digest of the provided data.
+     * @param data The data that should be hashed.
+     * @return The hash digest of the provided data.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
     byte[] generateHash(byte[] data) throws DimeCryptographicException;

@@ -11,8 +11,6 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import java.time.Instant;
 import java.util.*;
@@ -51,7 +49,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
+            _publicKey = getClaims().getKey(Claim.PUB, List.of(Key.Use.SIGN));
         }
         return _publicKey;
     }
@@ -119,7 +117,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeCryptographicException If something goes wrong.
      */
     public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
-        if (!key.getKeyUsage().contains(KeyUsage.SIGN)) { throw new IllegalArgumentException("Key most have SIGN usage set."); }
+        if (!key.getUse().contains(Key.Use.SIGN)) { throw new IllegalArgumentException("Key most have SIGN usage set."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
@@ -312,7 +310,7 @@ public class IdentityIssuingRequest extends Item {
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambit A list of ambits that will apply to the issued identity.
+     * @param ambit An ambit list that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return A self-issued Identity instance.
      * @throws DimeCryptographicException If anything goes wrong.
@@ -331,7 +329,7 @@ public class IdentityIssuingRequest extends Item {
     public void convertToLegacy() {
         if (isLegacy()) { return; }
         super.convertToLegacy();
-        Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
+        Key.convertKeyToLegacy(this, Key.Use.SIGN, Claim.PUB);
     }
 
     /// PROTECTED ///

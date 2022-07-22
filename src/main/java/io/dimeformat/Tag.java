@@ -30,7 +30,7 @@ public class Tag extends Item {
     }
 
     public Tag(UUID issuerId) {
-        this(issuerId, null);
+        this(issuerId, (String)null);
     }
 
     public Tag(UUID issuerId, String context) {
@@ -40,6 +40,13 @@ public class Tag extends Item {
         claims.put(Claim.UID, UUID.randomUUID());
         claims.put(Claim.ISS, issuerId);
         claims.put(Claim.CTX, context);
+    }
+
+    public Tag(UUID issuerId, List<Item> items) throws DimeCryptographicException {
+        this(issuerId);
+        if (items != null) {
+            setItemLinks(items);
+        }
     }
 
     public Tag(UUID issuerId, String context, List<Item> items) throws DimeCryptographicException {

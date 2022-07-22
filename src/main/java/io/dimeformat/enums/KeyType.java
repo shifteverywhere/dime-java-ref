@@ -9,11 +9,13 @@
 //
 package io.dimeformat.enums;
 
+import io.dimeformat.Key;
+
 /**
  * Defines different types of cryptographic keys.
  * Used for header information in keys and when generating new keys.
  * @deprecated Deprecated and will be removed in an upcoming release, and therefore not be used anymore. Replaced by
- * {#{@link KeyUsage}}.
+ * {#{@link Key.Use}}.
  */
 @Deprecated
 public enum KeyType {
@@ -63,19 +65,19 @@ public enum KeyType {
         }
     }
 
-    public KeyUsage toKeyUsage() {
+    public Key.Use toKeyUsage() {
         switch (this) {
             case UNDEFINED:
             case AUTHENTICATION:
-                return KeyUsage.UNDEFINED;
+                return Key.Use.UNDEFINED;
             case IDENTITY:
-                return KeyUsage.SIGN;
+                return Key.Use.SIGN;
             case EXCHANGE:
-                return KeyUsage.EXCHANGE;
+                return Key.Use.EXCHANGE;
             case ENCRYPTION:
-                return KeyUsage.ENCRYPT;
+                return Key.Use.ENCRYPT;
         }
-        return KeyUsage.UNDEFINED;
+        return Key.Use.UNDEFINED;
     }
 
 }

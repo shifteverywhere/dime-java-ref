@@ -9,14 +9,10 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.DimeIntegrityException;
-
-import javax.swing.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
@@ -42,16 +38,16 @@ class MessageTest {
         Instant now = Instant.now();
         assertEquals(0, Duration.between(message.getIssuedAt(), now).getSeconds());
         assertEquals(-10, Duration.between(message.getExpiresAt(), now).getSeconds());
-        message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+        message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
         assertNotNull(message.getUniqueId());
         assertEquals(Commons.getAudienceIdentity().getSubjectId(), message.getAudienceId());
-        assertEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
+        assertEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
     }
 
     @Test
     void messageTest2() {
         Dime.setTrustedIdentity(Commons.getTrustedIdentity());
-        byte[] payload = "Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8);
+        byte[] payload = Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8);
         long validFor = 10;
         Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), validFor);
         message1.setPayload(payload);
@@ -64,7 +60,7 @@ class MessageTest {
     void messageTest3() {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
-            String text = "Racecar is racecar backwards.";
+            String text = Commons.PAYLOAD;
             byte[] payload = text.getBytes(StandardCharsets.UTF_8);
             Message message1 = new Message(Commons.getIssuerIdentity().getSubjectId());
             message1.setPayload(payload);
@@ -85,7 +81,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             String encoded = message.exportToEncoded();
             assertNotNull(encoded);
@@ -112,7 +108,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             assertEquals(message.exportToEncoded(), message.exportToEncoded());
         } catch (Exception e) {
@@ -125,7 +121,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), -10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey());
         } catch (DimeDateException e) { 
@@ -139,11 +135,11 @@ class MessageTest {
     @Test
     void verifyTest2() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity untrustedSender = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 120, key, Commons.SYSTEM_NAME, null);
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), 120);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key);
             message.verify(Commons.getIssuerKey());
         } catch (DimeIntegrityException e) { 
@@ -159,7 +155,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 120);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerIdentity().getPublicKey());
         } catch (Exception e) {
@@ -172,7 +168,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId());
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerIdentity().getPublicKey());
         } catch (Exception e) {
@@ -185,7 +181,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(1000);
             try {
@@ -205,7 +201,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(2000);
             Dime.setTimeModifier(-2);
@@ -222,7 +218,7 @@ class MessageTest {
             Dime.setTimeModifier(-2);
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 1);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(2000);
             message.verify(Commons.getIssuerIdentity().getPublicKey());
@@ -243,7 +239,7 @@ class MessageTest {
             assertEquals(UUID.fromString("0cef1d8f-54be-4ce0-a669-cd2897ac64e0"), message.getUniqueId());
             assertEquals(UUID.fromString("a6902184-2ba0-4ba0-ab91-ca77da7d05d3"), message.getAudienceId());
             assertEquals(UUID.fromString("0aa56133-78b0-4dd9-928d-5d7ff9da5445"), message.getIssuerId());
-            assertEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
             assertEquals(Instant.parse("2021-11-18T18:05:52.974395Z"), message.getIssuedAt());
             assertEquals(Instant.parse("2021-11-18T18:06:02.974395Z"), message.getExpiresAt());
         } catch (Exception e) {
@@ -265,7 +261,7 @@ class MessageTest {
     void ImportTest3() {  
         try {
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 120);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             String encoded = message1.exportToEncoded();
             Message message2 = Item.importFromEncoded(encoded);
@@ -295,9 +291,9 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
         } catch (IllegalStateException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -310,9 +306,9 @@ class MessageTest {
     void signTest3() {
         // Multiple signatures
         try {
-            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
-            Key key2 = Key.generateKey(List.of(KeyUsage.SIGN));
-            Key key3 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key1 = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key2 = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key3 = Key.generateKey(List.of(Key.Use.SIGN));
             Message message = new Message(Commons.getIssuerIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key1);
@@ -333,7 +329,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             assertFalse(message.isSigned());
             message.sign(Commons.getIssuerKey());
             assertTrue(message.isSigned());
@@ -345,20 +341,20 @@ class MessageTest {
     @Test
     void setPayloadTest1() {
         Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-        message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-        assertEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
+        message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        assertEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
     }
 
     @Test
     void setPayloadTest2() {
         try {
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-            assertEquals("Racecar is racecar backwards.", new String(message1.getPayload(), StandardCharsets.UTF_8));
+            message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message1.getPayload(), StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             Message message2 = Item.importFromEncoded(message1.exportToEncoded());
             assertNotNull(message2);
-            assertEquals("Racecar is racecar backwards.", new String(message2.getPayload(), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message2.getPayload(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -367,11 +363,11 @@ class MessageTest {
     @Test
     void setPayloadTest3() {
         try {
-            Key localKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
-            Key remoteKey = Key.generateKey(List.of(KeyUsage.EXCHANGE)).publicCopy();
+            Key localKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+            Key remoteKey = Key.generateKey(List.of(Key.Use.EXCHANGE)).publicCopy();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), localKey, remoteKey);
-            assertNotEquals("Racecar is racecar backwards.", new String(message.getPayload(), StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), localKey, remoteKey);
+            assertNotEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -380,15 +376,15 @@ class MessageTest {
     @Test
     void setPayloadTest4() {
         try {
-            Key issuerKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
-            Key audienceKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key issuerKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setKeyId(issuerKey.getUniqueId());
             message.setPublicKey(audienceKey);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey);
             assertEquals(issuerKey.getUniqueId(), message.getKeyId());
             assertEquals(audienceKey.getPublic(), message.getPublicKey().getPublic());
-            assertEquals("Racecar is racecar backwards.", new String(message.getPayload(audienceKey, issuerKey.publicCopy()), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(audienceKey, issuerKey.publicCopy()), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -397,15 +393,15 @@ class MessageTest {
     @Test
     void setPayloadTest5() {
         try {
-            Key issuerKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
-            Key audienceKey = Key.generateKey(List.of(KeyUsage.EXCHANGE));
+            Key issuerKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
+            message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
             message1.sign(Commons.getIssuerKey());
             Message message2 = Item.importFromEncoded(message1.exportToEncoded());
             assertNotNull(message2);
             String plainText = new String(message2.getPayload(issuerKey.publicCopy(), audienceKey), StandardCharsets.UTF_8);
-            assertEquals("Racecar is racecar backwards.", plainText);
+            assertEquals(Commons.PAYLOAD, plainText);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -414,9 +410,9 @@ class MessageTest {
     @Test
     void setPayloadTest6() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8), key, key);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key, key);
         } catch (IllegalArgumentException e) {
             return; // All is well
         } catch (Exception e) {
@@ -432,7 +428,7 @@ class MessageTest {
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
             Message issuerMessage = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-            issuerMessage.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage.sign(Commons.getIssuerKey());
             Message responseMessage = new Message(issuer.getSubjectId(), receiver.getSubjectId(), 100);
             responseMessage.setPayload("It is!".getBytes(StandardCharsets.UTF_8));
@@ -452,8 +448,8 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
-            message.addItemLink(Key.generateKey(List.of(KeyUsage.EXCHANGE)));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.addItemLink(Key.generateKey(List.of(Key.Use.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
         } catch (DimeIntegrityException e) { 
@@ -469,9 +465,9 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.addItemLink(Key.generateKey(List.of(KeyUsage.EXCHANGE)));
+            message.addItemLink(Key.generateKey(List.of(Key.Use.EXCHANGE)));
         } catch (IllegalStateException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -485,7 +481,7 @@ class MessageTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             String thumbprint1 = message1.thumbprint();
             String encoded = message1.exportToEncoded();
@@ -505,10 +501,10 @@ class MessageTest {
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
             Message issuerMessage1 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-            issuerMessage1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage1.sign(Commons.getIssuerKey());
             Message issuerMessage2 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
-            issuerMessage2.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            issuerMessage2.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage2.sign(Commons.getIssuerKey());
             assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
         } catch (Exception e) {
@@ -541,7 +537,7 @@ class MessageTest {
         try {
             String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
             Message message1 = new Message(null, Commons.getIssuerIdentity().getIssuerId(), -1, context);
-            message1.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             String exported = message1.exportToEncoded();
             Message message2 = Item.importFromEncoded(exported);
@@ -565,7 +561,7 @@ class MessageTest {
     void stripTest1() {
         try {
             Message message = new Message(Commons.getIssuerIdentity().getSubjectId());
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             try {
                 message.setPublicKey(Commons.getIssuerKey().publicCopy());
@@ -593,7 +589,7 @@ class MessageTest {
             // Client generate a response (to be sent to the server) //
             Message response = new Message(UUID.randomUUID());
             response.setPayload(text.getBytes(StandardCharsets.UTF_8), serverKey.publicCopy(), clientKey);
-            response.sign(Key.generateKey(List.of(KeyUsage.SIGN)));
+            response.sign(Key.generateKey(List.of(Key.Use.SIGN)));
             String exported = response.exportToEncoded();
             // This would really happen on the server side //
             Message received = Item.importFromEncoded(exported);

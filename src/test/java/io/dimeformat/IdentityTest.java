@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.DimeCapabilityException;
 import io.dimeformat.exceptions.DimeDateException;
 import org.junit.jupiter.api.Test;
@@ -35,7 +34,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(null);
             UUID subjectId = UUID.randomUUID();
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
             assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
@@ -58,7 +57,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             UUID subjectId = UUID.randomUUID();
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
             Identity identity = iir.issueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
@@ -83,7 +82,7 @@ class IdentityTest {
             Capability[] reqCaps = new Capability[] { Capability.ISSUE };
             Capability[] allowedCaps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
             try {
-                IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN)), reqCaps).issueIdentity(UUID.randomUUID(), 100L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, allowedCaps, null);
+                IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN)), reqCaps).issueIdentity(UUID.randomUUID(), 100L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, allowedCaps, null);
             } catch (DimeCapabilityException e) { return; } // All is well
             fail("Should not happen.");
         } catch (Exception e) {
@@ -95,7 +94,7 @@ class IdentityTest {
     void issueTest4() {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, caps, null);
             assertTrue(identity.hasCapability(Capability.ISSUE));
@@ -109,7 +108,7 @@ class IdentityTest {
     void isSelfSignedTest1() {
         try {
             Dime.setTrustedIdentity(null);
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isSelfIssued());
         } catch (Exception e) {
@@ -122,7 +121,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN))).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN))).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
             assertFalse(identity.isSelfIssued());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -133,7 +132,7 @@ class IdentityTest {
     void isTrustedTest1() {
         try {
             Dime.setTrustedIdentity(null);
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isSelfIssued());
             assertFalse(identity.isTrusted());
@@ -147,7 +146,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN))).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN))).issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
             assertTrue(identity.isTrusted());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
@@ -158,7 +157,7 @@ class IdentityTest {
     void isTrustedTest3() {
         try {
             Dime.setTrustedIdentity(null);
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity identity = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             assertFalse(identity.isTrusted());
@@ -212,14 +211,14 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] nodeCaps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key1 = Key.generateKey(List.of(Key.Use.SIGN));
             Identity node1 = IdentityIssuingRequest.generateIIR(key1, nodeCaps).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, nodeCaps, nodeCaps);
-            Key key2 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key2 = Key.generateKey(List.of(Key.Use.SIGN));
             Identity node2 = IdentityIssuingRequest.generateIIR(key2, nodeCaps).issueIdentity(UUID.randomUUID(), 100, key1, node1, true, nodeCaps, nodeCaps);
-            Key key3 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key3 = Key.generateKey(List.of(Key.Use.SIGN));
             Identity node3 = IdentityIssuingRequest.generateIIR(key3, nodeCaps).issueIdentity(UUID.randomUUID(), 100, key2, node2, true, nodeCaps, nodeCaps);
             Capability[] leafCaps = new Capability[] { Capability.GENERIC };
-            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), 100, key3, node3, true, leafCaps, leafCaps);
+            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), 100, key3, node3, true, leafCaps, leafCaps);
             assertTrue(leaf.isTrusted());
             assertTrue(leaf.isTrusted(node1));
             assertTrue(leaf.isTrusted(node2));
@@ -235,12 +234,12 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] nodeCaps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
-            Key key1 = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key1 = Key.generateKey(List.of(Key.Use.SIGN));
             Identity node1 = IdentityIssuingRequest.generateIIR(key1, nodeCaps).issueIdentity(UUID.randomUUID(), 100, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, nodeCaps, nodeCaps);
-            Key key2 =Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key2 =Key.generateKey(List.of(Key.Use.SIGN));
             Identity node2 = IdentityIssuingRequest.generateIIR(key2, nodeCaps).issueIdentity(UUID.randomUUID(), 100, key1, node1, false, nodeCaps, nodeCaps);
             Capability[] leafCaps = new Capability[] { Capability.GENERIC };
-            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), 100, key2, node2, false, leafCaps, leafCaps);
+            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), 100, key2, node2, false, leafCaps, leafCaps);
             assertFalse(leaf.isTrusted());
             assertFalse(leaf.isTrusted(node1));
             assertTrue(leaf.isTrusted(node2));
@@ -254,7 +253,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(1000);
             try {
                 identity.isTrusted();
@@ -271,7 +270,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(2000);
             Dime.setTimeModifier(-2);
             identity.isTrusted();
@@ -286,7 +285,7 @@ class IdentityTest {
             Dime.setTimeModifier(-2);
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC };
-            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyUsage.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
+            Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN))).issueIdentity(UUID.randomUUID(), 1, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(2000);
             identity.isTrusted();
         } catch (DimeDateException e) {
@@ -301,7 +300,7 @@ class IdentityTest {
         try {
             Dime.setTrustedIdentity(Commons.getTrustedIdentity());
             Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps, null).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
             String exported = identity.exportToEncoded();
             assertNotNull(exported);
@@ -339,7 +338,7 @@ class IdentityTest {
     void ambitTest1() {
         try { 
             String[] ambit = new String[] { "global", "administrator" };
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             
             Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambit, null);
             assertEquals(2, identity1.getAmbit().size());
@@ -360,7 +359,7 @@ class IdentityTest {
     void methodsTest1() {
         try { 
             String[] methods = new String[] { "dime", "sov" };
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
 
             Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null, methods);
             List<String> methodList1 = identity1.getMethods();
@@ -384,13 +383,13 @@ class IdentityTest {
     @Test
     void principlesTest1() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Map<String, Object> principles = new HashMap<>();
-            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("tag", Commons.PAYLOAD);
             principles.put("nbr", Arrays.asList("one", "two", "three"));
             Identity identity =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Map<String, Object> pri = identity.getPrinciples();
-            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            assertEquals(Commons.PAYLOAD, pri.get("tag"));
             List<String> nbr = (List<String>)pri.get("nbr");
             assertEquals(3, nbr.size());
             assertEquals("two", nbr.get(1));
@@ -406,15 +405,15 @@ class IdentityTest {
     @Test
     void principlesTest2() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Map<String, Object> principles = new HashMap<>();
-            principles.put("tag", "Racecar is racecar backwards.");
+            principles.put("tag", Commons.PAYLOAD);
             principles.put("nbr", Arrays.asList("one", "two", "three"));
             Identity identity1 =  IdentityIssuingRequest.generateIIR(key, new Capability[] { Capability.GENERIC }, principles).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME);
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
             assertNotNull(identity2);
             Map<String, Object> pri = identity2.getPrinciples();
-            assertEquals("Racecar is racecar backwards.", pri.get("tag"));
+            assertEquals(Commons.PAYLOAD, pri.get("tag"));
             List<String> nbr = (List<String>)pri.get("nbr");
             assertEquals(3, nbr.size());
             assertEquals("three", nbr.get(2));

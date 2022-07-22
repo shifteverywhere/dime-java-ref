@@ -11,12 +11,9 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 

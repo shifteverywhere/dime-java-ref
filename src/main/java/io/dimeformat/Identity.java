@@ -11,7 +11,6 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -63,7 +62,7 @@ public class Identity extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = getClaims().getKey(Claim.PUB, List.of(KeyUsage.SIGN));
+            _publicKey = getClaims().getKey(Claim.PUB, List.of(Key.Use.SIGN));
         }
         return _publicKey;
     }
@@ -253,9 +252,9 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasAmbit(String ambit) {
-        List<String> ambits = getAmbits();
-        if (ambits != null) {
-            return ambits.contains(ambit);
+        List<String> ambitList = getAmbits();
+        if (ambitList != null) {
+            return ambitList.contains(ambit);
         }
         return false;
     }
@@ -264,7 +263,7 @@ public class Identity extends Item {
     public void convertToLegacy() {
         if (isLegacy()) { return; }
         super.convertToLegacy();
-        Key.convertKeyToLegacy(this, KeyUsage.SIGN, Claim.PUB);
+        Key.convertKeyToLegacy(this, Key.Use.SIGN, Claim.PUB);
     }
 
     /// PACKAGE-PRIVATE ///

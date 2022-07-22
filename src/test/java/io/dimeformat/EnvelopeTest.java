@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +24,7 @@ class EnvelopeTest {
     void getItemTest1() {
         try {
             Message message = new Message(UUID.randomUUID(), UUID.randomUUID(), -1, "message-context");
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN), "key-context");
+            Key key = Key.generateKey(List.of(Key.Use.SIGN), "key-context");
             Envelope envelope = new Envelope();
             envelope.addItem(message);
             envelope.addItem(key);

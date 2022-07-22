@@ -11,7 +11,6 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
-import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -209,7 +208,7 @@ public class DimeTest {
     @Test
     void legacyKeyConvertToLegacyTest1() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Message message = new Message(UUID.randomUUID());
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key);
@@ -230,7 +229,7 @@ public class DimeTest {
     @Test
     void legacyIIRConvertToLegacyTest1() {
         try {
-            Key key = Key.generateKey(List.of(KeyUsage.SIGN));
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
             String exported = iir.exportToEncoded();
             assertNotNull(exported);

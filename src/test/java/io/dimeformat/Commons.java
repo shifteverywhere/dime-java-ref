@@ -12,10 +12,8 @@ package io.dimeformat;
 import java.util.List;
 import java.util.UUID;
 
-import io.dimeformat.enums.KeyUsage;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.Capability;
-import io.dimeformat.enums.KeyType;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,7 +77,7 @@ public class Commons {
     public void generateCommons() {
         try {
             Dime.setTrustedIdentity(null);
-            Key trustedKey = Key.generateKey(List.of(KeyUsage.SIGN), Commons.SIGN_KEY_CONTEXT);
+            Key trustedKey = Key.generateKey(List.of(Key.Use.SIGN), Commons.SIGN_KEY_CONTEXT);
             Identity trustedIdentity = Commons.generateIdentity(trustedKey, trustedKey, null, Dime.VALID_FOR_1_YEAR * 10, new Capability[]{Capability.GENERIC, Capability.ISSUE});
             assertNotNull(trustedIdentity);
             assertFalse(trustedIdentity.isTrusted());
@@ -89,7 +87,7 @@ public class Commons {
             System.out.println("private static final String _encodedTrustedIdentity = \"" + trustedIdentity.exportToEncoded() + "\";\n");
 
             Dime.setTrustedIdentity(trustedIdentity);
-            Key intermediateKey = Key.generateKey(List.of(KeyUsage.SIGN), Commons.SIGN_KEY_CONTEXT);
+            Key intermediateKey = Key.generateKey(List.of(Key.Use.SIGN), Commons.SIGN_KEY_CONTEXT);
             Identity intermediateIdentity = Commons.generateIdentity(intermediateKey, trustedKey, trustedIdentity, Dime.VALID_FOR_1_YEAR * 5, new Capability[]{Capability.GENERIC, Capability.IDENTIFY, Capability.ISSUE});
             assertNotNull(intermediateIdentity);
             assertTrue(intermediateIdentity.isTrusted());
@@ -97,7 +95,7 @@ public class Commons {
             System.out.println("private static final String _encodedIntermediateKey = \"" + intermediateKey.exportToEncoded() + "\";");
             System.out.println("private static final String _encodedIntermediateIdentity = \"" + intermediateIdentity.exportToEncoded() + "\";\n");
 
-            Key issuerKey = Key.generateKey(List.of(KeyUsage.SIGN), Commons.SIGN_KEY_CONTEXT);
+            Key issuerKey = Key.generateKey(List.of(Key.Use.SIGN), Commons.SIGN_KEY_CONTEXT);
             Identity issuerIdentity = Commons.generateIdentity(issuerKey, intermediateKey, intermediateIdentity, Dime.VALID_FOR_1_YEAR, new Capability[]{Capability.GENERIC, Capability.IDENTIFY});
             assertNotNull(issuerIdentity);
             assertTrue(issuerIdentity.isTrusted());
@@ -105,7 +103,7 @@ public class Commons {
             System.out.println("private static final String _encodedIssuerKey = \"" + issuerKey.exportToEncoded() + "\";");
             System.out.println("public static final String _encodedIssuerIdentity = \"" + issuerIdentity.exportToEncoded() + "\";\n");
 
-            Key audienceKey = Key.generateKey(List.of(KeyUsage.SIGN), Commons.SIGN_KEY_CONTEXT);
+            Key audienceKey = Key.generateKey(List.of(Key.Use.SIGN), Commons.SIGN_KEY_CONTEXT);
             Identity audienceIdentity = Commons.generateIdentity(audienceKey, intermediateKey, intermediateIdentity, Dime.VALID_FOR_1_YEAR, new Capability[]{Capability.GENERIC, Capability.IDENTIFY});
             assertNotNull(audienceIdentity);
             assertTrue(audienceIdentity.isTrusted());

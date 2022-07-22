@@ -10,7 +10,6 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.KeyUsage;
 import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import org.webpki.jcs.JsonCanonicalizer;
@@ -18,8 +17,6 @@ import org.webpki.jcs.JsonCanonicalizer;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Handles claims for Di:ME items.
@@ -82,11 +79,11 @@ class ClaimsMap {
         return Base58.decode(string);
     }
 
-    public Key getKey(Claim claim, List<KeyUsage> usage) {
+    public Key getKey(Claim claim, List<Key.Use> use) {
         String string = get(claim);
         if (string == null || string.length() == 0) { return null; }
         try {
-            return new Key(usage, string, claim);
+            return new Key(use, string, claim);
         } catch (DimeCryptographicException ignored) {
             return null;
         }
