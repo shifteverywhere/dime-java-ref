@@ -9,11 +9,10 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
+import io.dimeformat.Identity.Capability;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,85 +43,88 @@ public class DimeTest {
 
     @Test
     void setTimeModifierTest1() {
-        Dime.setTimeModifier(0);
-        assertEquals(0, Dime.getTimeModifier());
-        Dime.setTimeModifier(10);
-        assertEquals(10, Dime.getTimeModifier());
+        Dime.setTimeModifier(0L);
+        assertEquals(0L, Dime.getTimeModifier());
+        Dime.setTimeModifier(10L);
+        assertEquals(10L, Dime.getTimeModifier());
     }
 
     @Test
     void createTimestampTest1() {
-        Dime.setTimeModifier(0);
+        Dime.setTimeModifier(0L);
         Instant reference = Instant.now();
         Instant timestamp = Utility.createTimestamp();
         Duration duration = Duration.between(reference, timestamp);
-        assertEquals(0, duration.getSeconds());
+        assertEquals(0L, duration.getSeconds());
     }
 
     @Test
     void createTimestampTest2() {
         Instant reference = Instant.now();
-        Dime.setTimeModifier(10);
+        Dime.setTimeModifier(10L);
         Instant timestamp = Utility.createTimestamp();
         Duration duration = Duration.between(reference, timestamp);
-        assertEquals(10, duration.getSeconds());
+        assertEquals(10L, duration.getSeconds());
     }
 
     @Test
     void createTimestampTest3() {
         Instant reference = Instant.now();
-        Dime.setTimeModifier(-10);
+        Dime.setTimeModifier(-10L);
         Instant timestamp = Utility.createTimestamp();
         Duration duration = Duration.between(reference, timestamp);
-        assertEquals(-10, duration.getSeconds());
+        assertEquals(-10L, duration.getSeconds());
     }
 
     @Test
     void createTimestampTest4() {
         Instant reference = Instant.now().minusSeconds(2);
-        Dime.setTimeModifier(-2);
+        Dime.setTimeModifier(-2L);
         Instant timestamp = Utility.createTimestamp();
         Duration duration = Duration.between(reference, timestamp);
-        assertEquals(0, duration.getSeconds());
+        assertEquals(0L, duration.getSeconds());
     }
 
     @Test
     void gracefulTimestampCompareTest1() {
-        int gracePeriod = 2;
+        Dime.setGracePeriod(2L);
         Instant now = Utility.createTimestamp();
         Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
-        int result = Utility.gracefulTimestampCompare(now, remoteTimestamp1, gracePeriod);
+        int result = Utility.gracefulTimestampCompare(now, remoteTimestamp1);
         assertEquals(0, result);
         Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
-        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2, gracePeriod);
+        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2);
         assertEquals(0, result);
+        Dime.setGracePeriod(0L);
     }
 
     @Test
     void gracefulTimestampCompareTest2() {
-        int gracePeriod = 1;
+        Dime.setGracePeriod(1L);
         Instant now = Utility.createTimestamp();
         Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
-        int result = Utility.gracefulTimestampCompare(Utility.createTimestamp(), remoteTimestamp1, gracePeriod);
+        int result = Utility.gracefulTimestampCompare(Utility.createTimestamp(), remoteTimestamp1);
         assertEquals(1, result);
         Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
-        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2, gracePeriod);
+        result = Utility.gracefulTimestampCompare(now, remoteTimestamp2);
         assertEquals(-1, result);
+        Dime.setGracePeriod(0L);
     }
 
     @Test
     void gracefulTimestampCompareTest3() {
         try {
-            int gracePeriod = 2;
+            Dime.setGracePeriod(2L);
             Instant iat = Instant.parse("2022-01-01T23:43:34.8755323Z");
             Instant exp = Instant.parse("2022-01-01T23:43:32.8755323Z");
             Instant res = Instant.parse("2022-01-01T23:43:33.968000Z");
             Instant now = Instant.parse("2022-01-01T23:43:33.052000Z");
-            assertTrue(Utility.gracefulTimestampCompare(iat, now, gracePeriod) <= 0); // checks so it passes
-            assertTrue(Utility.gracefulTimestampCompare(res, now, gracePeriod) <= 0); // checks so it passes
-            assertTrue(Utility.gracefulTimestampCompare(exp, now, gracePeriod) >= 0); // checks so it passes
+            assertTrue(Utility.gracefulTimestampCompare(iat, now) <= 0); // checks so it passes
+            assertTrue(Utility.gracefulTimestampCompare(res, now) <= 0); // checks so it passes
+            assertTrue(Utility.gracefulTimestampCompare(exp, now) >= 0); // checks so it passes
             // Issued at and expires at are created by same entity and should not be compared with grace period
-            assertTrue(Utility.gracefulTimestampCompare(iat, exp, 0) > 0); // check so it fails
+            Dime.setGracePeriod(0L);
+            assertTrue(Utility.gracefulTimestampCompare(iat, exp) > 0); // check so it fails
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -252,7 +254,7 @@ public class DimeTest {
             assertTrue(identity.isLegacy());
             String pub = identity.getPublicKey().getPublic();
             assertNotNull(pub);
-            assertFalse(pub.startsWith(Dime.STANDARD_SUITE));
+            assertFalse(pub.startsWith(Dime.crypto.getDefaultSuiteName()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

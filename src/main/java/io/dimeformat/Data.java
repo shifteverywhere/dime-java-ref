@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
@@ -121,9 +120,9 @@ public class Data extends Item {
     }
 
     @Override
-    public void verify(Key key, List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
+    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
-        super.verify(key, linkedItems, gracePeriod);
+        super.verify(key, linkedItems );
     }
 
     /// PACKAGE-PRIVATE ///
@@ -136,7 +135,7 @@ public class Data extends Item {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Data.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Data.MAXIMUM_NBR_COMPONENTS); }
+        if (components.size() > Data.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Data.MAXIMUM_NBR_COMPONENTS); }
         this.payload = components.get(COMPONENTS_PAYLOAD_INDEX);
         this.isSigned = components.size() == Data.MAXIMUM_NBR_COMPONENTS;
     }

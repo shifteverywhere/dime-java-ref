@@ -259,7 +259,9 @@ class IdentityTest {
                 identity.isTrusted();
                 fail("Exception should have been thrown.");
             } catch (DimeDateException e) { /* All is good */ }
-            identity.isTrusted(1);
+            Dime.setGracePeriod(1L);
+            identity.isTrusted();
+            Dime.setGracePeriod(0L);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -341,13 +343,13 @@ class IdentityTest {
             Key key = Key.generateKey(List.of(Key.Use.SIGN));
             
             Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambit, null);
-            assertEquals(2, identity1.getAmbit().size());
+            assertEquals(2, identity1.getAmbitList().size());
             assertTrue(identity1.hasAmbit(ambit[0]));
             assertTrue(identity1.hasAmbit(ambit[1]));
 
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
             assertNotNull(identity2);
-            assertEquals(2, identity2.getAmbit().size());
+            assertEquals(2, identity2.getAmbitList().size());
             assertTrue(identity2.hasAmbit(ambit[0]));
             assertTrue(identity2.hasAmbit(ambit[1]));
         } catch (Exception e) { 

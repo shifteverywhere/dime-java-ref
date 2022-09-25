@@ -132,17 +132,16 @@ public final class Utility {
     }
 
     /**
-     * Will, if provided with a value different from 0 in gracePeriod, compare two Instant instances using a grace
-     * period. A lower and upper boundary will be calculated from the base time given, the size of this period will be
-     * based on value in gracePeriod. The value provided in gracePeriod should be in whole seconds. The result given
-     * back will be equal to {@link Instant#compareTo(Instant)}. If 0 is provided as grace period, then the two Instant
-     * instances will be compared normally.
+     * Will, if {@link Dime#getGracePeriod()} returns a value different from 0, compare two Instant instances using a
+     * grace period. A lower and upper boundary will be calculated from the base time given, the size of this period
+     * will be based on the  grace period. The result given back will be equal to {@link Instant#compareTo(Instant)}.
+     * If no grace is set (0), then the two Instant objects will be compared directly.
      * @param baseTime The base time to compare a second Instant instance with.
      * @param otherTime The Instant instance to compare against the given base tne.
-     * @param gracePeriod A period in seconds that should be allowed as grace when comparing.
      * @return Negative if less, positive is greater, or 0 if the same or within the grace period.
      */
-    public static int gracefulTimestampCompare(Instant baseTime, Instant otherTime, long gracePeriod) {
+    public static int gracefulTimestampCompare(Instant baseTime, Instant otherTime) {
+        long gracePeriod = Dime.getGracePeriod();
         if (gracePeriod == 0) {
             return baseTime.compareTo(otherTime);
         } else {

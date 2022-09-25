@@ -182,7 +182,7 @@ public class Message extends Data {
      */
     public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
         throwIfSigned();
-        if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Payload must not be null or empty."); }
+        if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Unable to set payload, payload must not be null or empty."); }
         if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
         if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
         Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(Key.Use.ENCRYPT));
@@ -202,55 +202,6 @@ public class Message extends Data {
         Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(Key.Use.ENCRYPT));
         return Dime.crypto.decrypt(getPayload(), sharedKey);
     }
-
-    /// DEPRECATED ///
-
-    /**
-     * Will cryptographically link a message to another Di:ME item. This may be used to prove a relationship between one
-     * message and other item.
-     * @param item The item to link to the message.
-     * @throws DimeCryptographicException If anything goes wrong.
-     * @deprecated Will be removed in the future, use {#{@link Item#addItemLink(Item)}} instead.
-     */
-    @Deprecated
-    public void linkItem(Item item) throws DimeCryptographicException {
-        super.addItemLink(item);
-    }
-
-    /**
-     * Verifies the signature of the message using a provided key and verifies a linked item from the proved item. To
-     * verify correctly the linkedItem must be the original item that the message was linked to. No grace period will be
-     * used.
-     * @param key The key to used to verify the signature, must not be null.
-     * @param linkedItem The item the message was linked to.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
-     * @throws DimeFormatException If no item has been linked with the message.
-     * @throws DimeIntegrityException If the signature is invalid.
-     * @throws DimeCryptographicException If anything goes wrong.
-     * @deprecated Will be removed in the future, use {#{@link Item#verify(Key, List)}} instead.
-     */
-    @Deprecated
-    public void verify(Key key, Item linkedItem) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
-        verify(key, linkedItem, 0);
-    }
-
-    /**
-     * Verifies the signature of the message using a provided key and verifies a linked item from the proved item. To
-     * verify correctly the linkedItem must be the original item that the message was linked to. The provided grace
-     * period will be used.
-     * @param key The key to used to verify the signature, must not be null.
-     * @param linkedItem The item the message was linked to.
-     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @throws DimeDateException If any problems with issued at and expires at dates.
-     * @throws DimeFormatException If no item has been linked with the message.
-     * @throws DimeIntegrityException If the signature is invalid.
-     * @throws DimeCryptographicException If anything goes wrong.
-     * @deprecated Will be removed in the future, use {#{@link Item#verify(Key, List, long)}} instead.
-     */
-    @Deprecated
-    public void verify(Key key, Item linkedItem, long gracePeriod) throws DimeDateException, DimeFormatException, DimeIntegrityException, DimeCryptographicException {
-        super.verify(key, Arrays.asList(linkedItem), gracePeriod);
-     }
 
     /// PACKAGE-PRIVATE ///
 

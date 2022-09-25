@@ -66,6 +66,12 @@ public final class ItemLink {
         this.uniqueId = uniqueId;
     }
 
+    /**
+     * Returns an ItemLink instance from an encoded string.
+     * @param encoded The encoded string.
+     * @return Decoded ItemLink instance.
+     * @throws DimeFormatException If unable to decode the provided string.
+     */
     public static ItemLink fromEncoded(String encoded) throws DimeFormatException {
         if (encoded == null || encoded.isEmpty()) { throw new IllegalArgumentException("Encoded item link must not be null or empty."); }
         String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
@@ -73,6 +79,12 @@ public final class ItemLink {
         return new ItemLink(components[0], components[2], UUID.fromString(components[1]));
     }
 
+    /**
+     * Returns a list of ItemLink instances from an encoded string.
+     * @param encodedList The encoded string.
+     * @return Decoded ItemLink instances in a list.
+     * @throws DimeFormatException If unable to decode the provided string.
+     */
     public static List<ItemLink> fromEncodedList(String encodedList) throws DimeFormatException {
         if (encodedList == null || encodedList.isEmpty()) { throw new IllegalArgumentException("Encoded list of item links must not be null or empty."); }
         String[] items = encodedList.split("\\" + Dime.SECTION_DELIMITER);
@@ -83,6 +95,11 @@ public final class ItemLink {
         return links;
     }
 
+    /**
+     * Verifies if an item corresponds to the ItemLink.
+     * @param item The item to verify against.
+     * @return True if verified successfully.
+     */
     public boolean verify(Item item) {
         if (item == null) { return false; }
         try {
@@ -94,6 +111,12 @@ public final class ItemLink {
         }
     }
 
+    /**
+     * Verifies a list of items towards a list of ItemLink instances.
+     * @param items The items to verify against.
+     * @param links The list of ItemLink instances.
+     * @return True if all ItemLink instances can be verified with the provided items.
+     */
     public static boolean verify(List<Item> items, List<ItemLink> links) {
         if (items == null || items.isEmpty() || links == null || links.isEmpty()) { return false; }
         int verified = 0;

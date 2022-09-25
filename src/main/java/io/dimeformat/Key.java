@@ -302,7 +302,7 @@ public class Key extends Item {
      * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
      * @param issuerId The identifier of the issuer (creator) of the key, may be null.
      * @param context The context to attach to the key, may be null.
-     * @param suiteName A newly generated key.
+     * @param suiteName The name of the cryptographic suite to use, if null, then the default suite will be used.
      * @return A newly generated key.
      */
     public static Key generateKey(List<Key.Use> use, long validFor, UUID issuerId, String context, String suiteName) {
@@ -317,7 +317,6 @@ public class Key extends Item {
             if (validFor != -1) {
                 key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
             }
-            key.getClaims().put(Claim.UID, UUID.randomUUID());
             key.getClaims().put(Claim.ISS, issuerId);
             key.getClaims().put(Claim.CTX, context);
             return key;

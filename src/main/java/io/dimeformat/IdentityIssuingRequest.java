@@ -139,43 +139,27 @@ public class IdentityIssuingRequest extends Item {
     /**
      * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
      * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership. No grace period will be
-     * used when comparing dates.
+     * create the IIR and will also after issuing of an identity form the proof-of-ownership.
      * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
     public void verify() throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
-        super.verify(getPublicKey(), null, 0);
+        super.verify(getPublicKey(), null);
     }
 
     /**
      * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
      * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership. The provided grace period
-     * will be used when comparing dates.
-     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
-     * @throws DimeIntegrityException If the signature can not be verified.
-     * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
-     */
-    public void verify(long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
-        super.verify(getPublicKey(), null, gracePeriod);
-    }
-
-    /**
-     * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
-     * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership. The provided grace period
-     * will be used when comparing dates. This will also verify any items that may be linked in the IIR.
+     * create the IIR and will also after issuing of an identity form the proof-of-ownership. This will also verify any
+     * items that may be linked in the IIR.
      * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
-     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
      * @throws DimeDateException If the IIR was issued in the future (according to the issued at date).
      * @throws DimeIntegrityException If the signature can not be verified.
      * @throws DimeFormatException If the format of the public key inside the IIR is invalid.
      */
-    public void verify(List<Item> linkedItems, long gracePeriod) throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
-        super.verify(getPublicKey(), linkedItems, gracePeriod);
+    public void verify(List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeFormatException, DimeCryptographicException {
+        super.verify(getPublicKey(), linkedItems);
     }
 
     /**
@@ -229,7 +213,7 @@ public class IdentityIssuingRequest extends Item {
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param ambit An ambit list that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
@@ -237,8 +221,8 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName,  String[] ambits) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
-        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambits, null);
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName,  String[] ambit) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+        return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambit, null);
     }
     /**
      * Will issue a new Identity instance from the IIR. This method should only be called after the IIR has been
@@ -256,7 +240,7 @@ public class IdentityIssuingRequest extends Item {
      * @param allowedCapabilities A list of capabilities that must be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambits A list of ambits that will apply to the issued identity.
+     * @param ambit An ambit list that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
@@ -265,10 +249,10 @@ public class IdentityIssuingRequest extends Item {
      * @throws DimeIntegrityException If the signature of the IIR could not be verified.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName, String[] ambits, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeDateException, DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
-        return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambits, methods);
+        return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambit, methods);
     }
 
     /**
@@ -294,7 +278,7 @@ public class IdentityIssuingRequest extends Item {
      * @param validFor The number of seconds that the identity should be valid for, from the time of issuing.
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
-     * @param ambit A list of ambits that will apply to the issued identity.
+     * @param ambit An ambit list that will apply to the issued identity.
      * @return A self-issued Identity instance.
      * @throws DimeCryptographicException If anything goes wrong.
      */
@@ -335,7 +319,7 @@ public class IdentityIssuingRequest extends Item {
     /// PROTECTED ///
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
+    protected void customDecoding(List<String> components) {
         this.isSigned = true; // Identity issuing requests are always signed
     }
 
@@ -348,7 +332,7 @@ public class IdentityIssuingRequest extends Item {
 
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambits, String[] methods) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit, String[] methods) throws DimeCapabilityException, DimeUntrustedIdentityException, DimeCryptographicException, DimeIntegrityException, DimeDateException {
         verify(this.getPublicKey());
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
@@ -357,7 +341,7 @@ public class IdentityIssuingRequest extends Item {
             Instant now = Utility.createTimestamp();
             Instant expires = now.plusSeconds(validFor);
             UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
-            List<String> ambitList = ambits != null ? List.of(ambits) : null;
+            List<String> ambitList = ambit != null ? List.of(ambit) : null;
             List<String> methodList = methods != null ? List.of(methods) : null;
             Identity identity = new Identity(systemName,
                     subjectId,

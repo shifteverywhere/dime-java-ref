@@ -103,7 +103,7 @@ public class Identity extends Item {
      * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
      * may be used.
      * @return An immutable ambit list (as String instances).
-     * @deprecated Will be removed in a future release, use {{@link #getAmbit()}} instead.
+     * @deprecated Will be removed in a future release, use {{@link #getAmbitList()}} instead.
      */
     @Deprecated
     public List<String> getAmbits() {
@@ -115,7 +115,7 @@ public class Identity extends Item {
      * may be used.
      * @return An immutable ambit list (as String instances).
      */
-    public List<String> getAmbit() {
+    public List<String> getAmbitList() {
         return getClaims().get(Claim.AMB);
     }
 
@@ -189,53 +189,28 @@ public class Identity extends Item {
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
     public boolean isTrusted() throws DimeDateException {
-        return isTrusted(0);
-    }
-
-    /**
-     * Will verify if an identity can be trusted using the globally set Trusted Identity
-     * ({@link #setTrustedIdentity(Identity)}). Once trust has been established it will also verify the issued at date
-     * and the expires at date to see if these are valid. The provided grace period will be used.
-     * @param gracePeriod A grace period to used when evaluating timestamps, in seconds.
-     * @return True if the identity is trusted.
-     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
-     */
-    public boolean isTrusted(long gracePeriod) throws DimeDateException {
         if (this.isSelfIssued()) { return false; }
         Identity trustedIdentity = Dime.getTrustedIdentity();
-        if (trustedIdentity == null) { throw new IllegalStateException("Unable to verify trust, no global trusted identity set."); }
-        return isTrusted(trustedIdentity, gracePeriod);
+        if (trustedIdentity == null) { return false; }
+        return isTrusted(trustedIdentity);
     }
 
     /**
      * Will verify if an identity can be trusted using the provided identity. Once trust has been established it will
-     * also verify the issued at date and the expires at date to see if these are valid. The provided grace period will
-     * be used. This period will be used when comparing dates and allow for smaller differences in time synchronization.
+     * also verify the issued at date and the expires at date to see if these are valid.
      * @param trustedIdentity The identity to verify the trust against.
-     * @param gracePeriod A grace period to use when evaluating timestamps, in seconds.
-     * @return Tur if the identity is trusted.
+     * @return True if the identity is trusted, false otherwise.
      * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
      */
-    public boolean isTrusted(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
+    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
         if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
-        if (verifyChain(trustedIdentity, gracePeriod) == null) {
+        if (verifyChain(trustedIdentity) == null) {
             return false;
         }
-        verifyDates(gracePeriod); // Verify IssuedAt and ExpiresAt
+        verifyDates(); // Verify IssuedAt and ExpiresAt
         return true;
     }
 
-    /**
-     * Will verify if an identity can be trusted by a provided identity. An identity is trusted if it exists on the same
-     * branch and later in the branch as the provided identity. Once trust has been established it will also verify the
-     * issued at date and the expires at date to see if these are valid.
-     * @param trustedIdentity The identity to verify the trust from.
-     * @return True if the identity is trusted.
-     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
-     */
-    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException, DimeCryptographicException {
-        return isTrusted(trustedIdentity, 0);
-    }
 
     /**
      * Will check if a particular capability has been given to an identity.
@@ -297,7 +272,7 @@ public class Identity extends Item {
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Identity.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + Identity.MAXIMUM_NBR_COMPONENTS); }
+        if (components.size() > Identity.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Identity.MAXIMUM_NBR_COMPONENTS); }
         if (components.size() == Identity.MAXIMUM_NBR_COMPONENTS) { // There is also a trust chain identity
             byte[] issuer = Utility.fromBase64(components.get(Identity.COMPONENTS_CHAIN_INDEX));
             this.trustChain = Identity.fromEncodedIdentity(new String(issuer, StandardCharsets.UTF_8));
@@ -332,16 +307,16 @@ public class Identity extends Item {
         return identity;
     }
 
-    private Identity verifyChain(Identity trustedIdentity, long gracePeriod) throws DimeDateException {
+    private Identity verifyChain(Identity trustedIdentity) throws DimeDateException {
         Identity verifyingIdentity;
         if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
-            verifyingIdentity = trustChain.verifyChain(trustedIdentity, gracePeriod);
+            verifyingIdentity = trustChain.verifyChain(trustedIdentity);
         } else {
             verifyingIdentity = trustedIdentity;
         }
         if (verifyingIdentity == null) { return null; }
         try {
-            super.verify(verifyingIdentity.getPublicKey(), gracePeriod);
+            super.verify(verifyingIdentity.getPublicKey());
             return this;
         } catch (DimeIntegrityException | DimeCryptographicException e) {
             return null;
