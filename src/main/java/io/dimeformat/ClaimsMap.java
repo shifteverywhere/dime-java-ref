@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import org.json.JSONObject;
 import org.webpki.jcs.JsonCanonicalizer;
@@ -23,29 +22,29 @@ import java.util.*;
  */
 class ClaimsMap {
 
-    public ClaimsMap() {
+    ClaimsMap() {
         this._claims = new HashMap<>();
     }
 
-    public ClaimsMap(String encoded) {
+    ClaimsMap(String encoded) {
         this._claims = ClaimsMap.fromJSON(encoded);
     }
 
-    public String toJSON() throws IOException {
+    String toJSON() throws IOException {
         JSONObject jsonObject = new JSONObject(this._claims);
         JsonCanonicalizer jsonCanonicalizer = new JsonCanonicalizer(jsonObject.toString());
         return jsonCanonicalizer.getEncodedString();
     }
 
-    public int size() {
-        return _claims != null ? _claims.size() : 0;
+    int size() {
+        return _claims.size();
     }
 
-    public <T> T get(Claim claim) {
+    <T> T get(Claim claim) {
         return (T)_claims.get(claim.toString());
     }
 
-    public UUID getUUID(Claim claim) {
+    UUID getUUID(Claim claim) {
         Object object = get(claim);
         if (object == null) { return null; }
         if (object instanceof UUID) {
@@ -59,7 +58,7 @@ class ClaimsMap {
         }
     }
 
-    public Instant getInstant(Claim claim) {
+    Instant getInstant(Claim claim) {
         Object object = get(claim);
         if (object == null) { return null; }
         if (object instanceof Instant) {
@@ -73,13 +72,13 @@ class ClaimsMap {
         }
     }
 
-    public byte[] getBytes(Claim claim) {
+    byte[] getBytes(Claim claim) {
         String string = get(claim);
         if (string == null) { return null; }
         return Base58.decode(string);
     }
 
-    public Key getKey(Claim claim, List<Key.Use> use) {
+    Key getKey(Claim claim, List<Key.Use> use) {
         String string = get(claim);
         if (string == null || string.length() == 0) { return null; }
         try {
@@ -89,7 +88,7 @@ class ClaimsMap {
         }
     }
 
-    public List<ItemLink> getItemLinks(Claim claim) {
+    List<ItemLink> getItemLinks(Claim claim) {
         String string = get(claim);
         if (string == null || string.length() == 0) { return null; }
         try {
@@ -99,7 +98,7 @@ class ClaimsMap {
         }
     }
 
-    public void put(Claim claim, Object value) {
+    void put(Claim claim, Object value) {
         if (value != null) {
             if (value instanceof byte[]) {
                 _claims.put(claim.toString(), Base58.encode((byte[])value));
@@ -109,7 +108,7 @@ class ClaimsMap {
         }
     }
 
-    public void remove(Claim claim) {
+    void remove(Claim claim) {
         _claims.remove(claim.toString());
     }
 

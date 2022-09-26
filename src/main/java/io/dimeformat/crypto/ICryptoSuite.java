@@ -30,12 +30,18 @@ public interface ICryptoSuite {
     int PUBLIC_KEY_INDEX = 1;
 
     /**
-     * Returns the name of the cryptographic suite, usually a short series of letters, i.e. DDCS for Dime Default
-     * Cryptography Suite.
+     * Returns the name of the cryptographic suite, usually a short series of letters, i.e. STN for the standard
+     * Dime cryptography suite.
      * @return Identifier of the cryptographic suite.
      */
     String getName();
 
+    /**
+     * Generates a unique identifier for a key. The generated identifier is not sensitive and may be distributed without
+     * compromising the key.
+     * @param key The key to generate an identifier for.
+     * @return A unique identifier.
+     */
     byte[] generateKeyIdentifier(byte[][] key);
 
     /**

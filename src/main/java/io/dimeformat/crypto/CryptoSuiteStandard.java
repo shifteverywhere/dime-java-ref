@@ -19,10 +19,12 @@ import java.util.List;
 /**
  * Implements the Dime standard cryptographic suite (DSTD).
  */
-public class CryptoSuiteStandard implements ICryptoSuite {
+class CryptoSuiteStandard implements ICryptoSuite {
+
+    static final String NAME = "STN";
 
     public String getName() {
-        return "DSTD";
+        return CryptoSuiteStandard.NAME;
     }
 
     public CryptoSuiteStandard() {
@@ -55,7 +57,7 @@ public class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[][] generateKey(List<Key.Use> use) throws DimeCryptographicException {
-        if (use == null || use.size() != 1) { throw new IllegalArgumentException("Invalid key usage requested."); }
+        if (use == null || use.size() != 1) { throw new IllegalArgumentException("Unable to generate, invalid key usage requested."); }
         Key.Use firstUse = use.get(0);
         if (firstUse == Key.Use.ENCRYPT) {
             byte[] secretKey = new byte[CryptoSuiteStandard.NBR_S_KEY_BYTES];
@@ -81,20 +83,20 @@ public class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<Key.Use> use) throws DimeCryptographicException {
-        if (!use.contains(Key.Use.ENCRYPT)) { throw new IllegalArgumentException("Key usage for shared secret must be ENCRYPT"); }
-        if (use.size() > 1) { throw new IllegalArgumentException("Key usage for shared secret may only be ENCRYPT"); }
+        if (!use.contains(Key.Use.ENCRYPT)) { throw new IllegalArgumentException("Unable to generate, key usage for shared secret must be ENCRYPT."); }
+        if (use.size() > 1) { throw new IllegalArgumentException("Unable to generate, key usage for shared secret may only be ENCRYPT."); }
         byte[] shared = new byte[CryptoSuiteStandard.NBR_X_KEY_BYTES];
         if (clientKey[0] != null && clientKey.length == 2) { // has both private and public key
             byte[] secret = Utility.combine(clientKey[0], clientKey[1]);
             if (this.sodium.crypto_kx_client_session_keys(shared, null, clientKey[1], secret, serverKey[1]) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed.");
+                throw new DimeCryptographicException("Unable to generate, cryptographic operation failed.");
             }
-        } else if (serverKey[0] != null && serverKey.length ==2) { // has both private and public key
+        } else if (serverKey[0] != null && serverKey.length == 2) { // has both private and public key
             if (this.sodium.crypto_kx_server_session_keys(null, shared, serverKey[1], serverKey[0], clientKey[1]) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed.");
+                throw new DimeCryptographicException("Unable to generate, cryptographic operation failed.");
             }
         } else {
-            throw new DimeCryptographicException("Unable to generate shared secret.");
+            throw new DimeCryptographicException("Unable to generate, invalid keys provided.");
         }
         return shared;
     }

@@ -11,7 +11,7 @@ package io.dimeformat.crypto;
 
 import io.dimeformat.Key;
 import io.dimeformat.Utility;
-import io.dimeformat.enums.Claim;
+import io.dimeformat.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeIntegrityException;
 import java.nio.charset.StandardCharsets;
@@ -28,9 +28,18 @@ public final class Crypto {
     /// PUBLIC ///
 
     /**
-     * Set the default cryptographic suite name. This will be used when no suite is specificed for cryptographic
+     * Default constructor.
+     */
+    public Crypto() {
+        ICryptoSuite impl = new CryptoSuiteStandard();
+        registerCryptoSuite(impl);
+        _defaultSuiteName = impl.getName();
+    }
+
+    /**
+     * Set the default cryptographic suite name. This will be used when no suite is specified for cryptographic
      * operations. It can be queried through {@link Crypto#getDefaultSuiteName()}. This will be set by default to
-     * Dime Standard Cryptographic Suite (DSTD).
+     * Dime Standard Cryptographic Suite (STN).
      * @param name The name of the suite to set as the default.
      */
     public synchronized void setDefaultSuiteName(String name) {
@@ -48,6 +57,12 @@ public final class Crypto {
     }
 
 
+    /**
+     * Will generate a unique key identifier from the provided key. This will be used to extract which key was used to
+     * create a signature. How a key identifier is generated is specific to the cryptographic suite used.
+     * @param key The key to generate an identifier for.
+     * @return A key identifier, as a String.
+     */
     public String generateKeyIdentifier(Key key) {
         if (key == null) { throw new IllegalArgumentException("Unable to generate key identifier, key must not be null."); }
         try {
@@ -64,7 +79,7 @@ public final class Crypto {
      * Generates a cryptographic signature from a data string.
      * @param data The string to sign.
      * @param key The key to use for the signature.
-     * @return The signature that was generated, encoded in Base 64.
+     * @return The signature that was generated.
      * @throws DimeCryptographicException If something goes wrong.
      */
     public byte[] generateSignature(String data, Key key) throws DimeCryptographicException {
@@ -80,18 +95,16 @@ public final class Crypto {
      * @param data The string that should be verified with the signature.
      * @param signature The signature that should be verified.
      * @param key The key that should be used for the verification.
-     * @throws DimeIntegrityException If something goes wrong.
+     * @throws DimeCryptographicException If something goes wrong.
      */
-    public void verifySignature(String data, byte[] signature, Key key) throws DimeCryptographicException, DimeIntegrityException {
+    public boolean verifySignature(String data, byte[] signature, Key key) throws DimeCryptographicException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
         if (signature == null || signature.length == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify, public key in key must not be null."); }
         if (!key.hasUse(Key.Use.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        if (!impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB))) {
-            throw new DimeIntegrityException("Unable to verify signature (C1002).");
-        }
+        return  impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB));
     }
 
     /**
@@ -118,16 +131,17 @@ public final class Crypto {
     }
 
     /**
-     * Generates a shared secret from two keys of type EXCHANGE. The initiator of the key exchange is always the
+     * Generates a shared secret from two keys with use 'Exchange'. The initiator of the key exchange is always the
      * server and the receiver of the key exchange is always the client (no matter on which side this method is
      * called).
      * @param clientKey The client key to use (the receiver of the exchange).
      * @param serverKey The server key to use (the initiator of the exchange).
+     * @param use The use that should be specified for the generated key.
      * @return The generated shared secret key.
      * @throws DimeCryptographicException If anything goes wrong.
      */
     public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<Key.Use> use) throws DimeCryptographicException {
-        if (!clientKey.getUse().contains(Key.Use.EXCHANGE) || !serverKey.getUse().contains(Key.Use.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
+        if (!clientKey.hasUse(Key.Use.EXCHANGE) || !serverKey.hasUse(Key.Use.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
         if (!clientKey.getCryptoSuiteName().equals(serverKey.getCryptoSuiteName())) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
         ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
         byte[][] rawClientKeys = new byte[][] { clientKey.getKeyBytes(Claim.KEY), clientKey.getKeyBytes(Claim.PUB) };
@@ -188,15 +202,13 @@ public final class Crypto {
     }
 
     /**
-     * Registers a cryptographic suite. The provided name must be unique, it should also be short as it will be
-     * included with the encoded key, uppercase is recommended. If a cryptographic suite is already register with the
-     * provided name then IllegalArgumentException will be thrown.
+     * Registers a cryptographic suite. If a cryptographic suite is already register with the same name as the provided
+     * cryptographic suite then IllegalArgumentException will be thrown.
      * @param impl The implementation instance of ICryptoSuite.
-     * @param name A unique name for the suite.
      */
-    public void registerCryptoSuite(ICryptoSuite impl, String name) {
+    public void registerCryptoSuite(ICryptoSuite impl) {
         if (impl == null) { throw new IllegalArgumentException("Instance of ICrypto implementation must not be null."); }
-        if (name == null || name.isEmpty()) { throw new IllegalArgumentException("Name of cryptographic suite must not be null or empty."); }
+        String name = impl.getName();
         if (_suiteMap == null) {
             _suiteMap = new HashMap<>();
         } else if (_suiteMap.containsKey(name)) {
