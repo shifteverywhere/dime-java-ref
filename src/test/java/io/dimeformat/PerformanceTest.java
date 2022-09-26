@@ -9,10 +9,9 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Capability;
 import io.dimeformat.enums.KeyType;
 import org.junit.jupiter.api.Test;
-
+import io.dimeformat.Identity.Capability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +29,7 @@ public class PerformanceTest {
         System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");
         long totalStart = System.nanoTime();
 
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+        Commons.initializeKeyRing();
         Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
         List<Key> keyList = new ArrayList<>();
         List<IdentityIssuingRequest> iirList = new ArrayList<>();
@@ -85,7 +84,7 @@ public class PerformanceTest {
         try {
             for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
                 Identity identity = identityList.get(i);
-                identity.isTrusted();
+                identity.verify();
             }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -100,7 +99,7 @@ public class PerformanceTest {
         try {
             for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
                 Identity identity = identityList.get(i);
-                identity.isTrusted(Commons.getIntermediateIdentity());
+                identity.verify(Commons.getIntermediateIdentity());
             }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

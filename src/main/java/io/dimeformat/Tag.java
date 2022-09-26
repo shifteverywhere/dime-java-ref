@@ -9,19 +9,19 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * A Dime item that uses item links to cryptographically connect itself to other items. This may be done to create
+ * different types of proof, for example after verification, reception or handling.
+ */
 public class Tag extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Di:ME Tag items. */
+    /** The item type identifier forDime Tag items. */
     public static final String ITEM_IDENTIFIER = "TAG";
 
     @Override
@@ -29,10 +29,19 @@ public class Tag extends Item {
         return Tag.ITEM_IDENTIFIER;
     }
 
+    /**
+     * Default constructor.
+     * @param issuerId The issuer of the item.
+     */
     public Tag(UUID issuerId) {
         this(issuerId, (String)null);
     }
 
+    /**
+     * Alternative constructor.
+     * @param issuerId The issuer of the item.
+     * @param context The context of the item.
+     */
     public Tag(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
@@ -42,14 +51,22 @@ public class Tag extends Item {
         claims.put(Claim.CTX, context);
     }
 
-    public Tag(UUID issuerId, List<Item> items) throws DimeCryptographicException {
-        this(issuerId);
-        if (items != null) {
-            setItemLinks(items);
-        }
+    /**
+     * Alternative constructor.
+     * @param issuerId The issuer of the item.
+     * @param items List of items that should be linked.
+     */
+    public Tag(UUID issuerId, List<Item> items) {
+        this(issuerId, null, items);
     }
 
-    public Tag(UUID issuerId, String context, List<Item> items) throws DimeCryptographicException {
+    /**
+     * Alternative constructor.
+     * @param issuerId The issuer of the item.
+     * @param context The context of the item.
+     * @param items List of items that should be linked.
+     */
+    public Tag(UUID issuerId, String context, List<Item> items)  {
         this(issuerId, context);
         if (items != null) {
             setItemLinks(items);
@@ -70,7 +87,7 @@ public class Tag extends Item {
     }
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
+    protected void customDecoding(List<String> components) {
         this.isSigned = true; // Tags are always signed
     }
 

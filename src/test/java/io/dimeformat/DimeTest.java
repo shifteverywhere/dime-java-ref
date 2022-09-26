@@ -26,19 +26,27 @@ public class DimeTest {
 
     @BeforeAll
     static void beforeAll() {
-        Dime.setTrustedIdentity(null);
+        Commons.clearKeyRing();
         Dime.setTimeModifier(0);
         assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
-        assertNull(Dime.getTrustedIdentity());
         assertEquals(0, Dime.getTimeModifier());
     }
 
     @Test
+    void validConvenienceTest1() {
+        assertEquals(-1L, Dime.NO_EXPIRATION);
+        assertEquals(60L, Dime.VALID_FOR_1_MINUTE);
+        assertEquals(3600L, Dime.VALID_FOR_1_HOUR);
+        assertEquals(86400L, Dime.VALID_FOR_1_DAY);
+        assertEquals(31536000L, Dime.VALID_FOR_1_YEAR);
+    }
+
+    @Test
     void trustedIdentityTest1() {
-        Dime.setTrustedIdentity(null);
-        assertNull(Dime.getTrustedIdentity());
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
-        assertNotNull(Dime.getTrustedIdentity());
+        Commons.clearKeyRing();
+        assertTrue(Dime.keyRing.isEmpty());
+        Commons.initializeKeyRing();
+        assertFalse(Dime.keyRing.isEmpty());
     }
 
     @Test
@@ -154,7 +162,8 @@ public class DimeTest {
     @Test
     void legacyIdentityImportTest1() {
         try {
-            Dime.setTrustedIdentity(Item.importFromEncoded(DimeTest._legacyTrustedIdentity));
+            Commons.clearKeyRing();
+            Dime.keyRing.put((Identity) Item.importFromEncoded(DimeTest._legacyTrustedIdentity));
             String legacyExported = "Di:ID.eyJ1aWQiOiIyYTdkNDJhMy02YjQ1LTRhNGEtYmIzZC1lYzk0ZWMzNzlmMWYiLCJzdWIiOiJiZTRhZjVmMy1lODM4LTQ3MzItYTBmYy1mZmEyYzMyOGVhMTAiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImJkMjhkYjhmLTEzNjItNGFmZC1hZWQ3LTRjYTM5ZjY1OTc1ZSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIyLTExLTIwVDEyOjExOjAyLjc2NTI1OVoiLCJwdWIiOiIyVERYZG9OdzF3WlF0ZVU1MzI1czZSbVJYVnBUa1lXdlR1RXpSMWpOZFZ2WWpFUjZiNmJZYUR6dEYiLCJpYXQiOiIyMDIxLTExLTIwVDEyOjExOjAyLjc2NTI1OVoifQ.SUQuZXlKMWFXUWlPaUl5TTJRNVpXUmtaaTFtWXpoa0xUUmpNemN0WW1NNU1pMDNNVFF6TkRVMFlUSTBaRFVpTENKemRXSWlPaUppWkRJNFpHSTRaaTB4TXpZeUxUUmhabVF0WVdWa055MDBZMkV6T1dZMk5UazNOV1VpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pTVdaalpEVm1PRGd0TkdFM05TMDBOems1TFdKa05EZ3RNalZpTm1WaE1EWTBNRFV6SWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNall0TVRFdE1UbFVNVEk2TVRFNk1ESXVOell6TmpVeVdpSXNJbkIxWWlJNklqSlVSRmhrYjA1MlJEaGpRemwxZUZOaU5FcEdTSEpyTVdaUVNGZDNjWEZUUTFWS1IyVTRWbWRXUm5OaFZ6VkxjVVl5ZDJ0WVlsVlFUaUlzSW1saGRDSTZJakl3TWpFdE1URXRNakJVTVRJNk1URTZNREl1TnpZek5qVXlXaUo5LjU2djVMeVg4anRLQ3N0eTdnbTZOczJjWStiTUlYNHBxNDRnODBTRXB1NjF2QklzUlZ6UTFOZFY5Q1BXaHRTdHZEM3d3N01hOFg3QlZvMWxrMjZjMkRn.7H3RwTTeDcI3pGMIWMPbAjpDnCN2O91JG4lKu3JJbxlLNwTbgTB/03xrwi28wl0iMReJ4zUPc3cCqbymAlxwAw";
             Identity identity = Item.importFromEncoded(legacyExported);
             assertNotNull(identity);
@@ -168,7 +177,7 @@ public class DimeTest {
             assertTrue(identity.hasCapability(Capability.GENERIC));
             assertTrue(identity.hasCapability(Capability.IDENTIFY));
             assertNotNull(identity.getTrustChain());
-            assertTrue(identity.isTrusted());
+            identity.verify();
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -259,5 +268,21 @@ public class DimeTest {
             fail("Unexpected exception thrown: " + e);
         }
     }
+
+    @Test
+    void test() {
+
+        try {
+
+            UUID uuid = UUID.fromString("D2D912A6-07EB-4B3E-9C3E-8A41882756DC");
+
+
+
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+
+    }
+
 
 }

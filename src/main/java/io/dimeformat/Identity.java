@@ -9,8 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Capability;
-import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -28,6 +26,35 @@ import static java.util.stream.Collectors.toList;
 public class Identity extends Item {
 
     /// PUBLIC ///
+
+    /**
+     * Defines the capability or capabilities of an identity. This usually relates to what an identity may be used for.
+     */
+    public enum Capability {
+
+        /**
+         * Capability set if the identity has been self-signed. This capability often indicates a root identity, the start
+         * of a trust chain.
+         */
+        SELF,
+        /**
+         * A generic capability, may have been set after a simple registration. Depending on the application, the identity
+         * may have limited usage.
+         */
+        GENERIC,
+        /**
+         * A capability that indicates that the identity have been verified and is associated with a higher level of
+         * assurance. This may be done through more in-depth registration or secondary verification.
+         */
+        IDENTIFY,
+        /**
+         * This capability allows an identity to sign and issue other identities, thus creating leaf identities in a trust
+         * chain. A root identity does often have this capability. However, it may be assigned to other identities further
+         * down in a trust chain.
+         */
+        ISSUE
+
+    }
 
     /** The item type identifier for Di:ME Identity items. */
     public static final String ITEM_IDENTIFIER = "ID";
@@ -145,72 +172,20 @@ public class Identity extends Item {
         return getSubjectId().compareTo(getIssuerId()) == 0 && hasCapability(Capability.SELF);
     }
 
-    /**
-     * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
-     * @return An Identity instance.
-     * @deprecated Will be removed in the future, use {#{@link Dime#getTrustedIdentity()}} instead.
-     */
-    @Deprecated
-    public static synchronized Identity getTrustedIdentity() {
-        return Dime.getTrustedIdentity();
-    }
-
-    /**
-     * Sets an Identity instance to be the trusted identity used for verifying a trust chain of other Identity
-     * instances. This is normally the root identity of a trust chain.
-     * @param trustedIdentity The Identity instance to set as a trusted identity.
-     * @deprecated Will be removed in the future, use {#{@link Dime#setTrustedIdentity(Identity)}} instead.
-     */
-    @Deprecated
-    public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
-        Dime.setTrustedIdentity(trustedIdentity);
-    }
-
-    /**
-     * Verifies if an Identity instance is valid and can be trusted. Will validate issued at and expires at dates, look
-     * at a trust chain (if present) and verify the signature with the attached public key.
-     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
-     * @throws DimeUntrustedIdentityException If the trust of the identity could not be verified.
-     * @deprecated This method is deprecated since 1.0.1 and will be removed in a future version use
-     * {@link #isTrusted()} or {@link #isTrusted(Identity)} instead.
-     */
-    @Deprecated
-    public void verifyTrust() throws DimeDateException, DimeUntrustedIdentityException {
-        if (!isTrusted()) {
-            throw new DimeUntrustedIdentityException("Unable to verify trust of entity.");
+    @Override
+    public void verify(List<Item> linkedItems) throws VerificationException {
+        Identity trustChain = getTrustChain();
+        if (trustChain != null) {
+            trustChain.verify();
+            Item.verifyDates(this);
+            if (linkedItems != null && !linkedItems.isEmpty()) {
+                verifyLinkedItems(linkedItems);
+            }
+            verify(trustChain.getPublicKey());
+        } else {
+            super.verify(linkedItems);
         }
     }
-
-    /**
-     * Will verify if an identity can be trusted using the globally set Trusted Identity
-     * ({@link #setTrustedIdentity(Identity)}). Once trust has been established it will also verify the issued at date
-     * and the expires at date to see if these are valid. No grace period will be used.
-     * @return True if the identity is trusted.
-     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
-     */
-    public boolean isTrusted() throws DimeDateException {
-        if (this.isSelfIssued()) { return false; }
-        Identity trustedIdentity = Dime.getTrustedIdentity();
-        if (trustedIdentity == null) { return false; }
-        return isTrusted(trustedIdentity);
-    }
-
-    /**
-     * Will verify if an identity can be trusted using the provided identity. Once trust has been established it will
-     * also verify the issued at date and the expires at date to see if these are valid.
-     * @param trustedIdentity The identity to verify the trust against.
-     * @return True if the identity is trusted, false otherwise.
-     * @throws DimeDateException If the issued at date is in the future, or if the expires at date is in the past.
-     */
-    public boolean isTrusted(Identity trustedIdentity) throws DimeDateException {
-        if (trustedIdentity == null) { throw new IllegalArgumentException("Unable to verify trust, provided trusted identity must not be null."); }
-        if (verifyChain(trustedIdentity) == null) {
-            return false;
-        }
-        verifyDates(); // Verify IssuedAt and ExpiresAt
-        return true;
-    }
-
 
     /**
      * Will check if a particular capability has been given to an identity.
@@ -239,6 +214,16 @@ public class Identity extends Item {
         if (isLegacy()) { return; }
         super.convertToLegacy();
         Key.convertKeyToLegacy(this, Key.Use.SIGN, Claim.PUB);
+    }
+
+    public void sign(Identity issuer, Key key, boolean includeChain) throws DimeCryptographicException {
+
+        if (includeChain) {
+            setTrustChain(issuer);
+        }
+
+        super.sign(key);
+
     }
 
     /// PACKAGE-PRIVATE ///
@@ -305,22 +290,6 @@ public class Identity extends Item {
         Identity identity = new Identity();
         identity.decode(encoded);
         return identity;
-    }
-
-    private Identity verifyChain(Identity trustedIdentity) throws DimeDateException {
-        Identity verifyingIdentity;
-        if (trustChain != null && trustChain.getSubjectId().compareTo(trustedIdentity.getSubjectId()) != 0) {
-            verifyingIdentity = trustChain.verifyChain(trustedIdentity);
-        } else {
-            verifyingIdentity = trustedIdentity;
-        }
-        if (verifyingIdentity == null) { return null; }
-        try {
-            super.verify(verifyingIdentity.getPublicKey());
-            return this;
-        } catch (DimeIntegrityException | DimeCryptographicException e) {
-            return null;
-        }
     }
 
 }

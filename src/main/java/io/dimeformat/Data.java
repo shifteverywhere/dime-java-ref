@@ -9,10 +9,8 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeDateException;
-import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.*;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -120,9 +118,9 @@ public class Data extends Item {
     }
 
     @Override
-    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
+    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
-        super.verify(key, linkedItems );
+        super.verify(trustedKey, linkedItems);
     }
 
     /// PACKAGE-PRIVATE ///

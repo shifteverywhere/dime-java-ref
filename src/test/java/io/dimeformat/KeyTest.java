@@ -94,7 +94,7 @@ class KeyTest {
     void keyUsageTest4() {
         List<Key.Use> use = List.of(Key.Use.SIGN, Key.Use.EXCHANGE);
         try {
-            Key.generateKey(use, -1, null, null, Dime.STANDARD_SUITE);
+            Key.generateKey(use, -1, null, null, Dime.crypto.getDefaultSuiteName());
             fail("Expected exception never thrown.");
         } catch (IllegalArgumentException ignored) { /* All is well good */ }
         catch (Exception e) {

@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -29,7 +30,7 @@ public class DataTest {
     @Test
     void dataTest1() {
         Instant now = Instant.now();
-        Data data = new Data(UUID.randomUUID(), 10, Commons.CONTEXT);
+        Data data = new Data(UUID.randomUUID(), 10L, Commons.CONTEXT);
         data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
         assertNotNull(data.getUniqueId());
         assertEquals(Commons.CONTEXT, data.getContext());
@@ -57,7 +58,7 @@ public class DataTest {
     @Test
     void exportTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Data data = new Data(Commons.getIssuerIdentity().getSubjectId(), 120, Commons.CONTEXT);
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             String encoded = data.exportToEncoded();
@@ -91,16 +92,16 @@ public class DataTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di:DAT.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTA2LTI5VDIxOjQzOjAyLjY0MTM4OVoiLCJpYXQiOiIyMDIyLTA2LTI5VDIxOjQxOjAyLjY0MTM4OVoiLCJpc3MiOiIyZmMyMTA4NC1iNWVkLTQ5MjAtODlmMy03MTZiNGZmMmJmM2IiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiYWFmM2VhNDQtODU5OC00ZTI1LWE1YTctNWU3ODUyOTU3OGRlIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
+            String exported = "Di:DAT.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTA4LTE4VDIwOjIwOjEwLjQ0ODM0M1oiLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjE4OjEwLjQ0ODM0M1oiLCJpc3MiOiJiYjdhNzQ1OC0zZjVjLTQ4ZmItYWJmOC0zN2Y3Mzc4ZmEyMTkiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiNTZmOTJjOTAtNTg2OC00YzkyLTkxYzktNWY4N2FiNDhjNjQyIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.YThlNGMxZWJlYWIyMDliZi42YjRjYzUxMzExNjk2OTRiMDBmMjllNDNiNmU5N2RkZjY4MDRkYjlkMGMwZGJlZjA5MWQwOTg1ZjViNGVjOThkZTkzNTk5YzQ1NmEzNzAwMDM3MzRkM2NmYzI1NmI2NjhmMTE4ZTVlYjBjNjdiNGNhYThiYjdmNTU4NTFjYTAwMA";
             Data data = Item.importFromEncoded(exported);
             assertNotNull(data);
-            assertEquals(UUID.fromString("aaf3ea44-8598-4e25-a5a7-5e78529578de"), data.getUniqueId());
+            assertEquals(UUID.fromString("56f92c90-5868-4c92-91c9-5f87ab48c642"), data.getUniqueId());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), data.getIssuerId());
             assertEquals(Commons.MIMETYPE, data.getMIMEType());
             assertEquals(Commons.CONTEXT, data.getContext());
             assertEquals(Commons.PAYLOAD, new String(data.getPayload(), StandardCharsets.UTF_8));
-            assertEquals(Instant.parse("2022-06-29T21:41:02.641389Z"), data.getIssuedAt());
-            assertEquals(Instant.parse("2022-06-29T21:43:02.641389Z"), data.getExpiresAt());
+            assertEquals(Instant.parse("2022-08-18T20:18:10.448343Z"), data.getIssuedAt());
+            assertEquals(Instant.parse("2022-08-18T20:20:10.448343Z"), data.getExpiresAt());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -109,7 +110,7 @@ public class DataTest {
     @Test
     void importTest2() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Data data1 = new Data(Commons.getIssuerIdentity().getSubjectId(), 120, Commons.CONTEXT);
             data1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             String exported = data1.exportToEncoded();
@@ -127,7 +128,7 @@ public class DataTest {
 
     @Test
     void importTest3() {
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+        Commons.initializeKeyRing();
         String encoded = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
         try {
             Data data = Item.importFromEncoded(encoded);
@@ -143,7 +144,7 @@ public class DataTest {
     @Test
     void verifyTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Data data = new Data(Commons.getIssuerIdentity().getSubjectId());
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             data.sign(Commons.getIssuerKey());
@@ -156,12 +157,12 @@ public class DataTest {
     @Test
     void verifyTest2() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Data data = new Data(Commons.getIssuerIdentity().getSubjectId());
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             data.sign(Commons.getIssuerKey());
             data.verify(Commons.getAudienceKey());
-        } catch (DimeIntegrityException e) {
+        } catch (VerificationException e) {
             // All is well
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

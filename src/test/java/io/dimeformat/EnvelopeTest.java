@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.nio.charset.StandardCharsets;
@@ -50,7 +51,7 @@ class EnvelopeTest {
     @Test
     void getItemTest2() {
         try {
-            String exported = "Di:MSG.eyJpc3MiOiJkMThhM2ExYi05Y2I2LTQ4MGEtYTJlZC05NGU2NzMwZTVlMzQiLCJ1aWQiOiIwYTQ2YWVkNy0yYzkyLTQwNDQtYmMyMC0yMTc0Y2IwNjA0MmQiLCJhdWQiOiI3YTAyMzkzZS1kMTVkLTQ3NDYtOTU0Mi1hZDljYmUwNzUxYzgiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjQ0NjkxNloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.EBiQVW1sKZgKXEg0qDNoxXGUZXhvO8NfxMWn9YL8zhkVU7jp3q2a8p+5dzlRW1AJXwVdk7iH1jhJMux0DGbpBg:KEY.eyJ1aWQiOiIxMWYxNzllZi0yOWIwLTRlZjAtYjA0Yi0xZjU3MTk5ZTJjZjQiLCJwdWIiOiJEU1ROKzJObWlCMXZVUEhTQzJ6ZW82WWc5REJTUzRXWFN3RUgzS3JVMXpUQmpoOHZVdEt4eFlEIiwiaWF0IjoiMjAyMi0wNS0zMFQxNzoyNTozMS43Mjc3MDRaIiwidXNlIjpbInNpZ24iXSwiY3R4Ijoia2V5LWNvbnRleHQiLCJrZXkiOiJEU1ROK2FEWnRzYUhpb2dvVHU5bVh1NmpaYmNMb3hqUThoWlBoMnhGblJReGJ2VEtvVHdiQUt0YWV1ZEFEUDR2TVRLbm5Ec21hRzJzdHF4ZlozaEY1d21YMzNXZXpQVEg0WSJ9";
+            String exported = "Di:MSG.eyJpc3MiOiJkMThhM2ExYi05Y2I2LTQ4MGEtYTJlZC05NGU2NzMwZTVlMzQiLCJ1aWQiOiIwYTQ2YWVkNy0yYzkyLTQwNDQtYmMyMC0yMTc0Y2IwNjA0MmQiLCJhdWQiOiI3YTAyMzkzZS1kMTVkLTQ3NDYtOTU0Mi1hZDljYmUwNzUxYzgiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjQ0NjkxNloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.EBiQVW1sKZgKXEg0qDNoxXGUZXhvO8NfxMWn9YL8zhkVU7jp3q2a8p+5dzlRW1AJXwVdk7iH1jhJMux0DGbpBg:KEY.eyJ1aWQiOiIxMWYxNzllZi0yOWIwLTRlZjAtYjA0Yi0xZjU3MTk5ZTJjZjQiLCJwdWIiOiJTVE4rMk5taUIxdlVQSFNDMnplbzZZZzlEQlNTNFdYU3dFSDNLclUxelRCamg4dlV0S3h4WUQiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjcyNzcwNFoiLCJ1c2UiOlsic2lnbiJdLCJjdHgiOiJrZXktY29udGV4dCIsImtleSI6IlNUTithRFp0c2FIaW9nb1R1OW1YdTZqWmJjTG94alE4aFpQaDJ4Rm5SUXhidlRLb1R3YkFLdGFldWRBRFA0dk1US25uRHNtYUcyc3RxeGZaM2hGNXdtWDMzV2V6UFRINFkifQ";
             Envelope envelope = Envelope.importFromEncoded(exported);
             // Context
             Item item1 = envelope.getItem("key-context");
@@ -76,7 +77,7 @@ class EnvelopeTest {
     @Test
     void getItemTest3() {
         Envelope envelope = new Envelope();
-        envelope.addItem(Key.generateKey(KeyType.IDENTITY));
+        envelope.addItem(Key.generateKey(List.of(Key.Use.SIGN)));
         assertNull(envelope.getItem((String)null));
         assertNull(envelope.getItem(""));
         assertNull(envelope.getItem("invalid-context"));
@@ -249,7 +250,7 @@ class EnvelopeTest {
     @Test
     public void iirImportTest1() {
         try {
-            String exported = "Di:IIR.eyJ1aWQiOiJiNjM4NGM3Yi1hYzFlLTRhY2UtYTBjNC1kZjU1ZGY0OWM1MmEiLCJjYXAiOlsiZ2VuZXJpYyJdLCJwdWIiOiJEU1ROKzJDTWVQZHZ4VkxxcEhxcG1aeVNUaWNnQjV2OE5KZFBlMnlnRnJldDk2TGZWSEJnbXYyIiwiaWF0IjoiMjAyMi0wNS0zMFQxODowMjozNS4yOTg3MDJaIn0.SGwn25l5uXzVB3vs10cOn+MGUU2kFpEicCA09LYIdXieUnQxhbj7WT//IFKJ4un57B7L0vmYJXj9p8MyVezHBg";
+            String exported = "Di:IIR.eyJjYXAiOlsiZ2VuZXJpYyJdLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjI1OjIzLjQ1NTEwMFoiLCJwdWIiOiJTVE4uWVptcHlUdGpnWGdXYndBZmRNdmtUMXVGeUVVNG5qVVdQalFTaW1kU1NTQVZldlVHcSIsInVpZCI6IjM4YjYzNDY3LTU5YjUtNDc0ZC1hMGZiLTZjMWRiYjEyNWQ0NSJ9.YjAwNGE0NzdiYzUyN2JjYi4zYzBjOTk0MzEyYzAxZDM5ZTBlM2Q4YTA3NDRjODE1YmZiYjBhZjg5YTRhNWQ0ODZiODVmNGFhODM1YjA0Mzg4NzEyYjU5MWIyYzRjNGIyZWY4MWRiNTZiMzM0MzhiOGMwOTgzZDdmNDFmMmU3ZDAyNDQwMjFkNGUwZThjMzkwZg";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
@@ -290,11 +291,11 @@ class EnvelopeTest {
     @Test
     void identityImportTest1() {
         try {
-            String exported = "Di.eyJpc3MiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJ1aWQiOiIyMzJkZTY2OC04ODU0LTQ5MDEtYTIyYi1jMTBkMWNiYjMwZTciLCJpYXQiOiIyMDIyLTA1LTMwVDE4OjAzOjExLjg5MDMwMVoifQ:ID.eyJ1aWQiOiJjMTAwMDZhZC0zOGJhLTQ2ZDMtYWE1OS02YTYzNGIyMjMzNTMiLCJzdWIiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImRjZDMyMDcwLWI5OTYtNGE1Mi04MGI2LWI3Mjg2NzczY2MyMSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIzLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoifQ.SUQuZXlKMWFXUWlPaUkwWlRGak1tTTBPUzAwWVdJMkxUUTVZekV0WWpoaFl5MHlaV1U1TkRZek9XVmxNMlVpTENKemRXSWlPaUprWTJRek1qQTNNQzFpT1RrMkxUUmhOVEl0T0RCaU5pMWlOekk0TmpjM00yTmpNakVpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWW1Rek5tWmtNamN0WWpFNVpDMDBZV1ZoTFRneU1XUXRNRGRsWkdVNVpEVXdNMkZrSWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNamN0TURVdE1qbFVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSXNJbkIxWWlJNklrUlRWRTRyVEVjMlptdDZlVmxZTjNNM09FdGFNM05HYVU1dmNsVnZRMEV5UlhsS1JEWjZWbFEzVjFoMVJrVjBUVTE2ZW1sSGJTSXNJbWxoZENJNklqSXdNakl0TURVdE16QlVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSjkuYzgxVCtDaFRLN1RXai9mQzBUTUIrTjFkd1RURVVJb01lQUFFNVB5R0x1SzFsbThkZ1Z5WVFQTnRTeHVyY3ZZOXJsZk1OZ3poUUFrZ3VTbm44dkJ1Qnc.vzjmxBAyp2HX3RlWydjGRWsCLOojiXPZQOwEcdcSf+fVq9yWjHkNmJWjsQfxS0El4fDu7WdBidkdNMD7zhgGCw:GAfjZ9aZhGk2bPi1EJSlSQzGrXfZbgQGxlJuZw8gzlJl91bocDfpUgsGSH7vAhApvOvmQuflNOVWCUM8zK70AA";
+            String exported = "Di.eyJpYXQiOiIyMDIyLTA4LTE4VDIwOjI2OjA0Ljc2ODg3N1oiLCJpc3MiOiJiYjdhNzQ1OC0zZjVjLTQ4ZmItYWJmOC0zN2Y3Mzc4ZmEyMTkifQ:ID.eyJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImV4cCI6IjIwMjMtMDgtMThUMjA6MDY6NTMuNzQ5MzkzWiIsImlhdCI6IjIwMjItMDgtMThUMjA6MDY6NTMuNzQ5MzkzWiIsImlzcyI6ImNiNTBlNTEyLWQwMjYtNGQyZC04ZDhhLTZiMjQ3NDIzNjA5MiIsInB1YiI6IlNUTi4yZ1hma1VRZ1A2RUxCNFI4QXFpRDc1dXc1QllVUFB6UEx0R0xFRmMyejMzSm9hVDgybSIsInN1YiI6ImJiN2E3NDU4LTNmNWMtNDhmYi1hYmY4LTM3ZjczNzhmYTIxOSIsInN5cyI6ImlvLmRpbWVmb3JtYXQucmVmIiwidWlkIjoiMzViNDM1ZjgtZDI1OC00ZDMxLWJjMmMtNmEyMjE1NjQwZDhmIn0.SUQuZXlKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aVpYaHdJam9pTWpBeU55MHdPQzB4TjFReU1Eb3dOam8xTXk0M05EVTNNVGRhSWl3aWFXRjBJam9pTWpBeU1pMHdPQzB4T0ZReU1Eb3dOam8xTXk0M05EVTNNVGRhSWl3aWFYTnpJam9pWldaaE1XRTFNamN0TkRJMVlpMDBORGt3TFRnNU5XTXRNV05pTVRObE5qTTJZamc0SWl3aWNIVmlJam9pVTFST0xqSXpUblYzUWtONWIwZG9lR2RIVFdOalJVZExOMGhFZWpsNmVXZzVTMGcyV0hCa2VYaFZWa0Z5ZFhCT1dHZHdVMjV5SWl3aWMzVmlJam9pWTJJMU1HVTFNVEl0WkRBeU5pMDBaREprTFRoa09HRXRObUl5TkRjME1qTTJNRGt5SWl3aWMzbHpJam9pYVc4dVpHbHRaV1p2Y20xaGRDNXlaV1lpTENKMWFXUWlPaUkxTVRnNU1HRmxZUzFqWlRKbExUUTRabU10WVdKaE9DMW1PREZtT1dJeU1EVXlNekVpZlEuWWpJM09ERXdOMlJqWlRsaE4yTXpaUzVoTmprd1l6QmhPV00zTUdZeU9EWTRNelJrWmpZek56RTJZV1EzTXpJek1EQTVOVEJqTW1FeFl6ZGxObU0zWVRrNE56STJPR0V6WVdVeE5EYzFOamRrWWpVNVpEbGpOR0poWkdVNU5qUTNaV1kzWlRVd1pqUTRNREJsTkdJME5EZGhNbVprWldKbE1EbGxObVJrTkdFeU16WTFNek5qTVRabFpHVTJaall3TXc.MDA1MjE3NDUwNDBjNTI0Zi45ZjYwMzI1YjUxY2NiYWIxNTg2MGQ4MjQxNjdkZGE5MjQ0MmI5Nzc2MDllMTNkMzYzOGY2OTAwMTdhMGZiZjhlNTUzYzJhZjA1MzkwNTFjN2NkZDVkZDk0ZWY5NmQwZGZkYTAxYzMyZThiNTI2ZWE4YThhNGNkNjljYzAyODAwOA:YThlNGMxZWJlYWIyMDliZi5hZmVlMjg2ZWY0NDc2MjI2Y2I1OTQ3YjlmMzk5YjQ1Yjk5N2VkNDc3NGQ2MGQwNzc2YWZlZGE1Mjk5YmRmZGZmOWQ0MmIzMTEzZDQxZjAzNDc3OTAyYjMzZjA0YmY2MDI0OWI2ZjgxOTk5ZTNhYzg4ZWM5NDYyM2MwMmIzZDIwNw";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
-            assertEquals(UUID.fromString("6ce4a7b7-0587-407e-9f95-9d1cec1afd79"), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-05-30T18:03:11.890301Z"), envelope.getIssuedAt());
+            assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
+            assertEquals(Instant.parse("2022-08-18T20:26:04.768877Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Identity.class, envelope.getItems().get(0).getClass());
@@ -306,19 +307,16 @@ class EnvelopeTest {
     @Test
     void identityImportTest2() {
         try {
-            String exported = "Di:ID.eyJ1aWQiOiJjMTAwMDZhZC0zOGJhLTQ2ZDMtYWE1OS02YTYzNGIyMjMzNTMiLCJzdWIiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImlzcyI6ImRjZDMyMDcwLWI5OTYtNGE1Mi04MGI2LWI3Mjg2NzczY2MyMSIsInN5cyI6ImRpbWUtamF2YS1yZWYiLCJleHAiOiIyMDIzLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MzM1NVoifQ.SUQuZXlKMWFXUWlPaUkwWlRGak1tTTBPUzAwWVdJMkxUUTVZekV0WWpoaFl5MHlaV1U1TkRZek9XVmxNMlVpTENKemRXSWlPaUprWTJRek1qQTNNQzFpT1RrMkxUUmhOVEl0T0RCaU5pMWlOekk0TmpjM00yTmpNakVpTENKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aWFYTnpJam9pWW1Rek5tWmtNamN0WWpFNVpDMDBZV1ZoTFRneU1XUXRNRGRsWkdVNVpEVXdNMkZrSWl3aWMzbHpJam9pWkdsdFpTMXFZWFpoTFhKbFppSXNJbVY0Y0NJNklqSXdNamN0TURVdE1qbFVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSXNJbkIxWWlJNklrUlRWRTRyVEVjMlptdDZlVmxZTjNNM09FdGFNM05HYVU1dmNsVnZRMEV5UlhsS1JEWjZWbFEzVjFoMVJrVjBUVTE2ZW1sSGJTSXNJbWxoZENJNklqSXdNakl0TURVdE16QlVNRGM2TVRjNk1EQXVPRGt3TmpNeFdpSjkuYzgxVCtDaFRLN1RXai9mQzBUTUIrTjFkd1RURVVJb01lQUFFNVB5R0x1SzFsbThkZ1Z5WVFQTnRTeHVyY3ZZOXJsZk1OZ3poUUFrZ3VTbm44dkJ1Qnc.vzjmxBAyp2HX3RlWydjGRWsCLOojiXPZQOwEcdcSf+fVq9yWjHkNmJWjsQfxS0El4fDu7WdBidkdNMD7zhgGCw";
+            String exported = "Di:ID.eyJjYXAiOlsiZ2VuZXJpYyIsImlkZW50aWZ5Il0sImV4cCI6IjIwMjMtMDgtMThUMjA6MDY6NTMuNzQ5MzkzWiIsImlhdCI6IjIwMjItMDgtMThUMjA6MDY6NTMuNzQ5MzkzWiIsImlzcyI6ImNiNTBlNTEyLWQwMjYtNGQyZC04ZDhhLTZiMjQ3NDIzNjA5MiIsInB1YiI6IlNUTi4yZ1hma1VRZ1A2RUxCNFI4QXFpRDc1dXc1QllVUFB6UEx0R0xFRmMyejMzSm9hVDgybSIsInN1YiI6ImJiN2E3NDU4LTNmNWMtNDhmYi1hYmY4LTM3ZjczNzhmYTIxOSIsInN5cyI6ImlvLmRpbWVmb3JtYXQucmVmIiwidWlkIjoiMzViNDM1ZjgtZDI1OC00ZDMxLWJjMmMtNmEyMjE1NjQwZDhmIn0.SUQuZXlKallYQWlPbHNpWjJWdVpYSnBZeUlzSW1sa1pXNTBhV1o1SWl3aWFYTnpkV1VpWFN3aVpYaHdJam9pTWpBeU55MHdPQzB4TjFReU1Eb3dOam8xTXk0M05EVTNNVGRhSWl3aWFXRjBJam9pTWpBeU1pMHdPQzB4T0ZReU1Eb3dOam8xTXk0M05EVTNNVGRhSWl3aWFYTnpJam9pWldaaE1XRTFNamN0TkRJMVlpMDBORGt3TFRnNU5XTXRNV05pTVRObE5qTTJZamc0SWl3aWNIVmlJam9pVTFST0xqSXpUblYzUWtONWIwZG9lR2RIVFdOalJVZExOMGhFZWpsNmVXZzVTMGcyV0hCa2VYaFZWa0Z5ZFhCT1dHZHdVMjV5SWl3aWMzVmlJam9pWTJJMU1HVTFNVEl0WkRBeU5pMDBaREprTFRoa09HRXRObUl5TkRjME1qTTJNRGt5SWl3aWMzbHpJam9pYVc4dVpHbHRaV1p2Y20xaGRDNXlaV1lpTENKMWFXUWlPaUkxTVRnNU1HRmxZUzFqWlRKbExUUTRabU10WVdKaE9DMW1PREZtT1dJeU1EVXlNekVpZlEuWWpJM09ERXdOMlJqWlRsaE4yTXpaUzVoTmprd1l6QmhPV00zTUdZeU9EWTRNelJrWmpZek56RTJZV1EzTXpJek1EQTVOVEJqTW1FeFl6ZGxObU0zWVRrNE56STJPR0V6WVdVeE5EYzFOamRrWWpVNVpEbGpOR0poWkdVNU5qUTNaV1kzWlRVd1pqUTRNREJsTkdJME5EZGhNbVprWldKbE1EbGxObVJrTkdFeU16WTFNek5qTVRabFpHVTJaall3TXc.MDA1MjE3NDUwNDBjNTI0Zi45ZjYwMzI1YjUxY2NiYWIxNTg2MGQ4MjQxNjdkZGE5MjQ0MmI5Nzc2MDllMTNkMzYzOGY2OTAwMTdhMGZiZjhlNTUzYzJhZjA1MzkwNTFjN2NkZDVkZDk0ZWY5NmQwZGZkYTAxYzMyZThiNTI2ZWE4YThhNGNkNjljYzAyODAwOA";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertTrue(envelope.isAnonymous());
             assertNull(envelope.getIssuerId());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Identity.class, envelope.getItems().get(0).getClass());
-            try {
-                envelope.verify(Commons.getIssuerKey());
-            } catch (IllegalStateException e) { return; } // All is well
+            try { envelope.verify(Commons.getIssuerKey()); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
-        fail("Should not happen.");
     }
 
     @Test
@@ -340,11 +338,11 @@ class EnvelopeTest {
     @Test
     void keyImportTest1() {
         try {
-            String exported = "Di.eyJpc3MiOiI2Y2U0YTdiNy0wNTg3LTQwN2UtOWY5NS05ZDFjZWMxYWZkNzkiLCJ1aWQiOiIxZTY5MzQ3OC01MDIyLTQ5NGUtODIwZS01NjlmZjc4ZTZlNTYiLCJpYXQiOiIyMDIyLTA1LTMwVDE4OjA0OjU2LjU0MzEwMVoifQ:KEY.eyJ1aWQiOiI2ODBmMmZiMi1mMGE1LTRkMGUtODNiNy0yMmExOTViMzJjODQiLCJwdWIiOiJEU1ROK0w3WjlnWENOdWF2M2twYnRqRE1XZ200WWRTZXF0TXNOR05XMXEzN0FLbWF0UXFKREwiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjE3OjAwLjg5MTc5OFoiLCJ1c2UiOlsic2lnbiJdLCJjdHgiOiJpZC1rZXkiLCJrZXkiOiJEU1ROK2FHb0ZSSFQ4Y243eFdjNWdtYUVmRU05MTh2QzJvZ2hGNkpTNGJ5S2k3cmJRVEU0MjR6blpwOXRXU0M0VDVSeDVGZHByMU5XTE5kcnFBMUFFYVhObXB5MTZVa0V4RiJ9:Fq69NSCs8U+Lv+l0MNZbW+OC3brxv6QjJmjte2rPZr22GjzEwcCczNBAXHghaL197rYLCn4QRYjLCpOXjyK9Ag";
+            String exported = "Di.eyJpYXQiOiIyMDIyLTA4LTE4VDIwOjI4OjQ0LjcxNTk5NVoiLCJpc3MiOiJiYjdhNzQ1OC0zZjVjLTQ4ZmItYWJmOC0zN2Y3Mzc4ZmEyMTkifQ:KEY.eyJjdHgiOiJpZC1rZXkiLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjA2OjUzLjc0NzA2MloiLCJrZXkiOiJTVE4uUFRRVTFLY1l3c1ZUOEFmV1NTbUxxQW9peVF4cnVyd0F0S1djcnRqMnl6VVEzb0VkYXJOd1BkVUFkRm5xM2cxNFlpV2FMS3VOaUF3cERzYkI0b2NIMXE4Q3Z5TWkzIiwicHViIjoiU1ROLjJnWGZrVVFnUDZFTEI0UjhBcWlENzV1dzVCWVVQUHpQTHRHTEVGYzJ6MzNKb2FUODJtIiwidWlkIjoiNjg4ODdmM2EtMjQxNC00M2I5LWJjOTItNzIwMzQ4YjE1NmM5IiwidXNlIjpbInNpZ24iXX0:YThlNGMxZWJlYWIyMDliZi4zMmU1YzAwMDUwMjk4ZmYxZmM2NDcwNDE2MzRkMjlkN2YyNmUyZTBmNmY4NjkwMTU3NDc2ZTJhODA2ZGQ4MzA3N2NiNmY1ZmRkNzA5MjFmZDQwODI3YWZkYWY3MTM5ZWQ2ZWFiNmY2MmQyNzY0MjM4OWI0MGI3NWI3MTQ2MmYwMw";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
-            assertEquals(UUID.fromString("6ce4a7b7-0587-407e-9f95-9d1cec1afd79"), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-05-30T18:04:56.543101Z"), envelope.getIssuedAt());
+            assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
+            assertEquals(Instant.parse("2022-08-18T20:28:44.715995Z"), envelope.getIssuedAt());
             assertNull(envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Key.class, envelope.getItems().get(0).getClass());
@@ -375,11 +373,11 @@ class EnvelopeTest {
     @Test
     void dataImportTest1() {
         try {
-            String exported = "Di.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJpYXQiOiIyMDIyLTA2LTMwVDA3OjExOjU1LjEyMzA0NloiLCJpc3MiOiIyZmMyMTA4NC1iNWVkLTQ5MjAtODlmMy03MTZiNGZmMmJmM2IifQ:DAT.eyJleHAiOiIyMDIyLTA2LTMwVDA3OjEzOjM1LjEyNDM0M1oiLCJpYXQiOiIyMDIyLTA2LTMwVDA3OjExOjU1LjEyNDM0M1oiLCJpc3MiOiJiZmI0NTViOC0zYTc0LTRiYWYtYWRkMS1lNDEwNzZkNWZmZTQiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiYjVjNjJiN2ItNTIzMC00MzQxLTg4MTYtMDk0NDE3M2M4ZjFjIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.MTJhMTE3OTM1OTgwNDgzMC43ODgyMTI4NDc0Y2VhYzhmZDY5NjE0MTU2ZmVkY2RjNDEyZmU5NDBjMjAxNDk2MWRmM2JiZmZlYTkwODkyZDFlNTZkZDJlZjU5NTRlZGRkMDQxNWZjODZiN2Q2ZWQ4YjQzZWViZjdjYTUwYjVkYmE5YjNlZTUxNTI4ZWNmZWQwMw:MTJhMTE3OTM1OTgwNDgzMC4xYTVhMmViNGE0ZjZhOGMzZDU4OGI2MTc3YjdjNGM3M2UzZGU3ODEyNjg5ZDY2NzI4ZWZkNGMyZTZjYzNlZjI2Zjk1ZTEzN2ExMjY2NDFkYTczNzg3OGIxM2MyZDFjOThkODljNDdjNDVkYWRkZGQyMTllYTZlOTlkMTA1ODEwZA";
+            String exported = "Di.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjIwOjA5LjUwMzg0N1oiLCJpc3MiOiJiYjdhNzQ1OC0zZjVjLTQ4ZmItYWJmOC0zN2Y3Mzc4ZmEyMTkifQ:DAT.eyJleHAiOiIyMDIyLTA4LTE4VDIwOjIxOjQ5LjUwNTI3NVoiLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjIwOjA5LjUwNTI3NVoiLCJpc3MiOiI0MWFkMzk4Ny1kY2ZkLTQ4MWMtOWYxMi0xYTA0YTUzOTIzNTYiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiMDIwMGZiNjAtNmRkYi00MDJjLThiZjItNzFiNzBlNDcyOWQxIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.YThlNGMxZWJlYWIyMDliZi40MjhiMTZiYWY1MDdhNGYwMWVkMjJmNDVmMWRlNDgyZTRhNzNmMzE1ZmZjNjQ2NDMxNDgyOWRhZjg4N2U0ZjgxNzE1NDcwYjYwOTQ1ODg2MDcyNzIyNmM4MDE3YjY0ZGI5ODBhNDg5MTE2ZGY4NzRkMzVjYjYzOTUwMjgyZjkwMA:YThlNGMxZWJlYWIyMDliZi41Y2U2ZDUwZDY5NmRlYWM5MzM0NmM0YjUxZDUwNTdhZjNkOGVjNDNmMmY0YWQ1NGMxN2RiMWE2YjliYmIxY2VmY2U1NGFmNDhmYzNiZGU0OWVhMzE1Njc2NGQwZTk2ZDA2YzU0YTllNjVmYjQ3NzViMTk1OTllNzNlNzA1YWYwZQ";
             Envelope envelope = Envelope.importFromEncoded(exported);
             assertFalse(envelope.isAnonymous());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), envelope.getIssuerId());
-            assertEquals(Instant.parse("2022-06-30T07:11:55.123046Z"), envelope.getIssuedAt());
+            assertEquals(Instant.parse("2022-08-18T20:20:09.503847Z"), envelope.getIssuedAt());
             assertEquals(Commons.CONTEXT, envelope.getContext());
             assertEquals(1, envelope.getItems().size());
             assertEquals(Data.class, envelope.getItems().get(0).getClass());

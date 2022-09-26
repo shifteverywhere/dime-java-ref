@@ -16,15 +16,15 @@ import java.util.List;
 class Signature {
 
     final byte[] bytes;
-    final String identifier;
+    final String name;
 
-    Signature(byte[] bytes, String identifier) {
+    Signature(byte[] bytes, String name) {
         this.bytes = bytes;
-        this.identifier = identifier;
+        this.name = name;
     }
 
     public boolean isLegacy() {
-        return identifier == null;
+        return name == null;
     }
 
     public static List<Signature> fromEncoded(String encoded) {
@@ -53,7 +53,7 @@ class Signature {
 
     static String toEncoded(List<Signature> signatures) {
         StringBuilder builder = new StringBuilder();
-        boolean isLegacy = signatures.get(0).identifier == null;
+        boolean isLegacy = signatures.get(0).name == null;
         for(Signature signature: signatures) {
             if (builder.length() > 0) {
                 builder.append(Dime.SECTION_DELIMITER);
@@ -66,7 +66,7 @@ class Signature {
     static Signature find(String identifier, List<Signature> signatures) {
         if (signatures == null) { return null; }
         return signatures.stream()
-                .filter(signature -> identifier.equals(signature.identifier))
+                .filter(signature -> identifier.equals(signature.name))
                 .findAny()
                 .orElse(null);
     }
@@ -75,7 +75,7 @@ class Signature {
         if (this.isLegacy()) {
             builder.append(Utility.toBase64(this.bytes));
         } else {
-            builder.append(this.identifier);
+            builder.append(this.name);
             builder.append(Dime.COMPONENT_DELIMITER);
             builder.append(Utility.toHex(this.bytes));
         }

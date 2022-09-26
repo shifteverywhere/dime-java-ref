@@ -9,11 +9,9 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -177,10 +175,9 @@ public class Message extends Data {
      * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
-     * @throws DimeKeyMismatchException If provided keys are not of type EXCHANGE.
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeKeyMismatchException, DimeCryptographicException {
+    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeCryptographicException {
         throwIfSigned();
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Unable to set payload, payload must not be null or empty."); }
         if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }

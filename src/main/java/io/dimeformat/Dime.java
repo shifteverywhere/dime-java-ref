@@ -25,6 +25,11 @@ public final class Dime {
     public static final Crypto crypto = new Crypto();
 
     /**
+     * A set of keys and identities that are set to be trusted.
+     */
+    public static final KeyRing keyRing = new KeyRing();
+
+    /**
      * The maximum length that the context claim may hold.
      * */
     public static final int MAX_CONTEXT_LENGTH = 84;
@@ -62,18 +67,18 @@ public final class Dime {
      * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
      * @return An Identity instance.
      */
-    public static synchronized Identity getTrustedIdentity() {
-        return Dime.trustedIdentity;
-    }
+    //public static synchronized Identity getTrustedIdentity() {
+    //    return Dime.trustedIdentity;
+    //}
 
     /**
      * Sets an Identity instance to be the trusted identity used for verifying a trust chain of other Identity
      * instances. This is normally the root identity of a trust chain.
      * @param trustedIdentity The Identity instance to set as a trusted identity.
      */
-    public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
-        Dime.trustedIdentity = trustedIdentity;
-    }
+    //public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
+    //    Dime.trustedIdentity = trustedIdentity;
+    //}
 
     /**
      * Returns the set grace period in seconds. This value is used to allow a grace period when comparing and validating
@@ -138,7 +143,7 @@ public final class Dime {
 
     /// PRIVATE ///
 
-    private static Identity trustedIdentity;
+    //private static Identity trustedIdentity;
     private static long _gracePeriod = 0;
     private static long _timeModifier = 0;
     private static Instant _overrideTime = null;

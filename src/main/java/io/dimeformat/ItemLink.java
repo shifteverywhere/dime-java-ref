@@ -11,6 +11,8 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.VerificationException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -115,23 +117,29 @@ public final class ItemLink {
      * Verifies a list of items towards a list of ItemLink instances.
      * @param items The items to verify against.
      * @param links The list of ItemLink instances.
-     * @return True if all ItemLink instances can be verified with the provided items.
+     * @throws VerificationException If verification fails
      */
-    public static boolean verify(List<Item> items, List<ItemLink> links) {
-        if (items == null || items.isEmpty() || links == null || links.isEmpty()) { return false; }
-        int verified = 0;
+    public static void verify(List<Item> items, List<ItemLink> links) throws VerificationException {
+
+        if (items == null || links == null) { throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, null, "Unable to verify, item links or items missing for verification."); }
         for (Item item: items) {
+            boolean matchFound = false;
             for (ItemLink link: links) {
                 if (link.uniqueId.equals(item.getUniqueId())) {
+                    matchFound = true;
                     try {
-                        if (link.itemIdentifier.equals(item.getItemIdentifier()) && link.thumbprint.equals(item.thumbprint())) {
-                            verified++;
+                        if (!link.itemIdentifier.equals(item.getItemIdentifier()) || !link.thumbprint.equals(item.thumbprint())) {
+                            throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, item, "Unable to verify, item link not matching verified item.");
                         }
-                    } catch (DimeCryptographicException e) { /* ignored, will result in failed verify */ }
+                    } catch (DimeCryptographicException e) {
+                        throw new VerificationException(VerificationException.Reason.INTERNAL_ERROR, item, "Unable to verify, encountered an unexpected internal fault.", e);
+                    }
                 }
             }
+            if (!matchFound) {
+                throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, item, "Unable to verify, matching item link not found for item.");
+            }
         }
-        return (items.size() == verified);
     }
 
     /// PACKAGE-PRIVATE ///
@@ -145,7 +153,7 @@ public final class ItemLink {
 
     static String toEncoded(List<ItemLink> links) {
         if (links == null ||links.isEmpty()) { return null; }
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (ItemLink link: links) {
             if (buffer.length() > 0) { buffer.append(Dime.SECTION_DELIMITER); }
             buffer.append(link.toEncoded());

@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
@@ -33,7 +34,7 @@ class MessageTest {
     @Test
     void messageTest1() {
         Dime.setTimeModifier(0);
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+        Commons.initializeKeyRing();
         Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
         Instant now = Instant.now();
         assertEquals(0, Duration.between(message.getIssuedAt(), now).getSeconds());
@@ -46,7 +47,7 @@ class MessageTest {
 
     @Test
     void messageTest2() {
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+        Commons.initializeKeyRing();
         byte[] payload = Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8);
         long validFor = 10;
         Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), validFor);
@@ -59,7 +60,7 @@ class MessageTest {
     @Test
     void messageTest3() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             String text = Commons.PAYLOAD;
             byte[] payload = text.getBytes(StandardCharsets.UTF_8);
             Message message1 = new Message(Commons.getIssuerIdentity().getSubjectId());
@@ -79,7 +80,7 @@ class MessageTest {
     @Test
     void exportTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -95,7 +96,7 @@ class MessageTest {
 
     @Test
     void exportTest2() {
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+        Commons.initializeKeyRing();
         Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
         try {
             message.exportToEncoded();
@@ -106,7 +107,7 @@ class MessageTest {
     @Test
     void exportTest3() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -119,17 +120,17 @@ class MessageTest {
     @Test
     void verifyTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), -10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey());
-        } catch (DimeDateException e) { 
-            return; // All is well
+            fail("Exception not thrown.");
+        } catch (VerificationException e) {
+            /* all is well */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        fail("Should not happen.");    
     }
 
     @Test
@@ -137,23 +138,23 @@ class MessageTest {
         try {
             Key key = Key.generateKey(List.of(Key.Use.SIGN));
             Identity untrustedSender = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 120, key, Commons.SYSTEM_NAME, null);
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), 120);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key);
             message.verify(Commons.getIssuerKey());
-        } catch (DimeIntegrityException e) { 
-            return; // All is well
+            fail("Exception not thrown.");
+        } catch (VerificationException e) {
+           /* all is well */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        fail("Should not happen.");
     }
 
     @Test
     void verifyTest3() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 120);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -166,7 +167,7 @@ class MessageTest {
     @Test
     void verifyTest4() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId());
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -179,16 +180,18 @@ class MessageTest {
     @Test
     void verifyTest5() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(1000);
             try {
                 message.verify(Commons.getIssuerIdentity().getPublicKey());
-                fail("Exception should have been thrown.");
-            } catch (DimeDateException e) { /* All is good */ }
-            message.verify(Commons.getIssuerIdentity().getPublicKey(), 1);
+                fail("Exception not thrown.");
+            } catch (VerificationException e) { /* All is good */ }
+            Dime.setGracePeriod(1L);
+            message.verify(Commons.getIssuerIdentity().getPublicKey());
+            Dime.setGracePeriod(0L);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -199,7 +202,7 @@ class MessageTest {
     @Test
     void verifyTest6() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(),1);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -216,14 +219,15 @@ class MessageTest {
     void verifyTest7() {
         try {
             Dime.setTimeModifier(-2);
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 1);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(2000);
             message.verify(Commons.getIssuerIdentity().getPublicKey());
-        } catch (DimeDateException e) {
-            // All is good
+            fail("Exception not thrown.");
+        } catch (VerificationException e) {
+           /* all is good */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -232,7 +236,7 @@ class MessageTest {
     @Test
     void importTest1() { 
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             String exported = "Di:MSG.eyJ1aWQiOiIwY2VmMWQ4Zi01NGJlLTRjZTAtYTY2OS1jZDI4OTdhYzY0ZTAiLCJhdWQiOiJhNjkwMjE4NC0yYmEwLTRiYTAtYWI5MS1jYTc3ZGE3ZDA1ZDMiLCJpc3MiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJleHAiOiIyMDIxLTExLTE4VDE4OjA2OjAyLjk3NDM5NVoiLCJpYXQiOiIyMDIxLTExLTE4VDE4OjA1OjUyLjk3NDM5NVoifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.vWWk/1Ny6FzsVRNSEsqjhRrSEDvmbfLIE9CmADySp/pa3hqNau0tnhwH3YwRPPEpSl4wXpw0Uqkf56EQJI2TDQ";
             Message message = Item.importFromEncoded(exported);
             assertNotNull(message);
@@ -248,13 +252,13 @@ class MessageTest {
     }
 
     @Test
-    void importTest2() {  
-        Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+    void importTest2() {
+        Commons.initializeKeyRing();
         String encoded = "M1.STEuZXlKemRXSWlPaUpoWWpWaU9HTXdaQzFtWkRJNExUUmpNekF0T0RReVppMHpORGRpTkRoak9EWmtZbU1pTENKcGMzTWlPaUkzTVdVeVltVTFZeTAzTVdWa0xUUXlZalF0WW1ZNU1pMDRabUppWm1VMk1qQTNOMk1pTENKcFlYUWlPakUyTWpFNU56SXdNalFzSW1WNGNDSTZNVFkxTXpVd09EQXlOQ3dpYVd0NUlqb2lUVU52ZDBKUldVUkxNbFozUVhsRlFXbFRkR1IxU25wd2RVdHFjMHRLTlZ4MU1EQXlRbTVQT1VSMFIwTk9TMXBpY0ZCR1RUVlBORlJFUnpNMVMwVklaeUlzSW1OaGNDSTZXeUpoZFhSb2IzSnBlbVVpWFgwLndDV20xT3ExMHFVK3hPYVZVTTJwR1dHUmQxakgxc2FWYXRGMUc2Zy93UFUySHY5dGFSWGhINGtWVWc0NnFjcU0yTTRKd0JVZm8xbWM2dU10Z1JOSkJR.eyJ1aWQiOiI1ZWRkMmFkZS1mZjRiLTQ1YzktODMyMy1iOTE4YWJmYWZkMjEiLCJzdWIiOiJiMzIyNTU3NC1jYTNkLTRlYWItODNlMC03NjU1MDE2ZWEyMmQiLCJpc3MiOiJhYjViOGMwZC1mZDI4LTRjMzAtODQyZi0zNDdiNDhjODZkYmMiLCJpYXQiOjE2MjE5NzU2MzAsImV4cCI6MTYyMTk3NTY0MH0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
         try {
             Item.importFromEncoded(encoded);
-        } catch (DimeFormatException e) { return; } // All is well
-        fail("Should not happen.");
+            fail("Exception not thrown.");
+        } catch (DimeFormatException e) { /* all is well */ }
     }
 
     @Test
@@ -275,7 +279,7 @@ class MessageTest {
     @Test
     void signTest1() { 
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.sign(Commons.getIssuerKey());
         } catch (IllegalStateException e) { 
@@ -289,7 +293,7 @@ class MessageTest {
     @Test
     void signTest2() { 
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -318,16 +322,17 @@ class MessageTest {
             message.verify(key2);
             try {
                 message.verify(key3);
-            } catch (DimeIntegrityException e) { /* ignored */ }
+                fail("Exception not thrown.");
+            } catch (VerificationException e) { /* all is well */ }
         } catch (Exception e) {
-            fail("Should not happen.");
+            fail("Unexpected exception thrown: " + e);
         }
     }
 
     @Test
     void isSignedTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             assertFalse(message.isSigned());
@@ -424,7 +429,7 @@ class MessageTest {
     @Test
     void linkItemTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
             Message issuerMessage = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
@@ -446,13 +451,13 @@ class MessageTest {
     @Test
     void linkItemTest2() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.addItemLink(Key.generateKey(List.of(Key.Use.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
-        } catch (DimeIntegrityException e) { 
+        } catch (VerificationException e) {
             return; // All is well
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -463,7 +468,7 @@ class MessageTest {
     @Test
     void linkItemTest3() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
@@ -479,7 +484,7 @@ class MessageTest {
     @Test
     void thumbprintTest1() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
@@ -497,7 +502,7 @@ class MessageTest {
     @Test
     void thumbprintTest2() {
         try {
-            Dime.setTrustedIdentity(Commons.getTrustedIdentity());
+            Commons.initializeKeyRing();
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
             Message issuerMessage1 = new Message(receiver.getSubjectId(), issuer.getSubjectId(), 100);
@@ -604,7 +609,7 @@ class MessageTest {
     void alienMessageEncryptionTest2() {
         try {
             Key clientLegacyKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiI1MTllNWE5Mi01Yjc1LTQxMTctODZjMS1jMTFjZjI0MDY1YmUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc3MTQ2OFoiLCJwdWIiOiIyREJWdG5NYTFZM1B6a25FN3ZXTnJybkgyM0JVVlJROXVwRGM1Umd0MnloVFNEMUZoOFNiMXBhR3cifQ");
-            Key serverKey = Item.importFromEncoded("Di:KEY.eyJpYXQiOiIyMDIyLTA3LTAxVDA4OjM2OjIwLjI2ODQ1M1oiLCJrZXkiOiJEU1ROLjh2djVlSnNkN3V1WVI5ajVIZW53Qmd2N2VVZlpXaTlRN1NpeERzWFVaaG1qdGs5elciLCJwdWIiOiJEU1ROLjJNZmtyOGpMTEd4a0w3Y1BpS2JkYzhTcmplN2dIMTh2anNtR1pFcGVCU1pKRmI2UDZkIiwidWlkIjoiOWU5MzMxNGMtNmYwMC00MWMwLWI0MTAtZDI4YjViM2I5ZTVlIiwidXNlIjpbImV4Y2hhbmdlIl19");
+            Key serverKey = Item.importFromEncoded("Di:KEY.eyJpYXQiOiIyMDIyLTA3LTAxVDA4OjM2OjIwLjI2ODQ1M1oiLCJrZXkiOiJTVE4uOHZ2NWVKc2Q3dXVZUjlqNUhlbndCZ3Y3ZVVmWldpOVE3U2l4RHNYVVpobWp0azl6VyIsInB1YiI6IlNUTi4yTWZrcjhqTExHeGtMN2NQaUtiZGM4U3JqZTdnSDE4dmpzbUdaRXBlQlNaSkZiNlA2ZCIsInVpZCI6IjllOTMzMTRjLTZmMDAtNDFjMC1iNDEwLWQyOGI1YjNiOWU1ZSIsInVzZSI6WyJleGNoYW5nZSJdfQ");
             Message legacyMessage = Item.importFromEncoded("Di:MSG.eyJ1aWQiOiJiOTMxOWNiZS0xNzAzLTQ4MTQtYjQ2OC0wMzdmODJmYjNlNDAiLCJpc3MiOiJlODQ5YWQ5OS05YWM4LTQ2ZTktYjUyNS1lZWNiMWEwNjE3NDUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc4MDAzN1oifQ.fS10Cu3KBf/J+cKw6guu6cCO+NBdjrTsJudXNjmgoC4TtX4+HsHY8vmUMYuTLPwKYAQ7dNSchz52l7edgESIuemW1yzA.9bzv07SHm2Hd89iyjjUYLCY3LbvD/+Jw5drKqWnpZNGZRgK2VwWKJTLM0ffQcrvm2P572RBJ5mWhpPnZxLoPCA");
             assertNotNull(legacyMessage);
             assertEquals(Commons.PAYLOAD, new String(legacyMessage.getPayload(clientLegacyKey, serverKey), StandardCharsets.UTF_8));

@@ -9,11 +9,8 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeDateException;
-import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.*;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -205,18 +202,71 @@ public abstract class Item {
         return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
-    /**
-     * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
-     * claim issuer (iss) matches the subject id (sub) of the provided identity.
-     * @param issuer The issuer identity to use while verifying.
-     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
-     * @throws DimeIntegrityException If the signature is invalid.
-     */
-    public void verify(Identity issuer) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
+    public void verify() throws VerificationException {
+        verify((List<Item>) null);
+    }
+
+    public void verify(List<Item> linkedItems) throws VerificationException {
+        if (!isSigned()) { throw new VerificationException(VerificationException.Reason.NO_SIGNATURE, this, "Unable to verify, item has no signatures."); }
+        if (Dime.keyRing.size() == 0) { throw new VerificationException(VerificationException.Reason.NO_KEY_RING, this, "Unable to verify, no items found in key ring."); }
+        for (Item item: Dime.keyRing.items()) {
+            Key trustedKey;
+            if (item instanceof Identity) {
+                trustedKey = ((Identity) item).getPublicKey();
+            } else if (item instanceof Key) {
+                trustedKey = (Key) item;
+            } else {
+                throw new VerificationException(VerificationException.Reason.INVALID_ITEM, item, "Unable to verify, found invalid item in key ring.");
+            }
+            try {
+                verify(trustedKey, linkedItems);
+                return; // Return on first verified success
+            } catch (VerificationException e) {
+                if (e.reason != VerificationException.Reason.KEY_MISMATCH || isLegacy()) {
+                    // No need to rethrow if a key could not find a matching signature (unless this is legacy).
+                    throw e;
+                }
+            }
+
+        }
+        throw new VerificationException(VerificationException.Reason.NOT_TRUSTED, this, "Unable to verify, item not trusted.");
+    }
+
+    public void verify(Key trustedKey) throws VerificationException {
+        verify(trustedKey, null);
+    }
+
+    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
+        if (trustedKey == null) { throw new IllegalArgumentException("Unable to verify, key must not be null."); }
+        if (!isSigned()) { throw new VerificationException(VerificationException.Reason.NO_SIGNATURE, this, "Unable to verify, item has no signatures."); }
+        Signature signature;
+        if (isLegacy()) {
+            signature = getSignatures().get(0);
+        } else {
+            signature = Signature.find(Dime.crypto.generateKeyIdentifier(trustedKey), getSignatures());
+        }
+        if (signature == null) {
+            throw new VerificationException(VerificationException.Reason.KEY_MISMATCH, this,  "Unable to verify, no matching signature found for key.");
+        } else {
+            try {
+                if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, trustedKey)) {
+                    throw new VerificationException(VerificationException.Reason.NOT_TRUSTED, this, "Unable to verify, item is not trusted.");
+                }
+            } catch (DimeFormatException | DimeCryptographicException e) {
+                throw new VerificationException(VerificationException.Reason.INTERNAL_ERROR, this, "Unable to verify, encountered an unexpected internal fault.", e);
+            }
+        }
+        Item.verifyDates(this); // This throws VerificationException if unable to verify
+        if (linkedItems != null && !linkedItems.isEmpty()) {
+            verifyLinkedItems(linkedItems); // This throws VerificationException if unable to verify
+        }
+    }
+
+    public void verify(Identity issuer) throws VerificationException {
         verify(issuer, null);
     }
 
-    /**
+     /**
      * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
      * claim issuer (iss) matches the subject id (sub) of the provided identity. Any items provided in linkedItems will
      * be verified with item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException
@@ -224,65 +274,13 @@ public abstract class Item {
      * that are not linked will also result in a DimeIntegrityException being thrown.
      * @param issuer The issuer identity to use while verifying.
      * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
-     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
-     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
+     * @throws VerificationException If item could not be verified.
      */
-    public void verify(Identity issuer, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
-        if(issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
+    public void verify(Identity issuer, List<Item> linkedItems) throws VerificationException {
+        if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
         UUID issuerId = claims.getUUID(Claim.ISS);
-        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new DimeIntegrityException("Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
-        this.verify(issuer.getPublicKey(), linkedItems);
-    }
-
-    /**
-     * Verifies the signature of the item using a provided key.
-     * @param key The key to used to verify the signature, must not be null.
-     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
-     * @throws DimeIntegrityException If the signature is invalid.
-     */
-    public void verify(Key key) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
-        verify(key, null);
-    }
-
-    /**
-     * Verifies the signature of the item using a provided key. Any items provided in linkedItems will be verified with
-     * item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException will be thrown.
-     * Only items provided will be verified, any additional item links will be ignored. Providing items that are not
-     * linked will also result in a DimeIntegrityException being thrown.
-     * @param key The key to used to verify the signature, must not be null.
-     * @param linkedItems A list of linked items that should be included in the verification.
-     * @throws DimeDateException If any dates (iat, exp) are outside the validity period.
-     * @throws DimeIntegrityException If the item could not be verified to be integrity intact.
-     */
-    public void verify(Key key, List<Item> linkedItems) throws DimeDateException, DimeIntegrityException, DimeCryptographicException {
-        if (!isSigned()) { throw new IllegalStateException("Unable to verify, item is not signed."); }
-        verifyDates(); // Verify IssuedAt and ExpiresAt
-        try {
-            if (isLegacy()) {
-                Dime.crypto.verifySignature(encoded(false), getSignatures().get(0).bytes, key);
-            } else {
-                Signature signature = Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures());
-                if (signature != null) {
-                    Dime.crypto.verifySignature(encoded(false), signature.bytes, key);
-                } else {
-                    throw new DimeIntegrityException("Unable to verify signature, item not signed with provided key.");
-                }
-            }
-        } catch (DimeFormatException e) {
-            throw new DimeIntegrityException("Unable to verify signature, data invalid.");
-        }
-        if (linkedItems != null) {
-            if (itemLinks == null) {
-                itemLinks = claims.getItemLinks(Claim.LNK);
-            }
-            if (itemLinks != null) {
-                if (!ItemLink.verify(linkedItems, itemLinks)) {
-                    throw new DimeIntegrityException("Unable to verify, provided linked items did not verify correctly.");
-                }
-            } else {
-                throw new DimeIntegrityException("Unable to verify, no linked items found.");
-            }
-        }
+        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new VerificationException(VerificationException.Reason.ISSUER_MISMATCH, this, "Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
+        verify(issuer.getPublicKey(), linkedItems);
     }
 
     /**
@@ -393,8 +391,8 @@ public abstract class Item {
     protected final ClaimsMap getClaims() {
         if (this.claims == null) {
             if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
-                byte[] jsonBytes = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
-                this.claims = new ClaimsMap(new String(jsonBytes, StandardCharsets.UTF_8));
+                byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
+                this.claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
             } else {
                 this.claims = new ClaimsMap();
             }
@@ -420,12 +418,23 @@ public abstract class Item {
         return this.signatures;
     }
 
-    protected void verifyDates() throws DimeDateException {
+    protected static void verifyDates(Item item) throws VerificationException {
         Instant now = Utility.createTimestamp();
-        if (Utility.gracefulTimestampCompare(this.getIssuedAt(), now) > 0) { throw new DimeDateException("Issuing date in the future."); }
-        if (this.getExpiresAt() != null) {
-            if (Utility.gracefulTimestampCompare(this.getIssuedAt(), this.getExpiresAt()) > 0) { throw new DimeDateException("Expiration before issuing date."); }
-            if (Utility.gracefulTimestampCompare(this.getExpiresAt(), now) < 0) { throw new DimeDateException("Passed expiration date."); }
+        if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { throw new VerificationException(VerificationException.Reason.USE_BEFORE, item, "Unable to verify, issued at date in the future."); }
+        if (item.getExpiresAt() != null) {
+            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { throw new VerificationException(VerificationException.Reason.DATE_MISMATCH, item, "Unable to verify, expires at before issued at date."); }
+            if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { throw new VerificationException(VerificationException.Reason.USE_AFTER, item, "Unable to verify, passed expires at date."); }
+        }
+    }
+
+    protected void verifyLinkedItems(List<Item> linkedItems) throws VerificationException {
+        if (itemLinks == null) {
+            itemLinks = claims.getItemLinks(Claim.LNK);
+        }
+        if (itemLinks != null) {
+            ItemLink.verify(linkedItems, itemLinks);
+        } else {
+            throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, this, "Unable to verify, no linked items found.");
         }
     }
 

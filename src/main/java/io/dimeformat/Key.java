@@ -175,7 +175,7 @@ public class Key extends Item {
         if (_use == null) {
             List<String> usage = getClaims().get(Claim.USE);
             if (usage != null) {
-                _use = usage.stream().map(cap -> Key.Use.valueOf(cap.toUpperCase())).collect(toList());
+                _use = usage.stream().map(use -> Key.Use.valueOf(use.toUpperCase())).collect(toList());
             } else {
                 // This may be legacy
                 getKeyBytes(Claim.PUB);
@@ -354,6 +354,22 @@ public class Key extends Item {
         return new Key(UUID.randomUUID(), use, sharedKey, null, getCryptoSuiteName());
     }
 
+    @Override
+    public void convertToLegacy() {
+        if (isLegacy()) { return; }
+        Key.convertKeyToLegacy(this, getUse().get(0), Claim.KEY);
+        Key.convertKeyToLegacy(this, getUse().get(0), Claim.PUB);
+        super.convertToLegacy();
+    }
+
+    @Override
+    public boolean isLegacy() {
+        // Get the keys (if needed) to check if this is legacy
+        getKeyBytes(Claim.PUB);
+        getKeyBytes(Claim.KEY);
+        return super.isLegacy();
+    }
+
     /// PACKAGE-PRIVATE ///
 
     /**
@@ -389,14 +405,30 @@ public class Key extends Item {
     Key(List<Key.Use> use, String key, Claim claim) throws DimeCryptographicException {
         this._use = use;
         getClaims().put(claim, key);
-        getClaims().remove(Claim.UID); // TODO: rewrite this so that UID is null on creation
+    }
+
+    static void convertKeyToLegacy(Item item, Key.Use use, Claim claim) {
+        String key = item.getClaims().get(claim);
+        if (key == null) { return; }
+        byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
+        byte[] rawKey = Base58.decode(b58);
+        byte[] legacyKey = Utility.combine(header, rawKey);
+        legacyKey[1] = use == Key.Use.ENCRYPT ? 0x10 : use == Key.Use.EXCHANGE ? (byte)0x40 : (byte)0x80;
+        legacyKey[2] = use == Key.Use.EXCHANGE ? (byte)0x02 : (byte)0x01;
+        if (claim == Claim.PUB) {
+            legacyKey[3] = 0x01;
+        } else if (use == Key.Use.ENCRYPT) {
+            legacyKey[3] = 0x02;
+        }
+        item.getClaims().put(claim, Base58.encode(legacyKey));
     }
 
     /// PROTECTED ///
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Item.MINIMUM_NBR_COMPONENTS + 1) { throw new DimeFormatException("More components in item then expected, got " + components.size() + ", expected maximum " + (Item.MINIMUM_NBR_COMPONENTS + 1)); }
+        if (components.size() > Item.MINIMUM_NBR_COMPONENTS + 1) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + (Item.MINIMUM_NBR_COMPONENTS + 1)); }
         this.isSigned = components.size() > Item.MINIMUM_NBR_COMPONENTS;
     }
 
@@ -427,39 +459,6 @@ public class Key extends Item {
         }
     }
 
-    @Override
-    public void convertToLegacy() {
-        if (isLegacy()) { return; }
-        Key.convertKeyToLegacy(this, getUse().get(0), Claim.KEY);
-        Key.convertKeyToLegacy(this, getUse().get(0), Claim.PUB);
-        super.convertToLegacy();
-    }
-
-    @Override
-    public boolean isLegacy() {
-        // Get the keys (if needed) to check if this is legacy
-        getKeyBytes(Claim.PUB);
-        getKeyBytes(Claim.KEY);
-        return super.isLegacy();
-    }
-
-    static void convertKeyToLegacy(Item item, Key.Use use, Claim claim) {
-        String key = item.getClaims().get(claim);
-        if (key == null) { return; }
-        byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
-        String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
-        byte[] rawKey = Base58.decode(b58);
-        byte[] legacyKey = Utility.combine(header, rawKey);
-        legacyKey[1] = use == Key.Use.ENCRYPT ? 0x10 : use == Key.Use.EXCHANGE ? (byte)0x40 : (byte)0x80;
-        legacyKey[2] = use == Key.Use.EXCHANGE ? (byte)0x02 : (byte)0x01;
-        if (claim == Claim.PUB) {
-            legacyKey[3] = 0x01;
-        } else if (use == Key.Use.ENCRYPT) {
-            legacyKey[3] = 0x02;
-        }
-        item.getClaims().put(claim, Base58.encode(legacyKey));
-    }
-
     private static String encodeKey(String suiteName, byte[] rawKey) {
         return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey);
     }
@@ -473,7 +472,7 @@ public class Key extends Item {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
         } else {
             // This will be treated as legacy
-            suiteName = Dime.STANDARD_SUITE;
+            suiteName = Dime.crypto.getDefaultSuiteName();
             legacyKey = true;
             markAsLegacy();
         }

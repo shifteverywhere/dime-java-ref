@@ -9,13 +9,9 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeDateException;
-import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
+import io.dimeformat.exceptions.*;
+
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
@@ -143,8 +139,7 @@ public class Envelope extends Item {
         int endIndex = envelope.isAnonymous() ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
         ArrayList<Item> items = new ArrayList<>(endIndex - 1);
         for (int index = 1; index < endIndex; index++) {
-            Item item = Item.fromEncoded(sections[index]);
-            items.add(item);
+            items.add(Item.fromEncoded(sections[index]));
         }
         envelope.items = items;
         if (envelope.isAnonymous()) {
@@ -236,23 +231,19 @@ public class Envelope extends Item {
         super.sign(key);
     }
 
-    /**
-     * Verifies the signature of the envelope using a provided key.
-     * @param key The key to used to verify the signature, must not be null.
-     * @throws DimeIntegrityException If the signature is invalid.
-     */
     @Override
-    public void verify(Key key) throws DimeIntegrityException, DimeCryptographicException, DimeDateException {
+    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
         if (isLegacy()) {
             if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         }
-        super.verify(key);
+        super.verify(trustedKey, linkedItems);
     }
 
     /**
      * Exports the envelope to a Di:ME encoded string.
      * @return The Di:ME encoded representation of the envelope.
      */
+    @Override
     public String exportToEncoded() {
         if (!isAnonymous() && !isSigned()) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
         try {
@@ -269,29 +260,13 @@ public class Envelope extends Item {
      * @return The hash of the envelope as a hex string.
      * @throws DimeCryptographicException If something goes wrong.
      */
+    @Override
     public String thumbprint() throws DimeCryptographicException {
         try {
             return Envelope.thumbprint(encoded(!isAnonymous()));
         } catch (DimeFormatException e) {
             throw new DimeCryptographicException("Unable to generate thumbprint for item, data invalid.");
         }
-    }
-
-    /**
-     * Returns the thumbprint of a Di:ME encoded envelope string. This may be used to easily identify an envelope
-     * or detect if an envelope has been changed. This is created by securely hashing the envelope and will be unique
-     * and change as soon as any content changes. This will generate the same value as the instance method thumbprint
-     * for the same (and unchanged) envelope.
-     * @param encoded The Di:ME encoded envelope string.
-     * @return The hash of the envelope as a hex string.
-     * @throws DimeCryptographicException If something goes wrong.
-     */
-    public static String thumbprint(String encoded) throws DimeCryptographicException {
-        return Envelope.thumbprint(encoded, Dime.crypto.getDefaultSuiteName());
-    }
-
-    public static String thumbprint(String encoded, String suiteName) throws DimeCryptographicException {
-        return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
     /// PROTECTED ///

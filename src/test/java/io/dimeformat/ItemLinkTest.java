@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyType;
 import java.util.Arrays;
@@ -120,8 +121,11 @@ class ItemLinkTest {
     void verifyListTest1() {
         try {
             ItemLink link = new ItemLink(Commons.getAudienceKey());
-            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), List.of(link)));
-            assertFalse(ItemLink.verify(List.of(Commons.getAudienceKey().publicCopy()), List.of(link)));
+            ItemLink.verify(List.of(Commons.getAudienceKey()), List.of(link));
+            try {
+                ItemLink.verify(List.of(Commons.getAudienceKey().publicCopy()), List.of(link));
+                fail("Exception not thrown.");
+            } catch (VerificationException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -133,12 +137,12 @@ class ItemLinkTest {
             List<Item> items = List.of(Commons.getAudienceKey(), Commons.getAudienceIdentity());
             List<Item> revItems = List.of(Commons.getAudienceIdentity(), Commons.getAudienceKey());
             List<ItemLink> links = List.of(new ItemLink(Commons.getAudienceKey()), new ItemLink(Commons.getAudienceIdentity()));
-            assertTrue(ItemLink.verify(items, links));
-            assertTrue(ItemLink.verify(revItems, links));
-            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links));
-            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links));
-            assertFalse(ItemLink.verify(null, links));
-            assertFalse(ItemLink.verify(items, null));
+            ItemLink.verify(items, links);
+            ItemLink.verify(revItems, links);
+            ItemLink.verify(List.of(Commons.getAudienceKey()), links);
+            ItemLink.verify(List.of(Commons.getAudienceKey()), links);
+            try { ItemLink.verify(null, links); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
+            try { ItemLink.verify(items, null); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

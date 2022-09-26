@@ -29,7 +29,7 @@ class CryptoTest {
     void generateKeyIdentifierTest2() {
         try {
             String hex = "506f85299f6a2a4b";
-            String encoded = "Di:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJEU1ROLjJCOFc2QjY0UU05QXg0b3czY29WNE5Sa01veTFjV1M0eDdBWGE0c3Z3eXVSZUFrUDRvIiwiaWF0IjoiMjAyMi0wNi0xMVQxMDoyNzozNC45OTYyMzhaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5BeHBndnY3QVhLaWFqU0RCUEJnRkJud3NKSjJReldIYVRpakVjb0twTHphSjlVWWk4ZUo0aDRuQkVCdVI3Y2V1a1VCbnBpZTU2TFlBbkR0dDdjZXdpVzN3QUZMN0UifQ";
+            String encoded = "Di:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJTVE4uMkI4VzZCNjRRTTlBeDRvdzNjb1Y0TlJrTW95MWNXUzR4N0FYYTRzdnd5dVJlQWtQNG8iLCJpYXQiOiIyMDIyLTA2LTExVDEwOjI3OjM0Ljk5NjIzOFoiLCJ1c2UiOlsic2lnbiJdLCJrZXkiOiJTVE4uQXhwZ3Z2N0FYS2lhalNEQlBCZ0ZCbndzSkoyUXpXSGFUaWpFY29LcEx6YUo5VVlpOGVKNGg0bkJFQnVSN2NldWtVQm5waWU1NkxZQW5EdHQ3Y2V3aVczd0FGTDdFIn0";
             Key key = Item.importFromEncoded(encoded);
             String identifier = Dime.crypto.generateKeyIdentifier(key);
             assertEquals(hex, identifier);
@@ -54,7 +54,7 @@ class CryptoTest {
     void generateSignatureTest2() {
         try {
             byte[] sig = Utility.fromBase64("3DYiduduCeMYt86jEBHJG981O1NxpYn3gBnkUxI3yG9penQxk+qR8G222asv5lLpbX7JOBS+CKouZGhR8NEdBg");
-            String encoded = "Di:KEY.eyJ1aWQiOiIzYWQ0Y2YyNi1lM2M1LTQ1YWYtYmRmNi02OGNmMDRjMTBhMWMiLCJwdWIiOiJEU1ROLjJKSGVwODZvOFl5UFU1b01MbmtpNUxZYkhHU0tOdEM3YXVrdmlOWEFyU0g5UnB0Ykt0IiwiaWF0IjoiMjAyMi0wNS0zMFQwNzoyNTowMC4wMDUxMjVaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTi5TMXJxejhLWkdGenpqWkRxUVVCZUdkYmVMdVZiQUVRYnFXUmVycGZEUW1CZjJHZkpCaWdWYkhDMVViTWRBallYVHRTdWM2ZHdrdHY5cDdLcXY0U2pDZldUd3VmSjkifQ";
+            String encoded = "Di:KEY.eyJ1aWQiOiIzYWQ0Y2YyNi1lM2M1LTQ1YWYtYmRmNi02OGNmMDRjMTBhMWMiLCJwdWIiOiJTVE4uMkpIZXA4Nm84WXlQVTVvTUxua2k1TFliSEdTS050QzdhdWt2aU5YQXJTSDlScHRiS3QiLCJpYXQiOiIyMDIyLTA1LTMwVDA3OjI1OjAwLjAwNTEyNVoiLCJ1c2UiOlsic2lnbiJdLCJrZXkiOiJTVE4uUzFycXo4S1pHRnp6alpEcVFVQmVHZGJlTHVWYkFFUWJxV1JlcnBmRFFtQmYyR2ZKQmlnVmJIQzFVYk1kQWpZWFR0U3VjNmR3a3R2OXA3S3F2NFNqQ2ZXVHd1Zko5In0=";
             Key key = Item.importFromEncoded(encoded);
             Dime.crypto.verifySignature(Commons.PAYLOAD, sig, key);
         } catch (Exception e) {
@@ -82,7 +82,7 @@ class CryptoTest {
         try {
             String encodedClient = "Di:KEY.eyJ1aWQiOiI1ODc1YWNjZS01OTE5LTQwMzEtOWY2MS0zMzg4NGZmOTRiY2EiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjQ2ODE0OFoiLCJrZXkiOiIyREJWdDhWOWhSOTU0Mjl5MWdja3lXaVBoOXhVRVBxb2hFUTFKQjRnSjlodmpaV1hheE0zeWVURXYiLCJwdWIiOiIyREJWdG5NYUZ6ZkpzREIyTGtYS2hjV3JHanN2UG1TMXlraXdCTjVvZXF2eExLaDRBMllIWFlUc1EifQ";
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMyWiIsInB1YiI6IjJEQlZ0bk1aUDc5aEpWTUpwVnlIR29rRU1QWEM2cXkzOHNoeVRIaEpBekY5TlVRdlFmUWRxNGRjMyJ9";
-            String encodedShared = "DSTN.2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
+            String encodedShared = "STN.2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
             Key clientKey = Item.importFromEncoded(encodedClient);
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
@@ -99,7 +99,7 @@ class CryptoTest {
         try {
             String encodedClient = "Di:KEY.eyJ1aWQiOiI1ODc1YWNjZS01OTE5LTQwMzEtOWY2MS0zMzg4NGZmOTRiY2EiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDE1MloiLCJwdWIiOiIyREJWdG5NYUZ6ZkpzREIyTGtYS2hjV3JHanN2UG1TMXlraXdCTjVvZXF2eExLaDRBMllIWFlUc1EifQ";
             String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMxNloiLCJrZXkiOiIyREJWdDhWOWJ4R2pGS0xoa2FodEo0UUtRc3F6Y1ZjNGFqeWNxSnQ4eFZQTlZkYnBveHBLdkFZaUoiLCJwdWIiOiIyREJWdG5NWlA3OWhKVk1KcFZ5SEdva0VNUFhDNnF5MzhzaHlUSGhKQXpGOU5VUXZRZlFkcTRkYzMifQ";
-            String encodedShared = "DSTN.2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
+            String encodedShared = "STN.2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
             Key clientKey = Item.importFromEncoded(encodedClient);
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
