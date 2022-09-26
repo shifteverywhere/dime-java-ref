@@ -121,10 +121,10 @@ public abstract class Item {
     public void sign(Key key) throws DimeCryptographicException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
-        if (isSigned() && Signature.find(Dime.crypto.generateKeyIdentifier(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
+        if (isSigned() && Signature.find(Dime.crypto.generateKeyName(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
         try {
             byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
-            String identifier = isLegacy() ? null : Dime.crypto.generateKeyIdentifier(key);
+            String identifier = isLegacy() ? null : Dime.crypto.generateKeyName(key);
             getSignatures().add(new Signature(signature, identifier));
             this.isSigned = true;
         } catch (DimeFormatException e) {
@@ -151,7 +151,7 @@ public abstract class Item {
      */
     public boolean strip(Key key) {
         if (!isLegacy() && isSigned()) {
-           String identifier = Dime.crypto.generateKeyIdentifier(key);
+           String identifier = Dime.crypto.generateKeyName(key);
             Signature signature = Signature.find(identifier, getSignatures());
             if (signature != null) {
                 return getSignatures().remove(signature);
@@ -243,7 +243,7 @@ public abstract class Item {
         if (isLegacy()) {
             signature = getSignatures().get(0);
         } else {
-            signature = Signature.find(Dime.crypto.generateKeyIdentifier(trustedKey), getSignatures());
+            signature = Signature.find(Dime.crypto.generateKeyName(trustedKey), getSignatures());
         }
         if (signature == null) {
             throw new VerificationException(VerificationException.Reason.KEY_MISMATCH, this,  "Unable to verify, no matching signature found for key.");

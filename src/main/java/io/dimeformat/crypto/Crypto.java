@@ -13,7 +13,7 @@ import io.dimeformat.Key;
 import io.dimeformat.Utility;
 import io.dimeformat.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeIntegrityException;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ public final class Crypto {
      * Default constructor.
      */
     public Crypto() {
-        ICryptoSuite impl = new CryptoSuiteStandard();
+        ICryptoSuite impl = new StandardSuite();
         registerCryptoSuite(impl);
         _defaultSuiteName = impl.getName();
     }
@@ -58,16 +58,16 @@ public final class Crypto {
 
 
     /**
-     * Will generate a unique key identifier from the provided key. This will be used to extract which key was used to
-     * create a signature. How a key identifier is generated is specific to the cryptographic suite used.
-     * @param key The key to generate an identifier for.
-     * @return A key identifier, as a String.
+     * Will generate a unique key name from the provided key. This will be used to extract which key was used to
+     * create a signature. How a key name is generated is specific to the cryptographic suite used.
+     * @param key The key to generate a name for.
+     * @return A key name, as a String.
      */
-    public String generateKeyIdentifier(Key key) {
+    public String generateKeyName(Key key) {
         if (key == null) { throw new IllegalArgumentException("Unable to generate key identifier, key must not be null."); }
         try {
             ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-            byte[] id = impl.generateKeyIdentifier(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
+            byte[] id = impl.generateKeyName(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
             if (id != null) {
                 return Utility.toHex(id);
             }

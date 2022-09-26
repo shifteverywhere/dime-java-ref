@@ -1,6 +1,6 @@
 //
-//  CryptoDDCS.java
-//  Di:ME - Data Identity Message Envelope
+//  StandardSuite.java
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -17,21 +17,21 @@ import io.dimeformat.exceptions.DimeCryptographicException;
 import java.util.List;
 
 /**
- * Implements the Dime standard cryptographic suite (DSTD).
+ * Implements the Dime standard cryptographic suite (STN).
  */
-class CryptoSuiteStandard implements ICryptoSuite {
+class StandardSuite implements ICryptoSuite {
 
     static final String NAME = "STN";
 
     public String getName() {
-        return CryptoSuiteStandard.NAME;
+        return StandardSuite.NAME;
     }
 
-    public CryptoSuiteStandard() {
+    public StandardSuite() {
         this.sodium = new SodiumJava();
     }
 
-    public byte[] generateKeyIdentifier(byte[][] key) {
+    public byte[] generateKeyName(byte[][] key) {
         // This only supports key identifier for public keys, may be different for other crypto suites
         byte[] identifier = null;
         byte[] bytes = key[ICryptoSuite.PUBLIC_KEY_INDEX];;
@@ -45,7 +45,7 @@ class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[] generateSignature(byte[] data, byte[] key) throws DimeCryptographicException {
-        byte[] signature = new byte[CryptoSuiteStandard.NBR_SIGNATURE_BYTES];
+        byte[] signature = new byte[StandardSuite.NBR_SIGNATURE_BYTES];
         if (this.sodium.crypto_sign_detached(signature, null, data, data.length, key) != 0) {
             throw new DimeCryptographicException("Cryptographic operation failed.");
         }
@@ -60,19 +60,19 @@ class CryptoSuiteStandard implements ICryptoSuite {
         if (use == null || use.size() != 1) { throw new IllegalArgumentException("Unable to generate, invalid key usage requested."); }
         Key.Use firstUse = use.get(0);
         if (firstUse == Key.Use.ENCRYPT) {
-            byte[] secretKey = new byte[CryptoSuiteStandard.NBR_S_KEY_BYTES];
+            byte[] secretKey = new byte[StandardSuite.NBR_S_KEY_BYTES];
             this.sodium.crypto_secretbox_keygen(secretKey);
             return new byte[][] { secretKey };
         } else {
-            byte[] publicKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
+            byte[] publicKey = new byte[StandardSuite.NBR_A_KEY_BYTES];
             byte[] secretKey;
             switch (use.get(0)) {
                 case SIGN:
-                    secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES * 2];
+                    secretKey = new byte[StandardSuite.NBR_A_KEY_BYTES * 2];
                     this.sodium.crypto_sign_keypair(publicKey, secretKey);
                     break;
                 case EXCHANGE:
-                    secretKey = new byte[CryptoSuiteStandard.NBR_A_KEY_BYTES];
+                    secretKey = new byte[StandardSuite.NBR_A_KEY_BYTES];
                     this.sodium.crypto_kx_keypair(publicKey, secretKey);
                     break;
                 default:
@@ -85,7 +85,7 @@ class CryptoSuiteStandard implements ICryptoSuite {
     public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<Key.Use> use) throws DimeCryptographicException {
         if (!use.contains(Key.Use.ENCRYPT)) { throw new IllegalArgumentException("Unable to generate, key usage for shared secret must be ENCRYPT."); }
         if (use.size() > 1) { throw new IllegalArgumentException("Unable to generate, key usage for shared secret may only be ENCRYPT."); }
-        byte[] shared = new byte[CryptoSuiteStandard.NBR_X_KEY_BYTES];
+        byte[] shared = new byte[StandardSuite.NBR_X_KEY_BYTES];
         if (clientKey[0] != null && clientKey.length == 2) { // has both private and public key
             byte[] secret = Utility.combine(clientKey[0], clientKey[1]);
             if (this.sodium.crypto_kx_client_session_keys(shared, null, clientKey[1], secret, serverKey[1]) != 0) {
@@ -102,9 +102,9 @@ class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[] encrypt(byte[] data, byte[] key) throws DimeCryptographicException {
-        byte[] nonce = Utility.randomBytes(CryptoSuiteStandard.NBR_NONCE_BYTES);
+        byte[] nonce = Utility.randomBytes(StandardSuite.NBR_NONCE_BYTES);
         if (nonce.length > 0) {
-            byte[] cipherText = new byte[CryptoSuiteStandard.NBR_MAC_BYTES + data.length];
+            byte[] cipherText = new byte[StandardSuite.NBR_MAC_BYTES + data.length];
             if (this.sodium.crypto_secretbox_easy(cipherText, data, data.length, nonce, key) != 0) {
                 throw new DimeCryptographicException("Cryptographic operation failed.");
             }
@@ -115,9 +115,9 @@ class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[] decrypt(byte[] data, byte[] key) throws DimeCryptographicException {
-        byte[] nonce = Utility.subArray(data, 0, CryptoSuiteStandard.NBR_NONCE_BYTES);
-        byte[] bytes = Utility.subArray(data, CryptoSuiteStandard.NBR_NONCE_BYTES);
-        byte[] plain = new byte[bytes.length - CryptoSuiteStandard.NBR_MAC_BYTES];
+        byte[] nonce = Utility.subArray(data, 0, StandardSuite.NBR_NONCE_BYTES);
+        byte[] bytes = Utility.subArray(data, StandardSuite.NBR_NONCE_BYTES);
+        byte[] plain = new byte[bytes.length - StandardSuite.NBR_MAC_BYTES];
         if (this.sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key) != 0) {
             throw new DimeCryptographicException("Cryptographic operation failed.");
         }
@@ -125,7 +125,7 @@ class CryptoSuiteStandard implements ICryptoSuite {
     }
 
     public byte[] generateHash(byte[] data) throws DimeCryptographicException {
-        byte[] hash = new byte[CryptoSuiteStandard.NBR_HASH_BYTES];
+        byte[] hash = new byte[StandardSuite.NBR_HASH_BYTES];
         if (this.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
             throw new DimeCryptographicException("Cryptographic operation failed.");
         }

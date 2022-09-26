@@ -37,12 +37,12 @@ public interface ICryptoSuite {
     String getName();
 
     /**
-     * Generates a unique identifier for a key. The generated identifier is not sensitive and may be distributed without
+     * Generates a unique name for a key. The generated name is not sensitive and may be distributed without
      * compromising the key.
-     * @param key The key to generate an identifier for.
-     * @return A unique identifier.
+     * @param key The key to generate a name for.
+     * @return A unique name.
      */
-    byte[] generateKeyIdentifier(byte[][] key);
+    byte[] generateKeyName(byte[][] key);
 
     /**
      * Generates a cryptographic signature from a data byte array using the provided key.

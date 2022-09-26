@@ -35,7 +35,7 @@ public class KeyRing {
 
     public boolean containsItem(Item item) {
         if (item instanceof Key) {
-            String name = Dime.crypto.generateKeyIdentifier(((Key) item));
+            String name = Dime.crypto.generateKeyName(((Key) item));
             Key key = (Key) _keyRing.get(name);
             return key.getPublic().equals(((Key) item).getPublic());
         } else if (item instanceof Identity) {
@@ -52,7 +52,7 @@ public class KeyRing {
     }
 
     public void put(Key key) {
-        put(Dime.crypto.generateKeyIdentifier(key), key);
+        put(Dime.crypto.generateKeyName(key), key);
     }
 
     public void put(Identity identity) {

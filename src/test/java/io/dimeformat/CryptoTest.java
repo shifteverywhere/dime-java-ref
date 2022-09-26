@@ -18,20 +18,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class CryptoTest {
 
     @Test
-    void generateKeyIdentifierTest1() {
+    void generateKeyNameTest1() {
         Key key = Key.generateKey(List.of(Key.Use.SIGN));
-        String identifier = Dime.crypto.generateKeyIdentifier(key);
+        String identifier = Dime.crypto.generateKeyName(key);
         assertNotNull(identifier);
         assertEquals(16, identifier.length());
     }
 
     @Test
-    void generateKeyIdentifierTest2() {
+    void generateKeyNameTest2() {
         try {
             String hex = "506f85299f6a2a4b";
             String encoded = "Di:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJTVE4uMkI4VzZCNjRRTTlBeDRvdzNjb1Y0TlJrTW95MWNXUzR4N0FYYTRzdnd5dVJlQWtQNG8iLCJpYXQiOiIyMDIyLTA2LTExVDEwOjI3OjM0Ljk5NjIzOFoiLCJ1c2UiOlsic2lnbiJdLCJrZXkiOiJTVE4uQXhwZ3Z2N0FYS2lhalNEQlBCZ0ZCbndzSkoyUXpXSGFUaWpFY29LcEx6YUo5VVlpOGVKNGg0bkJFQnVSN2NldWtVQm5waWU1NkxZQW5EdHQ3Y2V3aVczd0FGTDdFIn0";
             Key key = Item.importFromEncoded(encoded);
-            String identifier = Dime.crypto.generateKeyIdentifier(key);
+            String identifier = Dime.crypto.generateKeyName(key);
             assertEquals(hex, identifier);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
