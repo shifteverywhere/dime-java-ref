@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.KeyType;
+import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.Identity.Capability;
@@ -133,6 +134,26 @@ public class DimeTest {
             // Issued at and expires at are created by same entity and should not be compared with grace period
             Dime.setGracePeriod(0L);
             assertTrue(Utility.gracefulTimestampCompare(iat, exp) > 0); // check so it fails
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void keyRingTest1() {
+        try {
+            Commons.initializeKeyRing();
+            Key trustedKey = Key.generateKey(List.of(Key.Use.SIGN));
+            Dime.keyRing.put(trustedKey);
+            Key issuerKey = Key.generateKey(List.of(Key.Use.SIGN));
+            Capability[] issuerCaps = new Capability[] { Capability.GENERIC, Capability.ISSUE };
+            Identity issuerIdentity = IdentityIssuingRequest.generateIIR(issuerKey, issuerCaps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, Commons.SYSTEM_NAME);
+            Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(Key.Use.SIGN)), caps);
+            Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, issuerIdentity, false, caps, null, null, null);
+            try { identity.verify(); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
+            identity.sign(trustedKey); // signs the identity with another trusted key
+            identity.verify();
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

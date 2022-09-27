@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeIntegrityException;
 import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
