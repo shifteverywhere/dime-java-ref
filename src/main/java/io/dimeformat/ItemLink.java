@@ -153,12 +153,12 @@ public final class ItemLink {
 
     static String toEncoded(List<ItemLink> links) {
         if (links == null ||links.isEmpty()) { return null; }
-        StringBuilder buffer = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         for (ItemLink link: links) {
-            if (buffer.length() > 0) { buffer.append(Dime.SECTION_DELIMITER); }
-            buffer.append(link.toEncoded());
+            if (builder.length() > 0) { builder.append(Dime.SECTION_DELIMITER); }
+            builder.append(link.toEncoded());
         }
-        return buffer.toString();
+        return builder.toString();
     }
 
 }

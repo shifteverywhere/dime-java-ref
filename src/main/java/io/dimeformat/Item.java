@@ -331,9 +331,10 @@ public abstract class Item {
      * Removes all item links.
      */
     public void removeLinkItems() {
-        if (_claims.get(Claim.LNK) == null) return;
+        if (getClaims().get(Claim.LNK) == null) return;
         throwIfSigned();
-        _claims.remove(Claim.LNK);
+        getClaims().remove(Claim.LNK);
+        this.itemLinks = null;
     }
 
     /**
@@ -456,7 +457,7 @@ public abstract class Item {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
-            this._claims.put(Claim.LNK, ItemLink.toEncoded(itemLinks));
+            getClaims().put(Claim.LNK, ItemLink.toEncoded(itemLinks));
         }
         try {
             builder.append(Utility.toBase64(this._claims.toJSON()));

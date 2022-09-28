@@ -23,7 +23,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest1() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             ItemLink link = new ItemLink(key);
             assertNotNull(link);
             assertEquals(key.getItemIdentifier(), link.itemIdentifier);

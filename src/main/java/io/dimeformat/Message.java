@@ -94,20 +94,6 @@ public class Message extends Data {
     }
 
     /**
-     * If the message is linked to another Di:ME item, thus creating a cryptographic link between them, then this will
-     * return the identifier, as a UUID, of the linked item. This is optional.
-     * @return An identifier of a linked item, as a UUID.
-     */
-    public UUID getLinkedId() {
-        String lnk = getClaims().get(Claim.LNK);
-        if (lnk != null && !lnk.isEmpty()) {
-            String uuid = lnk.split("//" + Dime.COMPONENT_DELIMITER)[Message.LINK_UID_INDEX];
-            return UUID.fromString(uuid);
-        }
-        return null;
-    }
-
-    /**
      * Creates a message from a specified issuer (sender).
      * @param issuerId The issuer identifier.
      */
