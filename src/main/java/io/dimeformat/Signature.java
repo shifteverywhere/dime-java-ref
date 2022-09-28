@@ -13,20 +13,41 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-class Signature {
+/**
+ * Encapsulates a digital signature. A signature consists of two components, a key name and the actual signature. The
+ * key name is used to identify the public key that may be used to verify the signature.
+ */
+public class Signature {
 
+    /** The raw bytes of the signature. */
     final byte[] bytes;
+    /** The key name for the key that may be used to verify the signature. */
     final String name;
 
+    /**
+     * Default constructor. If the name is omitted (null passed) then the signature will be considered as of legacy
+     * format.
+     * @param bytes The raw bytes of a signature.
+     * @param name The key name.
+     */
     Signature(byte[] bytes, String name) {
         this.bytes = bytes;
         this.name = name;
     }
 
+    /**
+     * Indicates if the signature is of legacy format.
+     * @return True if legacy, false otherwise.
+     */
     public boolean isLegacy() {
         return name == null;
     }
 
+    /**
+     * Decodes a string of encoded signatures and returns a list of Signature instances.
+     * @param encoded The string of encoded signatures.
+     * @return A list of Signature instances.
+     */
     public static List<Signature> fromEncoded(String encoded) {
         if (encoded == null || encoded.isEmpty()) { throw new IllegalArgumentException("Encoded list of signatures must not be null or empty."); }
         ArrayList<Signature> signatures = new ArrayList<>();
@@ -40,7 +61,7 @@ class Signature {
                 break; // No need to continue, legacy only supports one signature per item
             } else {
                 try {
-                    signatures.add(new Signature(Utility.fromHex(components[Signature.INDEX_SIGNATURE]), components[Signature.INDEX_KEY_IDENTIFIER]));
+                    signatures.add(new Signature(Utility.fromHex(components[Signature.INDEX_SIGNATURE]), components[Signature.INDEX_KEY_NAME]));
                 } catch (Exception e) {
                     // This is a legacy signature
                     signatures.add(new Signature(Utility.fromBase64(encoded), null));
@@ -51,6 +72,11 @@ class Signature {
         return signatures;
     }
 
+    /**
+     * Encodes a provided list of Signature instances to a string, used when exporting Dime items.
+     * @param signatures A list of Signature instances to encode.
+     * @return An encoded string.
+     */
     static String toEncoded(List<Signature> signatures) {
         StringBuilder builder = new StringBuilder();
         boolean isLegacy = signatures.get(0).name == null;
@@ -63,13 +89,24 @@ class Signature {
         return isLegacy ? builder.toString() : Utility.toBase64(builder.toString());
     }
 
-    static Signature find(String identifier, List<Signature> signatures) {
+    /**
+     * Finds a signature that matches a provided key name, if one is to be found.
+     * @param name The key name to look for.
+     * @param signatures A list of Signature instances to look in.
+     * @return The found signature, or null if none could be found.
+     */
+    static Signature find(String name, List<Signature> signatures) {
         if (signatures == null) { return null; }
         return signatures.stream()
-                .filter(signature -> identifier.equals(signature.name))
+                .filter(signature -> name.equals(signature.name))
                 .findAny()
                 .orElse(null);
     }
+
+    /// PRIVATE ///
+
+    private static final int INDEX_KEY_NAME = 0;
+    private static final int INDEX_SIGNATURE = 1;
 
     private void toEncoded(StringBuilder builder) {
         if (this.isLegacy()) {
@@ -80,8 +117,5 @@ class Signature {
             builder.append(Utility.toHex(this.bytes));
         }
     }
-
-    private static final int INDEX_KEY_IDENTIFIER = 0;
-    private static final int INDEX_SIGNATURE = 1;
 
 }

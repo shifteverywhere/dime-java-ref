@@ -120,12 +120,12 @@ public abstract class Item {
      */
     public void sign(Key key) throws DimeCryptographicException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
-        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign item, key for signing must not be null. (I1004)"); }
+        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, key for signing must not be null. (I1004)"); }
         if (isSigned() && Signature.find(Dime.crypto.generateKeyName(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
         try {
             byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
-            String identifier = isLegacy() ? null : Dime.crypto.generateKeyName(key);
-            getSignatures().add(new Signature(signature, identifier));
+            String name = isLegacy() ? null : Dime.crypto.generateKeyName(key);
+            getSignatures().add(new Signature(signature, name));
             this.isSigned = true;
         } catch (DimeFormatException e) {
             throw new DimeCryptographicException("Unable to sign item, invalid data.");
@@ -139,7 +139,7 @@ public abstract class Item {
     public boolean strip() {
         this.encoded = null;
         this.components = null;
-        this.signatures = null;
+        this._signatures = null;
         this.isSigned = false;
         return true;
     }
@@ -278,7 +278,7 @@ public abstract class Item {
      */
     public void verify(Identity issuer, List<Item> linkedItems) throws VerificationException {
         if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
-        UUID issuerId = claims.getUUID(Claim.ISS);
+        UUID issuerId = _claims.getUUID(Claim.ISS);
         if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new VerificationException(VerificationException.Reason.ISSUER_MISMATCH, this, "Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
         verify(issuer.getPublicKey(), linkedItems);
     }
@@ -331,9 +331,9 @@ public abstract class Item {
      * Removes all item links.
      */
     public void removeLinkItems() {
-        if (claims.get(Claim.LNK) == null) return;
+        if (_claims.get(Claim.LNK) == null) return;
         throwIfSigned();
-        claims.remove(Claim.LNK);
+        _claims.remove(Claim.LNK);
     }
 
     /**
@@ -389,33 +389,33 @@ public abstract class Item {
     protected boolean isSigned = false;
 
     protected final ClaimsMap getClaims() {
-        if (this.claims == null) {
+        if (this._claims == null) {
             if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
                 byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
-                this.claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
+                this._claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
             } else {
-                this.claims = new ClaimsMap();
+                this._claims = new ClaimsMap();
             }
         }
-        return this.claims;
+        return this._claims;
     }
 
     protected final boolean hasClaims() {
-        if (this.claims == null && this.components != null) {
+        if (this._claims == null && this.components != null) {
             return this.components.size() >= Item.MINIMUM_NBR_COMPONENTS;
         }
-        return this.claims != null && this.claims.size() > 0;
+        return this._claims != null && this._claims.size() > 0;
     }
 
     protected final List<Signature> getSignatures() {
-        if (this.signatures == null) {
+        if (this._signatures == null) {
             if (isSigned()) {
-                this.signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1));
+                this._signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1));
             } else {
-               this.signatures = new ArrayList<>();
+               this._signatures = new ArrayList<>();
             }
         }
-        return this.signatures;
+        return this._signatures;
     }
 
     protected static void verifyDates(Item item) throws VerificationException {
@@ -429,7 +429,7 @@ public abstract class Item {
 
     protected void verifyLinkedItems(List<Item> linkedItems) throws VerificationException {
         if (itemLinks == null) {
-            itemLinks = claims.getItemLinks(Claim.LNK);
+            itemLinks = _claims.getItemLinks(Claim.LNK);
         }
         if (itemLinks != null) {
             ItemLink.verify(linkedItems, itemLinks);
@@ -456,10 +456,10 @@ public abstract class Item {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
-            this.claims.put(Claim.LNK, ItemLink.toEncoded(itemLinks));
+            this._claims.put(Claim.LNK, ItemLink.toEncoded(itemLinks));
         }
         try {
-            builder.append(Utility.toBase64(this.claims.toJSON()));
+            builder.append(Utility.toBase64(this._claims.toJSON()));
         } catch (IOException e) {
             throw new DimeFormatException("Unexpected exception while encoding item: " + e);
         }
@@ -470,7 +470,7 @@ public abstract class Item {
         String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (array.length < getMinNbrOfComponents()) { throw new DimeFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
         if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
-        this.components = new ArrayList(Arrays.asList(array));
+        this.components = new ArrayList<>(Arrays.asList(array));
         customDecoding(this.components);
         if (isSigned()) {
             if (getSignatures().get(0).isLegacy()) {
@@ -496,8 +496,8 @@ public abstract class Item {
 
     /// PRIVATE ///
 
-    private ClaimsMap claims;
-    private List<Signature> signatures;
+    private ClaimsMap _claims;
+    private List<Signature> _signatures;
     private boolean legacy = false;
 
     private static Class<?> classFromTag(String tag) {

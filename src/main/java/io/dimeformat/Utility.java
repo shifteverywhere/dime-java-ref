@@ -47,6 +47,11 @@ public final class Utility {
         return new String(hexChars);
     }
 
+    /**
+     * Decodes a hexadecimal string to a byte array.
+     * @param string The string to decode.
+     * @return Decoded string.
+     */
     public static byte[] fromHex(String string) {
         int len = string.length();
         byte[] bytes = new byte[len >>> 1];
