@@ -1,6 +1,6 @@
 //
 //  Data.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 
 import java.time.Instant;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Di:ME item that carries a data payload. The payload may be any data.
+ * DiME item that carries a data payload. The payload may be any data.
  */
 public class Data extends Item {
 
@@ -35,7 +36,7 @@ public class Data extends Item {
      * @return A String instance.
      */
     public String getMIMEType() {
-        return getClaims().get(Claim.MIM);
+        return getClaim(Claim.MIM);
     }
 
     /**
@@ -73,15 +74,15 @@ public class Data extends Item {
     public Data(UUID issuerId, long validFor, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        getClaims().put(Claim.UID, UUID.randomUUID());
-        getClaims().put(Claim.ISS, issuerId);
+        putClaim(Claim.UID, UUID.randomUUID());
+        putClaim(Claim.ISS, issuerId);
         Instant iat = Utility.createTimestamp();
-        getClaims().put(Claim.IAT, iat);
+        putClaim(Claim.IAT, iat);
         if (validFor != -1) {
             Instant exp = iat.plusSeconds(validFor);
-            getClaims().put(Claim.EXP, exp);
+            putClaim(Claim.EXP, exp);
         }
-        getClaims().put(Claim.CTX, context);
+        putClaim(Claim.CTX, context);
     }
 
     /**
@@ -100,7 +101,7 @@ public class Data extends Item {
     public void setPayload(byte[] payload, String mimeType) {
         throwIfSigned();
         this.payload = Utility.toBase64(payload);
-        getClaims().put(Claim.MIM, mimeType);
+        putClaim(Claim.MIM, mimeType);
     }
 
     /**
@@ -123,6 +124,12 @@ public class Data extends Item {
         super.verify(trustedKey, linkedItems);
     }
 
+    @Override
+    public String thumbprint() throws DimeCryptographicException {
+        if (payload == null) { throw new IllegalStateException("Unable to generate thumbprint, no payload added."); }
+        return super.thumbprint();
+    }
+
     /// PACKAGE-PRIVATE ///
 
     Data() { }
@@ -130,6 +137,11 @@ public class Data extends Item {
     /// PROTECTED ///
 
     protected String payload;
+
+    @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.KID && claim != Claim.PRI && claim != Claim.PUB && claim != Claim.USE;
+    }
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {

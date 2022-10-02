@@ -343,7 +343,7 @@ class IdentityTest {
             String[] ambit = new String[] { "global", "administrator" };
             Key key = Key.generateKey(List.of(Key.Use.SIGN));
             
-            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, ambit, null);
+            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME, ambit, null);
             assertEquals(2, identity1.getAmbitList().size());
             assertTrue(identity1.hasAmbit(ambit[0]));
             assertTrue(identity1.hasAmbit(ambit[1]));
@@ -364,7 +364,7 @@ class IdentityTest {
             String[] methods = new String[] { "dime", "sov" };
             Key key = Key.generateKey(List.of(Key.Use.SIGN));
 
-            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 100, key, Commons.SYSTEM_NAME, null, methods);
+            Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME, null, methods);
             List<String> methodList1 = identity1.getMethods();
             assertNotNull(methodList1);
             assertEquals(2, identity1.getMethods().size());

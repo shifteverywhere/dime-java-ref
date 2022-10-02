@@ -1,6 +1,6 @@
 //
 //  Key.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -14,6 +14,7 @@ import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import static java.util.stream.Collectors.toList;
@@ -87,9 +88,9 @@ public class Key extends Item {
         if (_type == null) {
             if (isLegacy()) {
                 try {
-                    String key = getClaims().get(Claim.KEY);
+                    String key = getClaim(Claim.KEY);
                     if (key == null) {
-                        key = getClaims().get(Claim.PUB);
+                        key = getClaim(Claim.PUB);
                         decodeKey(key, Claim.PUB);
                     } else {
                         decodeKey(key, Claim.KEY);
@@ -130,7 +131,7 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getSecret() {
-        return getClaims().get(Claim.KEY);
+        return getClaim(Claim.KEY);
     }
 
     /**
@@ -138,7 +139,7 @@ public class Key extends Item {
      * @return A base 58 encoded string.
      */
     public String getPublic() {
-        return getClaims().get(Claim.PUB);
+        return getClaim(Claim.PUB);
     }
 
     /**
@@ -151,12 +152,12 @@ public class Key extends Item {
         try {
             if (claim == Claim.KEY) {
                 if (this._secretBytes == null) {
-                    decodeKey(getClaims().get(Claim.KEY), Claim.KEY);
+                    decodeKey(getClaim(Claim.KEY), Claim.KEY);
                 }
                 return this._secretBytes;
             } else if (claim == Claim.PUB) {
                 if (this._publicBytes == null) {
-                    decodeKey(getClaims().get(Claim.PUB), Claim.PUB);
+                    decodeKey(getClaim(Claim.PUB), Claim.PUB);
                 }
                 return this._publicBytes;
             } else {
@@ -173,7 +174,7 @@ public class Key extends Item {
      */
     public List<Key.Use> getUse() {
         if (_use == null) {
-            List<String> usage = getClaims().get(Claim.USE);
+            List<String> usage = getClaim(Claim.USE);
             if (usage != null) {
                 _use = usage.stream().map(use -> Key.Use.valueOf(use.toUpperCase())).collect(toList());
             } else {
@@ -315,10 +316,10 @@ public class Key extends Item {
                     keyBytes.length == 2 ? keyBytes[ICryptoSuite.PUBLIC_KEY_INDEX] : null,
                     suiteName);
             if (validFor != -1) {
-                key.getClaims().put(Claim.EXP, key.getClaims().getInstant(Claim.IAT).plusSeconds(validFor));
+                key.putClaim(Claim.EXP, ((Instant) key.getClaim(Claim.IAT)).plusSeconds(validFor));
             }
-            key.getClaims().put(Claim.ISS, issuerId);
-            key.getClaims().put(Claim.CTX, context);
+            key.putClaim(Claim.ISS, issuerId);
+            key.putClaim(Claim.CTX, context);
             return key;
         } catch (DimeCryptographicException e) {
             throw new RuntimeException("Unexpected exception thrown when generating key: " + e);
@@ -332,12 +333,12 @@ public class Key extends Item {
      */
     public Key publicCopy() {
         Key copyKey = new Key(getUse(), null, getPublic(), getCryptoSuiteName());
-        copyKey.getClaims().put(Claim.UID, getUniqueId());
-        copyKey.getClaims().put(Claim.IAT, getIssuedAt());
-        copyKey.getClaims().put(Claim.EXP, getExpiresAt());
-        copyKey.getClaims().put(Claim.ISS, getIssuerId());
-        copyKey.getClaims().put(Claim.CTX, getContext());
-        copyKey.getClaims().put(Claim.USE, getUse().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        copyKey.putClaim(Claim.UID, getUniqueId());
+        copyKey.putClaim(Claim.IAT, getIssuedAt());
+        copyKey.putClaim(Claim.EXP, getExpiresAt());
+        copyKey.putClaim(Claim.ISS, getIssuerId());
+        copyKey.putClaim(Claim.CTX, getContext());
+        copyKey.putClaim(Claim.USE, getUse().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         return copyKey;
     }
 
@@ -378,16 +379,16 @@ public class Key extends Item {
     Key() { }
 
     Key(UUID id, List<Key.Use> use, byte[] key, byte[] pub, String suiteName) {
-        getClaims().put(Claim.UID, id);
-        getClaims().put(Claim.IAT, Utility.createTimestamp());
+        putClaim(Claim.UID, id);
+        putClaim(Claim.IAT, Utility.createTimestamp());
         this._suiteName = suiteName;
         this._use = use;
-        getClaims().put(Claim.USE, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        putClaim(Claim.USE, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         if (key != null) {
-            getClaims().put(Claim.KEY, Key.encodeKey(suiteName, key));
+            putClaim(Claim.KEY, Key.encodeKey(suiteName, key));
         }
         if (pub != null) {
-            getClaims().put(Claim.PUB, Key.encodeKey(suiteName, pub));
+            putClaim(Claim.PUB, Key.encodeKey(suiteName, pub));
         }
     }
 
@@ -395,20 +396,20 @@ public class Key extends Item {
         this._suiteName = suiteName;
         this._use = use;
         if (key != null) {
-            getClaims().put(Claim.KEY, key);
+            putClaim(Claim.KEY, key);
         }
         if (pub != null) {
-            getClaims().put(Claim.PUB, pub);
+            putClaim(Claim.PUB, pub);
         }
     }
 
     Key(List<Key.Use> use, String key, Claim claim) throws DimeCryptographicException {
         this._use = use;
-        getClaims().put(claim, key);
+        putClaim(claim, key);
     }
 
     static void convertKeyToLegacy(Item item, Key.Use use, Claim claim) {
-        String key = item.getClaims().get(claim);
+        String key = item.getClaim(claim);
         if (key == null) { return; }
         byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
         String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
@@ -421,10 +422,15 @@ public class Key extends Item {
         } else if (use == Key.Use.ENCRYPT) {
             legacyKey[3] = 0x02;
         }
-        item.getClaims().put(claim, Base58.encode(legacyKey));
+        item.putClaim(claim, Base58.encode(legacyKey));
     }
 
     /// PROTECTED ///
+
+    @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.CAP && claim != Claim.MIM && claim != Claim.PRI;
+    }
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {

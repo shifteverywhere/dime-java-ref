@@ -1,6 +1,6 @@
 //
 //  Identity.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -70,7 +71,7 @@ public class Identity extends Item {
      * @return The system name
      */
     public String getSystemName() {
-        return getClaims().get(Claim.SYS);
+        return getClaim(Claim.SYS);
     }
 
     /**
@@ -79,7 +80,7 @@ public class Identity extends Item {
      * @return The subject identifier assigned to an entity, as a UUID.
      */
     public UUID getSubjectId() {
-        return getClaims().getUUID(Claim.SUB);
+        return getClaim(Claim.SUB);
     }
 
     /**
@@ -89,7 +90,11 @@ public class Identity extends Item {
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
-            _publicKey = getClaims().getKey(Claim.PUB, List.of(Key.Use.SIGN));
+            try {
+                return new Key(List.of(Key.Use.SIGN), getClaim(Claim.PUB), Claim.PUB);
+            } catch (DimeCryptographicException e) {
+                return null; // Ignored for now
+            }
         }
         return _publicKey;
     }
@@ -103,7 +108,7 @@ public class Identity extends Item {
      */
     public List<Capability> getCapabilities() {
         if (_capabilities == null) {
-            List<String> caps = getClaims().get(Claim.CAP);
+            List<String> caps = getClaim(Claim.CAP);
             _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
         }
         return _capabilities;
@@ -117,7 +122,7 @@ public class Identity extends Item {
      */
     public Map<String, Object> getPrinciples() {
         if (_principles == null) {
-            Map<String, Object> pri = getClaims().get(Claim.PRI);
+            Map<String, Object> pri = getClaim(Claim.PRI);
             if (pri != null) {
                 _principles = Collections.unmodifiableMap(pri);
             }
@@ -134,7 +139,7 @@ public class Identity extends Item {
      */
     @Deprecated
     public List<String> getAmbits() {
-        return getClaims().get(Claim.AMB);
+        return getClaim(Claim.AMB);
     }
 
     /**
@@ -143,7 +148,7 @@ public class Identity extends Item {
      * @return An immutable ambit list (as String instances).
      */
     public List<String> getAmbitList() {
-        return getClaims().get(Claim.AMB);
+        return getClaim(Claim.AMB);
     }
 
     /**
@@ -153,7 +158,7 @@ public class Identity extends Item {
      * @return An immutable list of methods (as String instances).
      */
     public List<String> getMethods() {
-        return getClaims().get(Claim.MTD);
+        return getClaim(Claim.MTD);
     }
 
     /**
@@ -235,18 +240,17 @@ public class Identity extends Item {
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        ClaimsMap claims = getClaims();
-        claims.put(Claim.UID, UUID.randomUUID());
-        claims.put(Claim.SYS, systemName);
-        claims.put(Claim.SUB, subjectId);
-        claims.put(Claim.ISS, issuerId);
-        claims.put(Claim.IAT, issuedAt);
-        claims.put(Claim.EXP, expiresAt);
-        claims.put(Claim.PUB, subjectKey.getPublic());
-        claims.put(Claim.CAP, capabilities);
-        claims.put(Claim.PRI, principles);
-        claims.put(Claim.AMB, ambits);
-        claims.put(Claim.MTD, methods);
+        putClaim(Claim.UID, UUID.randomUUID());
+        putClaim(Claim.SYS, systemName);
+        putClaim(Claim.SUB, subjectId);
+        putClaim(Claim.ISS, issuerId);
+        putClaim(Claim.IAT, issuedAt);
+        putClaim(Claim.EXP, expiresAt);
+        putClaim(Claim.PUB, subjectKey.getPublic());
+        putClaim(Claim.CAP, capabilities);
+        putClaim(Claim.PRI, principles);
+        putClaim(Claim.AMB, ambits);
+        putClaim(Claim.MTD, methods);
     }
 
     void setTrustChain(Identity trustChain) {
@@ -254,6 +258,11 @@ public class Identity extends Item {
     }
 
     /// PROTECTED ///
+
+    @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.MIM && claim != Claim.KEY && claim != Claim.USE;
+    }
 
     @Override
     protected void customDecoding(List<String> components) throws DimeFormatException {

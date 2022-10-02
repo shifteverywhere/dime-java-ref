@@ -1,6 +1,6 @@
 //
 //  Envelope.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 
 import java.io.IOException;
@@ -56,7 +57,7 @@ public class Envelope extends Item {
      * @return A UUID instance.
      */
     public UUID getIssuerId() {
-        return getClaims().getUUID(Claim.ISS);
+        return getClaim(Claim.ISS);
     }
 
     /**
@@ -65,7 +66,7 @@ public class Envelope extends Item {
      * @return An Instant instance.
      */
     public Instant getIssuedAt() {
-        return getClaims().getInstant(Claim.IAT);
+        return getClaim(Claim.IAT);
     }
 
     /**
@@ -74,7 +75,7 @@ public class Envelope extends Item {
      * @return A String instance.
      */
     public String getContext() {
-        return getClaims().get(Claim.CTX);
+        return getClaim(Claim.CTX);
     }
 
     /**
@@ -116,9 +117,9 @@ public class Envelope extends Item {
     public Envelope(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer id may not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        getClaims().put(Claim.ISS, issuerId);
-        getClaims().put(Claim.IAT, Utility.createTimestamp());
-        getClaims().put(Claim.CTX, context);
+        putClaim(Claim.ISS, issuerId);
+        putClaim(Claim.IAT, Utility.createTimestamp());
+        putClaim(Claim.CTX, context);
     }
 
     /**
@@ -272,6 +273,12 @@ public class Envelope extends Item {
     /// PROTECTED ///
 
     @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.AMB && claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM
+                && claim != Claim.MTD  && claim != Claim.PRI && claim != Claim.SUB && claim != Claim.USE;
+    }
+
+    @Override
     protected String encoded(boolean withSignature) throws DimeFormatException {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
@@ -279,7 +286,7 @@ public class Envelope extends Item {
             if (!this.isAnonymous()) {
                 builder.append(Dime.COMPONENT_DELIMITER);
                 try {
-                    builder.append(Utility.toBase64(getClaims().toJSON()));
+                    builder.append(Utility.toBase64(exportClaims()));
                 } catch (IOException e) {
                     throw new DimeFormatException("Unexpected exception while encoding item: " + e);
                 }

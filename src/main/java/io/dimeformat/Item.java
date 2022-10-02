@@ -1,6 +1,6 @@
 //
 //  Item.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ public abstract class Item {
      * @return A unique identifier, as a UUID.
      */
     public UUID getUniqueId() {
-        return getClaims().getUUID(Claim.UID);
+        return getClaim(Claim.UID);
     }
 
     /**
@@ -43,7 +44,7 @@ public abstract class Item {
      * @return The identifier of the issuer of the key.
      */
     public UUID getIssuerId() {
-        return getClaims().getUUID(Claim.ISS);
+        return getClaim(Claim.ISS);
     }
 
     /**
@@ -52,7 +53,7 @@ public abstract class Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getIssuedAt() {
-        return getClaims().getInstant(Claim.IAT);
+        return getClaim(Claim.IAT);
     }
 
     /**
@@ -61,7 +62,7 @@ public abstract class Item {
      * @return A UTC timestamp, as an Instant.
      */
     public Instant getExpiresAt() {
-        return getClaims().getInstant(Claim.EXP);
+        return getClaim(Claim.EXP);
     }
 
     /**
@@ -69,7 +70,7 @@ public abstract class Item {
      * @return A String instance.
      */
     public String getContext() {
-        return getClaims().get(Claim.CTX);
+        return getClaim(Claim.CTX);
     }
 
     /**
@@ -78,6 +79,37 @@ public abstract class Item {
      */
     public boolean isSigned() {
         return this.isSigned;
+    }
+
+
+    /**
+     * Gets an item claim. Will throw IllegalArgumentException if claim requested is not support by the item type.
+     * @param claim The claim to get the value for.
+     * @return The claim value.
+     * @param <T> Using generics.
+     */
+    public <T> T getClaim(Claim claim) {
+        return getClaimMap().get(claim);
+    }
+
+    /**
+     * Puts a value to an item claim. Will throw IllegalStateException is the item is already signed.
+     * @param claim The claim to put a value to.
+     * @param value The claim value.
+     */
+    public void putClaim(Claim claim, Object value) {
+        throwIfSigned();
+        if (!validClaim(claim)) { throw new IllegalArgumentException("Unsupported claim: " + claim); }
+        getClaimMap().put(claim, value);
+    }
+
+    /**
+     * Will remove the value from an item claim.
+     * @param claim The claim to remove the value from.
+     */
+    public void removeClaim(Claim claim) {
+        throwIfSigned();
+        getClaimMap().remove(claim);
     }
 
     /**
@@ -278,7 +310,7 @@ public abstract class Item {
      */
     public void verify(Identity issuer, List<Item> linkedItems) throws VerificationException {
         if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
-        UUID issuerId = _claims.getUUID(Claim.ISS);
+        UUID issuerId = getClaim(Claim.ISS);
         if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new VerificationException(VerificationException.Reason.ISSUER_MISMATCH, this, "Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
         verify(issuer.getPublicKey(), linkedItems);
     }
@@ -315,14 +347,7 @@ public abstract class Item {
      */
     public List<ItemLink> getItemLinks() {
         if (this.itemLinks == null) {
-            String lnk = getClaims().get(Claim.LNK);
-            if (lnk != null && !lnk.isEmpty()) {
-                try {
-                    this.itemLinks = ItemLink.fromEncodedList(lnk);
-                } catch (DimeFormatException e) {
-                    // TODO: what to do here?
-                }
-            }
+            this.itemLinks = getClaim(Claim.LNK);
         }
         return this.itemLinks;
     }
@@ -331,9 +356,9 @@ public abstract class Item {
      * Removes all item links.
      */
     public void removeLinkItems() {
-        if (getClaims().get(Claim.LNK) == null) return;
+        if (getClaimMap().get(Claim.LNK) == null) return;
         throwIfSigned();
-        getClaims().remove(Claim.LNK);
+        getClaimMap().remove(Claim.LNK);
         this.itemLinks = null;
     }
 
@@ -389,16 +414,10 @@ public abstract class Item {
     protected List<ItemLink> itemLinks;
     protected boolean isSigned = false;
 
-    protected final ClaimsMap getClaims() {
-        if (this._claims == null) {
-            if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
-                byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
-                this._claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
-            } else {
-                this._claims = new ClaimsMap();
-            }
-        }
-        return this._claims;
+    protected abstract boolean validClaim(Claim claim);
+
+    protected String exportClaims() throws IOException{
+        return getClaimMap().toJSON();
     }
 
     protected final boolean hasClaims() {
@@ -430,7 +449,7 @@ public abstract class Item {
 
     protected void verifyLinkedItems(List<Item> linkedItems) throws VerificationException {
         if (itemLinks == null) {
-            itemLinks = _claims.getItemLinks(Claim.LNK);
+            itemLinks = getClaim(Claim.LNK);
         }
         if (itemLinks != null) {
             ItemLink.verify(linkedItems, itemLinks);
@@ -457,7 +476,7 @@ public abstract class Item {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
-            getClaims().put(Claim.LNK, ItemLink.toEncoded(itemLinks));
+            getClaimMap().put(Claim.LNK, ItemLink.toEncoded(itemLinks));
         }
         try {
             builder.append(Utility.toBase64(this._claims.toJSON()));
@@ -500,6 +519,18 @@ public abstract class Item {
     private ClaimsMap _claims;
     private List<Signature> _signatures;
     private boolean legacy = false;
+
+    private final ClaimsMap getClaimMap() {
+        if (this._claims == null) {
+            if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
+                byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
+                this._claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
+            } else {
+                this._claims = new ClaimsMap();
+            }
+        }
+        return this._claims;
+    }
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {

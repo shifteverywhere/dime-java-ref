@@ -1,6 +1,6 @@
 //
 //  Message.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 
 import java.time.Instant;
@@ -38,7 +39,7 @@ public class Message extends Data {
      * @return The audience identifier, as a UUID.
      */
     public UUID getAudienceId() {
-        return getClaims().getUUID(Claim.AUD);
+        return getClaim(Claim.AUD);
     }
 
     /**
@@ -47,7 +48,7 @@ public class Message extends Data {
      * @return A key identifier, as a UUID.
      */
     public UUID getKeyId() {
-        return getClaims().getUUID(Claim.KID);
+        return getClaim(Claim.KID);
     }
 
     /**
@@ -56,11 +57,10 @@ public class Message extends Data {
      * @param kid The identifier of the key to set.
      */
     public void setKeyId(UUID kid) {
-        throwIfSigned();
         if (kid != null) {
-            getClaims().put(Claim.KID, kid);
+            putClaim(Claim.KID, kid);
         } else {
-            getClaims().remove(Claim.KID);
+            removeClaim(Claim.KID);
         }
     }
 
@@ -70,7 +70,7 @@ public class Message extends Data {
      * @return A public key.
      */
     public Key getPublicKey() {
-        String pub = getClaims().get(Claim.PUB);
+        String pub = getClaim(Claim.PUB);
         if (pub != null && pub.length() > 0) {
             try {
                 return new Key(List.of(Key.Use.EXCHANGE), pub, Claim.PUB);
@@ -85,11 +85,10 @@ public class Message extends Data {
      * @param publicKey The public key to set.
      */
     public void setPublicKey(Key publicKey) {
-        throwIfSigned();
         if (publicKey != null) {
-            getClaims().put(Claim.PUB, publicKey.getPublic());
+            putClaim(Claim.PUB, publicKey.getPublic());
         } else {
-            getClaims().remove(Claim.PUB);
+            removeClaim(Claim.PUB);
         }
     }
 
@@ -141,18 +140,17 @@ public class Message extends Data {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Utility.createTimestamp();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        ClaimsMap claims = getClaims();
-        claims.put(Claim.UID, UUID.randomUUID());
-        claims.put(Claim.AUD, audienceId);
-        claims.put(Claim.ISS, issuerId);
-        claims.put(Claim.IAT, iat);
-        claims.put(Claim.EXP, exp);
-        claims.put(Claim.CTX, context);
+        putClaim(Claim.UID, UUID.randomUUID());
+        putClaim(Claim.AUD, audienceId);
+        putClaim(Claim.ISS, issuerId);
+        putClaim(Claim.IAT, iat);
+        putClaim(Claim.EXP, exp);
+        putClaim(Claim.CTX, context);
     }
 
     @Override
     public String thumbprint() throws DimeCryptographicException {
-        if (!isSigned()) { throw new IllegalStateException("Unable to generate thumbprint of message, must be signed first."); }
+        if (!isSigned()) { throw new IllegalStateException("Unable to generate thumbprint, must be signed first."); }
         return super.thumbprint();
     }
 
@@ -194,6 +192,11 @@ public class Message extends Data {
     Message() { }
 
     /// PROTECTED ///
+
+    @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.PRI && claim != Claim.USE;
+    }
 
     @Override
     protected String forExport() throws DimeFormatException {

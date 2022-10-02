@@ -40,7 +40,7 @@ public class PerformanceTest {
         System.out.flush();
         long start = System.nanoTime();
         for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(List.of(Key.Use.SIGN));
             keyList.add(key);
         }
         long end = System.nanoTime();

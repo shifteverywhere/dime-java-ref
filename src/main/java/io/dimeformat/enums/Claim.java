@@ -1,13 +1,19 @@
 //
 //  Claim.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
 //
-package io.dimeformat;
+package io.dimeformat.enums;
+
+import java.lang.reflect.Type;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Standard claim names.

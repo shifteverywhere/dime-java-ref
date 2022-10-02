@@ -11,7 +11,7 @@ package io.dimeformat.crypto;
 
 import io.dimeformat.Key;
 import io.dimeformat.Utility;
-import io.dimeformat.Claim;
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeCryptographicException;
 
 import java.nio.charset.StandardCharsets;

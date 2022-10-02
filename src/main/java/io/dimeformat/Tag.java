@@ -1,6 +1,6 @@
 //
 //  Tag.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.DimeFormatException;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class Tag extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier forDime Tag items. */
+    /** The item type identifier for Dime Tag items. */
     public static final String ITEM_IDENTIFIER = "TAG";
 
     @Override
@@ -45,10 +46,9 @@ public class Tag extends Item {
     public Tag(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        ClaimsMap claims = getClaims();
-        claims.put(Claim.UID, UUID.randomUUID());
-        claims.put(Claim.ISS, issuerId);
-        claims.put(Claim.CTX, context);
+        putClaim(Claim.UID, UUID.randomUUID());
+        putClaim(Claim.ISS, issuerId);
+        putClaim(Claim.CTX, context);
     }
 
     /**
@@ -78,6 +78,11 @@ public class Tag extends Item {
     Tag() { }
 
     /// PROTECTED ///
+
+    @Override
+    protected boolean validClaim(Claim claim) {
+        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM && claim != Claim.PRI && claim != Claim.USE;
+    }
 
     @Override
     protected String forExport() throws DimeFormatException {
