@@ -7,8 +7,9 @@
 //  Released under the MIT licence, see LICENSE for more information.
 //  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
 //
-package io.dimeformat;
+package io.dimeformat.crypto;
 
+import io.dimeformat.*;
 import io.dimeformat.exceptions.DimeFormatException;
 
 import java.util.Collection;

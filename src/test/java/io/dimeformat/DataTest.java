@@ -91,16 +91,16 @@ public class DataTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di:DAT.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTA4LTE4VDIwOjIwOjEwLjQ0ODM0M1oiLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjE4OjEwLjQ0ODM0M1oiLCJpc3MiOiJiYjdhNzQ1OC0zZjVjLTQ4ZmItYWJmOC0zN2Y3Mzc4ZmEyMTkiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiNTZmOTJjOTAtNTg2OC00YzkyLTkxYzktNWY4N2FiNDhjNjQyIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.YThlNGMxZWJlYWIyMDliZi42YjRjYzUxMzExNjk2OTRiMDBmMjllNDNiNmU5N2RkZjY4MDRkYjlkMGMwZGJlZjA5MWQwOTg1ZjViNGVjOThkZTkzNTk5YzQ1NmEzNzAwMDM3MzRkM2NmYzI1NmI2NjhmMTE4ZTVlYjBjNjdiNGNhYThiYjdmNTU4NTFjYTAwMA";
+            String exported = "Di:DAT.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTAzVDE0OjQ5OjMzLjgzMDU3M1oiLCJpYXQiOiIyMDIyLTEwLTAzVDE0OjQ3OjMzLjgzMDU3M1oiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiZjI5MjRhNjktMDk4MC00MGVlLThiZjEtNzdlNGE1NWMxNDExIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
             Data data = Item.importFromEncoded(exported);
             assertNotNull(data);
-            assertEquals(UUID.fromString("56f92c90-5868-4c92-91c9-5f87ab48c642"), data.getUniqueId());
+            assertEquals(UUID.fromString("f2924a69-0980-40ee-8bf1-77e4a55c1411"), data.getUniqueId());
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), data.getIssuerId());
             assertEquals(Commons.MIMETYPE, data.getMIMEType());
             assertEquals(Commons.CONTEXT, data.getContext());
             assertEquals(Commons.PAYLOAD, new String(data.getPayload(), StandardCharsets.UTF_8));
-            assertEquals(Instant.parse("2022-08-18T20:18:10.448343Z"), data.getIssuedAt());
-            assertEquals(Instant.parse("2022-08-18T20:20:10.448343Z"), data.getExpiresAt());
+            assertEquals(Instant.parse("2022-10-03T14:47:33.830573Z"), data.getIssuedAt());
+            assertEquals(Instant.parse("2022-10-03T14:49:33.830573Z"), data.getExpiresAt());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -130,7 +130,7 @@ public class DataTest {
         Commons.initializeKeyRing();
         String encoded = "Di:KEY.eyJ1aWQiOiIzZjAwY2QxMy00NDc0LTRjMDQtOWI2Yi03MzgzZDQ5MGYxN2YiLCJwdWIiOiJTMjFUWlNMMXV2RjVtVFdLaW9tUUtOaG1rY1lQdzVYWjFWQmZiU1BxbXlxRzVHYU5DVUdCN1BqMTlXU2h1SnVMa2hSRUVKNGtMVGhlaHFSa2FkSkxTVEFrTDlEdHlobUx4R2ZuIiwiaWF0IjoiMjAyMS0xMS0xOFQwODo0ODoyNS4xMzc5MThaIiwia2V5IjoiUzIxVGtnb3p4aHprNXR0RmdIaGdleTZ0MTQxOVdDTVVVTTk4WmhuaVZBamZUNGluaVVrbmZVck5xZlBxZEx1YTJTdnhGZjhTWGtIUzFQVEJDcmRrWVhONnFURW03TXdhMkxSZCJ9";
         try {
-            Data data = Item.importFromEncoded(encoded);
+            Data item = Item.importFromEncoded(encoded);
             fail("Expected exception not thrown.");
         } catch (ClassCastException e) {
             /* All is well, carry on */

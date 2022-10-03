@@ -140,7 +140,7 @@ public class Data extends Item {
 
     @Override
     protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.KID && claim != Claim.PRI && claim != Claim.PUB && claim != Claim.USE;
+        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.KID && claim != Claim.PRI && claim != Claim.PUB;
     }
 
     @Override

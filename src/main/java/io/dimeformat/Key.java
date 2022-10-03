@@ -13,7 +13,6 @@ import io.dimeformat.crypto.ICryptoSuite;
 import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,49 +26,6 @@ public class Key extends Item {
 
     /// PUBLIC ///
 
-    /**
-     * Defines different types of cryptographic keys.
-     * Used for header information in keys and when generating new keys.
-     */
-    public enum Use {
-
-        /**
-         * Undefined usage of the key (should not happen).
-         */
-        UNDEFINED,
-        /**
-         * Key type for asymmetric key used for signing.
-         */
-        SIGN,
-        /**
-         * Key type for asymmetric keys used for key exchange (agreement).
-         */
-        EXCHANGE,
-        /**
-         * Key type for symmetric keys used for encryption.
-         */
-        ENCRYPT;
-
-        /**
-         * An intermediate method to convert legacy KeyType to KeyUsage. Should only be used for legacy keys.
-         * @param type The KeyType to convert.
-         * @return Equivalent KeyUsage.
-         */
-        @Deprecated
-        public static Key.Use fromKeyType(KeyType type) {
-            switch (type) {
-                case IDENTITY: return Key.Use.SIGN;
-                case EXCHANGE: return Key.Use.EXCHANGE;
-                case ENCRYPTION: return Key.Use.ENCRYPT;
-                case AUTHENTICATION:
-                case UNDEFINED:
-                default:
-                    return Key.Use.UNDEFINED;
-            }
-        }
-
-    }
-
     /** The item type identifier for Di:ME Key items. */
     public static final String ITEM_IDENTIFIER = "KEY";
 
@@ -77,40 +33,6 @@ public class Key extends Item {
     public String getItemIdentifier() {
         return Key.ITEM_IDENTIFIER;
     }
-
-    /**
-     * Returns the type of the key. The type determines what the key may be used for, this since it is also closely
-     * associated with the cryptographic algorithm the key is generated for.
-     * @return The type of the key.
-     */
-    @Deprecated
-    public KeyType getKeyType() {
-        if (_type == null) {
-            if (isLegacy()) {
-                try {
-                    String key = getClaim(Claim.KEY);
-                    if (key == null) {
-                        key = getClaim(Claim.PUB);
-                        decodeKey(key, Claim.PUB);
-                    } else {
-                        decodeKey(key, Claim.KEY);
-                    }
-                } catch (DimeCryptographicException e) {
-                    throw new IllegalStateException("Invalid legacy key, missing key type.");
-                }
-            } else {
-                if (hasUse(Key.Use.SIGN)) {
-                    _type = KeyType.IDENTITY;
-                } else if (hasUse(Key.Use.EXCHANGE)) {
-                    _type = KeyType.EXCHANGE;
-                } else if (hasUse(Key.Use.ENCRYPT)) {
-                    _type = KeyType.ENCRYPTION;
-                }
-            }
-        }
-        return _type;
-    }
-    private KeyType _type;
 
     /**
      * Returns the cryptographic suite used to generate they key.
@@ -169,149 +91,94 @@ public class Key extends Item {
     }
 
     /**
-     * Returns a list of cryptographic uses that the key may perform.
-     * @return List of usages.
+     * Returns a list of cryptographic capabilities that the key may perform.
+     * @return List of capabilities.
      */
-    public List<Key.Use> getUse() {
-        if (_use == null) {
-            List<String> usage = getClaim(Claim.USE);
-            if (usage != null) {
-                _use = usage.stream().map(use -> Key.Use.valueOf(use.toUpperCase())).collect(toList());
+    public List<KeyCapability> getCapability() {
+        if (_capabilities == null) {
+            List<String> caps = getClaim(Claim.CAP);
+            if (caps != null) {
+                _capabilities = caps.stream().map(cap -> KeyCapability.valueOf(cap.toUpperCase())).collect(toList());
             } else {
                 // This may be legacy
                 getKeyBytes(Claim.PUB);
                 getKeyBytes(Claim.KEY);
-                _use = List.of(Key.Use.fromKeyType(getKeyType()));
             }
         }
-        return _use;
+        return _capabilities;
     }
 
     /**
-     * Indicates if a key may be used for a specific cryptographic use.
-     * @param use The use to test for.
+     * Indicates if a key may be used for a specific cryptographic capability.
+     * @param capability The capability to test for.
      * @return True if key supports the use, false otherwise.
      */
-    public boolean hasUse(Key.Use use) {
-        if (use == null) { return false; }
-        return getUse().contains(use);
+    public boolean hasCapability(KeyCapability capability) {
+        if (capability == null) { return false; }
+        return getCapability().contains(capability);
     }
 
     /**
-     * Will generate a new Key with a specified type.
-     * @param type The type of key to generate.
+     * Will generate a new key for a specific cryptographic capability.
+     * @param capability The capability of the key.
      * @return A newly generated key.
      */
-    @Deprecated
-    public static Key generateKey(KeyType type) {
-        return Key.generateKey(type, -1, null, null);
+    public static Key generateKey(KeyCapability capability) {
+        return Key.generateKey(List.of(capability), Dime.NO_EXPIRATION, null, null, Dime.crypto.getDefaultSuiteName());
     }
 
     /**
-     * Will generate a new Key with a specified type.
-     * @param type The type of key to generate.
+     * Will generate a new key for a specific cryptographic capabilities.
+     * @param capabilities The capabilities of the key.
+     * @return A newly generated key.
+     */
+    public static Key generateKey(List<KeyCapability> capabilities) {
+        return Key.generateKey(capabilities, Dime.NO_EXPIRATION, null, null, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Will generate a new key for a specific cryptographic capabilities and setting a context to the key.
+     * @param capabilities The capabilities of the key.
      * @param context The context to attach to the key, may be null.
      * @return A newly generated key.
      */
-    @Deprecated
-    public static Key generateKey(KeyType type, String context) {
-        return Key.generateKey(type, -1, null, context);
+    public static Key generateKey(List<KeyCapability> capabilities, String context) {
+        return Key.generateKey(capabilities, Dime.NO_EXPIRATION, null, context, Dime.crypto.getDefaultSuiteName());
     }
 
     /**
-     * Will generate a new Key with a specified type and an expiration date. Abiding to the expiration date is
-     * application specific as the key will continue to function after the expiration date. Providing -1 as validFor
-     * will skip setting an expiration date.
-     * @param type The type of key to generate.
-     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
-     * @return A newly generated key.
-     */
-    @Deprecated
-    public static Key generateKey(KeyType type, long validFor) {
-        return Key.generateKey(type, validFor, null, null);
-    }
-
-    /**
-     * Will generate a new Key with a specified type, an expiration date, and the identifier of the issuer. Abiding to
-     * the expiration date is application specific as the key will continue to function after the expiration date.
-     * Providing -1 as validFor will skip setting an expiration date.
-     * @param type The type of key to generate.
-     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
-     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
-     * @return A newly generated key.
-     */
-    @Deprecated
-    public static Key generateKey(KeyType type, long validFor, UUID issuerId) {
-        return Key.generateKey(type, validFor, issuerId, null);
-    }
-
-    /**
-     * Will generate a new Key with a specified type, an expiration date, and the identifier of the issuer. Abiding to
-     * the expiration date is application specific as the key will continue to function after the expiration date.
-     * Providing -1 as validFor will skip setting an expiration date.
-     * @param type The type of key to generate.
-     * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
-     * @param issuerId The identifier of the issuer (creator) of the key, may be null.
-     * @param context The context to attach to the key, may be null.
-     * @return A newly generated key.
-     */
-    @Deprecated
-    public static Key generateKey(KeyType type, long validFor, UUID issuerId, String context) {
-        return Key.generateKey(List.of(Key.Use.fromKeyType(type)), validFor, issuerId, context, Dime.crypto.getDefaultSuiteName());
-    }
-
-    /**
-     * Will generate a new Key for a specific cryptographic usage.
-     * @param use The use of the key.
-     * @return A newly generated key.
-     */
-    public static Key generateKey(List<Key.Use> use) {
-        return Key.generateKey(use, -1, null, null, Dime.crypto.getDefaultSuiteName());
-    }
-
-    /**
-     * Will generate a new Key for a specific cryptographic usage and attach a specified context.
-     * @param use The use of the key.
-     * @param context The context to attach to the key, may be null.
-     * @return A newly generated key.
-     */
-    public static Key generateKey(List<Key.Use> use, String context) {
-        return Key.generateKey(use, -1, null, context, Dime.crypto.getDefaultSuiteName());
-    }
-
-    /**
-     * Will generate a new Key for a specific cryptographic usage, an expiration date, and the identifier of the issuer.
+     * Will generate a new key for a specific cryptographic capabilities, an expiration date, and the identifier of the issuer.
      * Abiding to the expiration date is application specific as the key will continue to function after the expiration
-     * date. Providing -1 as validFor will skip setting an expiration date. The specified context will be attached to
+     * date. Providing {@link Dime#NO_EXPIRATION} as validFor will skip setting an expiration date. The specified context will be attached to
      * the generated key.
-     * @param use The use of the key.
+     * @param capabilities The capabilities of the key.
      * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
      * @param issuerId The identifier of the issuer (creator) of the key, may be null.
      * @param context The context to attach to the key, may be null.
      * @return A newly generated key.
      */
-    public static Key generateKey(List<Key.Use> use, long validFor, UUID issuerId, String context) {
-        return Key.generateKey(use, validFor, issuerId, context, Dime.crypto.getDefaultSuiteName());
+    public static Key generateKey(List<KeyCapability> capabilities, long validFor, UUID issuerId, String context) {
+        return Key.generateKey(capabilities, validFor, issuerId, context, Dime.crypto.getDefaultSuiteName());
     }
 
     /**
-     * Will generate a new Key for a specific cryptographic usage, an expiration date, and the identifier of the issuer.
+     * Will generate a new key for a specific cryptographic capabilities, an expiration date, and the identifier of the issuer.
      * Abiding to the expiration date is application specific as the key will continue to function after the expiration
-     * date. Providing -1 as validFor will skip setting an expiration date. The specified context will be attached to
+     * date. Providing {@link Dime#NO_EXPIRATION} as validFor will skip setting an expiration date. The specified context will be attached to
      * the generated key. The cryptographic suite specified will be used when generating the key.
-     * @param use The use of the key.
+     * @param capabilities The capabilities of the key.
      * @param validFor The number of seconds that the key should be valid for, from the time of issuing.
      * @param issuerId The identifier of the issuer (creator) of the key, may be null.
      * @param context The context to attach to the key, may be null.
      * @param suiteName The name of the cryptographic suite to use, if null, then the default suite will be used.
      * @return A newly generated key.
      */
-    public static Key generateKey(List<Key.Use> use, long validFor, UUID issuerId, String context, String suiteName) {
+    public static Key generateKey(List<KeyCapability> capabilities, long validFor, UUID issuerId, String context, String suiteName) {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         try {
-            byte[][] keyBytes = Dime.crypto.generateKey(use, suiteName);
+            byte[][] keyBytes = Dime.crypto.generateKey(capabilities, suiteName);
             Key key = new Key(UUID.randomUUID(),
-                    use,
+                    capabilities,
                     keyBytes[ICryptoSuite.SECRET_KEY_INDEX],
                     keyBytes.length == 2 ? keyBytes[ICryptoSuite.PUBLIC_KEY_INDEX] : null,
                     suiteName);
@@ -332,13 +199,13 @@ public class Key extends Item {
      * @return A new instance of the key with only the public part.
      */
     public Key publicCopy() {
-        Key copyKey = new Key(getUse(), null, getPublic(), getCryptoSuiteName());
+        Key copyKey = new Key(getCapability(), null, getPublic(), getCryptoSuiteName());
         copyKey.putClaim(Claim.UID, getUniqueId());
         copyKey.putClaim(Claim.IAT, getIssuedAt());
         copyKey.putClaim(Claim.EXP, getExpiresAt());
         copyKey.putClaim(Claim.ISS, getIssuerId());
         copyKey.putClaim(Claim.CTX, getContext());
-        copyKey.putClaim(Claim.USE, getUse().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        copyKey.putClaim(Claim.CAP, getCapability().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         return copyKey;
     }
 
@@ -346,20 +213,20 @@ public class Key extends Item {
      * Generates a shared secret from the current key and another provided key. Both keys must have key usage EXCHANGE
      * specified.
      * @param key The other key to use with the key exchange (generation of shared key).
-     * @param use The requested usage of the generated shared key, usually {@link Key.Use#ENCRYPT}.
+     * @param capabilities The requested capabilities of the generated shared key, usually {@link KeyCapability#ENCRYPT}.
      * @return The generated shared key.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Key generateSharedSecret(Key key, List<Key.Use> use) throws DimeCryptographicException {
-        byte[] sharedKey = Dime.crypto.generateSharedSecret(this, key, use);
-        return new Key(UUID.randomUUID(), use, sharedKey, null, getCryptoSuiteName());
+    public Key generateSharedSecret(Key key, List<KeyCapability> capabilities) throws DimeCryptographicException {
+        byte[] sharedKey = Dime.crypto.generateSharedSecret(this, key, capabilities);
+        return new Key(UUID.randomUUID(), capabilities, sharedKey, null, getCryptoSuiteName());
     }
 
     @Override
     public void convertToLegacy() {
         if (isLegacy()) { return; }
-        Key.convertKeyToLegacy(this, getUse().get(0), Claim.KEY);
-        Key.convertKeyToLegacy(this, getUse().get(0), Claim.PUB);
+        Key.convertKeyToLegacy(this, getCapability().get(0), Claim.KEY);
+        Key.convertKeyToLegacy(this, getCapability().get(0), Claim.PUB);
         super.convertToLegacy();
     }
 
@@ -378,12 +245,12 @@ public class Key extends Item {
      */
     Key() { }
 
-    Key(UUID id, List<Key.Use> use, byte[] key, byte[] pub, String suiteName) {
+    Key(UUID id, List<KeyCapability> use, byte[] key, byte[] pub, String suiteName) {
         putClaim(Claim.UID, id);
         putClaim(Claim.IAT, Utility.createTimestamp());
         this._suiteName = suiteName;
-        this._use = use;
-        putClaim(Claim.USE, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        this._capabilities = use;
+        putClaim(Claim.CAP, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         if (key != null) {
             putClaim(Claim.KEY, Key.encodeKey(suiteName, key));
         }
@@ -392,9 +259,9 @@ public class Key extends Item {
         }
     }
 
-    Key(List<Key.Use> use, String key, String pub, String suiteName) {
+    Key(List<KeyCapability> capabilities, String key, String pub, String suiteName) {
         this._suiteName = suiteName;
-        this._use = use;
+        this._capabilities = capabilities;
         if (key != null) {
             putClaim(Claim.KEY, key);
         }
@@ -403,23 +270,23 @@ public class Key extends Item {
         }
     }
 
-    Key(List<Key.Use> use, String key, Claim claim) throws DimeCryptographicException {
-        this._use = use;
+    Key(List<KeyCapability> capabilities, String key, Claim claim) throws DimeCryptographicException {
+        this._capabilities = capabilities;
         putClaim(claim, key);
     }
 
-    static void convertKeyToLegacy(Item item, Key.Use use, Claim claim) {
+    static void convertKeyToLegacy(Item item, KeyCapability capability, Claim claim) {
         String key = item.getClaim(claim);
         if (key == null) { return; }
         byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
         String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
         byte[] rawKey = Base58.decode(b58);
         byte[] legacyKey = Utility.combine(header, rawKey);
-        legacyKey[1] = use == Key.Use.ENCRYPT ? 0x10 : use == Key.Use.EXCHANGE ? (byte)0x40 : (byte)0x80;
-        legacyKey[2] = use == Key.Use.EXCHANGE ? (byte)0x02 : (byte)0x01;
+        legacyKey[1] = capability == KeyCapability.ENCRYPT ? 0x10 : capability == KeyCapability.EXCHANGE ? (byte)0x40 : (byte)0x80;
+        legacyKey[2] = capability == KeyCapability.EXCHANGE ? (byte)0x02 : (byte)0x01;
         if (claim == Claim.PUB) {
             legacyKey[3] = 0x01;
-        } else if (use == Key.Use.ENCRYPT) {
+        } else if (capability == KeyCapability.ENCRYPT) {
             legacyKey[3] = 0x02;
         }
         item.putClaim(claim, Base58.encode(legacyKey));
@@ -429,7 +296,7 @@ public class Key extends Item {
 
     @Override
     protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.MIM && claim != Claim.PRI;
+        return claim != Claim.MIM && claim != Claim.PRI;
     }
 
     @Override
@@ -444,24 +311,18 @@ public class Key extends Item {
     private static final int ENCODED_KEY_INDEX = 1;
     private static final int LEGACY_KEY_HEADER_SIZE = 6;
     private String _suiteName;
-    private List<Key.Use> _use;
+    private List<KeyCapability> _capabilities;
     private byte[] _secretBytes;
     private byte[] _publicBytes;
 
     @Deprecated
-    private static KeyType getKeyType(byte[] key) {
-        AlgorithmFamily family = AlgorithmFamily.valueOf(key[1]);
-        switch (family) {
-            case AEAD:
-                return KeyType.ENCRYPTION;
-            case ECDH:
-                return KeyType.EXCHANGE;
-            case EDDSA:
-                return KeyType.IDENTITY;
-            case HASH:
-                return KeyType.AUTHENTICATION;
-            default:
-                return KeyType.UNDEFINED;
+    private static KeyCapability getCapabilityFromLegacy(byte[] key) {
+        switch (key[1]) {
+            case 0x10: return KeyCapability.keyCapabilityFromLegacy("encryption");
+            case 0x40: return KeyCapability.keyCapabilityFromLegacy("exchange");
+            case (byte)0x80: return KeyCapability.keyCapabilityFromLegacy("identity");
+            case (byte)0xE0: return KeyCapability.keyCapabilityFromLegacy("authenticate");
+            default: return null;
         }
     }
 
@@ -493,7 +354,9 @@ public class Key extends Item {
         } else {
             byte[] decoded = Base58.decode(encoded);
             rawKey = Utility.subArray(decoded, Key.LEGACY_KEY_HEADER_SIZE);
-            _type = Key.getKeyType(decoded);
+            KeyCapability cap = Key.getCapabilityFromLegacy(decoded);
+            if (cap == null) { throw new IllegalStateException("Invalid key capability encountered."); }
+            _capabilities = List.of(cap);
         }
         if (claim == Claim.KEY) {
             this._secretBytes = rawKey;

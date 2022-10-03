@@ -1,6 +1,6 @@
 //
 //  KeyTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -27,9 +28,9 @@ class KeyTest {
 
     @Test
     void keyTest1() {
-        Key key = Key.generateKey(List.of(Key.Use.SIGN));
-        assertEquals(1, key.getUse().size());
-        assertTrue(key.hasUse(Key.Use.SIGN));
+        Key key = Key.generateKey(List.of(KeyCapability.SIGN));
+        assertEquals(1, key.getCapability().size());
+        assertTrue(key.hasCapability(KeyCapability.SIGN));
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -37,9 +38,9 @@ class KeyTest {
 
     @Test
     void keyTest2() {
-        Key key = Key.generateKey(List.of(Key.Use.EXCHANGE));
-        assertEquals(1, key.getUse().size());
-        assertTrue(key.hasUse(Key.Use.EXCHANGE));
+        Key key = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+        assertEquals(1, key.getCapability().size());
+        assertTrue(key.hasCapability(KeyCapability.EXCHANGE));
         assertNotNull(key.getUniqueId());
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
@@ -47,52 +48,52 @@ class KeyTest {
 
     @Test
     void keyUsageTest1() {
-        Key signKey = Key.generateKey(List.of(Key.Use.SIGN));
+        Key signKey = Key.generateKey(List.of(KeyCapability.SIGN));
         assertEquals(Dime.crypto.getDefaultSuiteName(), signKey.getCryptoSuiteName());
         assertNotNull(signKey.getSecret());
         assertNotNull(signKey.getPublic());
-        List<Key.Use> usage = signKey.getUse();
+        List<KeyCapability> usage = signKey.getCapability();
         assertNotNull(usage);
-        assertTrue(usage.contains(Key.Use.SIGN));
+        assertTrue(usage.contains(KeyCapability.SIGN));
         assertEquals(1, usage.size());
-        assertTrue(signKey.hasUse(Key.Use.SIGN));
-        assertFalse(signKey.hasUse(Key.Use.EXCHANGE));
-        assertFalse(signKey.hasUse(Key.Use.ENCRYPT));
+        assertTrue(signKey.hasCapability(KeyCapability.SIGN));
+        assertFalse(signKey.hasCapability(KeyCapability.EXCHANGE));
+        assertFalse(signKey.hasCapability(KeyCapability.ENCRYPT));
     }
 
     @Test
     void keyUsageTest2() {
-        Key exchangeKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+        Key exchangeKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
         assertEquals(Dime.crypto.getDefaultSuiteName(), exchangeKey.getCryptoSuiteName());
         assertNotNull(exchangeKey.getSecret());
         assertNotNull(exchangeKey.getPublic());
-        List<Key.Use> usage = exchangeKey.getUse();
+        List<KeyCapability> usage = exchangeKey.getCapability();
         assertNotNull(usage);
-        assertTrue(usage.contains(Key.Use.EXCHANGE));
+        assertTrue(usage.contains(KeyCapability.EXCHANGE));
         assertEquals(1, usage.size());
-        assertFalse(exchangeKey.hasUse(Key.Use.SIGN));
-        assertTrue(exchangeKey.hasUse(Key.Use.EXCHANGE));
-        assertFalse(exchangeKey.hasUse(Key.Use.ENCRYPT));
+        assertFalse(exchangeKey.hasCapability(KeyCapability.SIGN));
+        assertTrue(exchangeKey.hasCapability(KeyCapability.EXCHANGE));
+        assertFalse(exchangeKey.hasCapability(KeyCapability.ENCRYPT));
     }
 
     @Test
     void keyUsageTest3() {
-        Key encryptionKey = Key.generateKey(List.of(Key.Use.ENCRYPT));
+        Key encryptionKey = Key.generateKey(List.of(KeyCapability.ENCRYPT));
         assertEquals(Dime.crypto.getDefaultSuiteName(), encryptionKey.getCryptoSuiteName());
         assertNotNull(encryptionKey.getSecret());
         assertNull(encryptionKey.getPublic());
-        List<Key.Use> usage = encryptionKey.getUse();
+        List<KeyCapability> usage = encryptionKey.getCapability();
         assertNotNull(usage);
-        assertTrue(usage.contains(Key.Use.ENCRYPT));
+        assertTrue(usage.contains(KeyCapability.ENCRYPT));
         assertEquals(1, usage.size());
-        assertFalse(encryptionKey.hasUse(Key.Use.SIGN));
-        assertFalse(encryptionKey.hasUse(Key.Use.EXCHANGE));
-        assertTrue(encryptionKey.hasUse(Key.Use.ENCRYPT));
+        assertFalse(encryptionKey.hasCapability(KeyCapability.SIGN));
+        assertFalse(encryptionKey.hasCapability(KeyCapability.EXCHANGE));
+        assertTrue(encryptionKey.hasCapability(KeyCapability.ENCRYPT));
     }
 
     @Test
     void keyUsageTest4() {
-        List<Key.Use> use = List.of(Key.Use.SIGN, Key.Use.EXCHANGE);
+        List<KeyCapability> use = List.of(KeyCapability.SIGN, KeyCapability.EXCHANGE);
         try {
             Key.generateKey(use, -1, null, null, Dime.crypto.getDefaultSuiteName());
             fail("Expected exception never thrown.");
@@ -105,11 +106,11 @@ class KeyTest {
     @Test
     void keyUsageTest5() {
         try {
-            Key key1 = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key1 = Key.generateKey(List.of(KeyCapability.SIGN));
             String exported1 = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported1);
             assertNotNull(key2);
-            assertTrue(key2.hasUse(Key.Use.SIGN));
+            assertTrue(key2.hasCapability(KeyCapability.SIGN));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
@@ -117,7 +118,7 @@ class KeyTest {
 
     @Test
     void exportTest1() {
-        Key key = Key.generateKey(List.of(Key.Use.SIGN));
+        Key key = Key.generateKey(List.of(KeyCapability.SIGN));
         String exported = key.exportToEncoded();
         assertNotNull(exported);
         assertTrue(exported.startsWith(Commons.fullHeaderFor(Key.ITEM_IDENTIFIER)));
@@ -127,15 +128,15 @@ class KeyTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di:KEY.eyJ1aWQiOiJjMjhkOTY2OC1hNzU5LTQ4YjQtYmEzYi0zMTE0MWZmZjM0MTUiLCJwdWIiOiJEU1ROKzJkdGFnSm5ISlBxdFNkeEZrVnVCZWRaR2s2UHVIRkZKd1pEUVoyaWpzbWlyb0FDZmR0IiwiaWF0IjoiMjAyMi0wNS0zMFQxODoyNzozNS42NzI4OTJaIiwidXNlIjpbInNpZ24iXSwia2V5IjoiRFNUTis1MVdnNlVOakFxMnZodURERTRNdEoxNXVOTnBNbjVVRnR1OXVQTUphVlMzamhadnl5MThvcEpBU0haeUR0UE0yTmZvOTRROXhhaVlNdGZOSmZBcnNzVTc0S2Fkd2gifQ";
+            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIyLTEwLTAzVDE3OjM3OjAyLjYzMDAzOFoiLCJrZXkiOiJTVE4uYUJqa3pLWDJCNVp3RzFucmJtTkZtdWdacDZvM2k2Rms4b1ZtanRmb3B2Z1RQSmNQY0VNb3R0WmppMmVqVW1NV2dFRHVrTER5RkJjaFR3NUtCb0tqRkY1NXdDVFdrIiwicHViIjoiU1ROLkxvOGNRYlVVOXdpRFkxcmdEYnhZREF6c204Z2lzN1JyREZzbkgzQmN2Ylk4d3BCTkMiLCJ1aWQiOiJjOGYyNmIxZi0zNDA2LTRjMjktYTQ3ZS1iODQ4Mjc4MGFiNjQifQ";
             Key key = Item.importFromEncoded(exported);
             assertNotNull(key);
-            assertEquals(1, key.getUse().size());
-            assertTrue(key.hasUse(Key.Use.SIGN));
-            assertEquals(UUID.fromString("c28d9668-a759-48b4-ba3b-31141fff3415"), key.getUniqueId());
-            assertEquals(Instant.parse("2022-05-30T18:27:35.672892Z"), key.getIssuedAt());
-            assertEquals("DSTN+51Wg6UNjAq2vhuDDE4MtJ15uNNpMn5UFtu9uPMJaVS3jhZvyy18opJASHZyDtPM2Nfo94Q9xaiYMtfNJfArssU74Kadwh", key.getSecret());
-            assertEquals("DSTN+2dtagJnHJPqtSdxFkVuBedZGk6PuHFFJwZDQZ2ijsmiroACfdt", key.getPublic());
+            assertEquals(1, key.getCapability().size());
+            assertTrue(key.hasCapability(KeyCapability.SIGN));
+            assertEquals(UUID.fromString("c8f26b1f-3406-4c29-a47e-b8482780ab64"), key.getUniqueId());
+            assertEquals(Instant.parse("2022-10-03T17:37:02.630038Z"), key.getIssuedAt());
+            assertEquals("STN.aBjkzKX2B5ZwG1nrbmNFmugZp6o3i6Fk8oVmjtfopvgTPJcPcEMottZji2ejUmMWgEDukLDyFBchTw5KBoKjFF55wCTWk", key.getSecret());
+            assertEquals("STN.Lo8cQbUU9wiDY1rgDbxYDAzsm8gis7RrDFsnH3BcvbY8wpBNC", key.getPublic());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
@@ -144,7 +145,7 @@ class KeyTest {
     @Test
     void publicOnlyTest1() {
         try {
-            Key key = Key.generateKey(List.of(Key.Use.SIGN), 120, UUID.randomUUID(), Commons.CONTEXT);
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN), 120, UUID.randomUUID(), Commons.CONTEXT);
             assertNotNull(key.getSecret());
             Key pubOnly = key.publicCopy();
             assertNull(pubOnly.getSecret());
@@ -162,7 +163,7 @@ class KeyTest {
     @Test
     void publicOnlyTest2() {
         try {
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Key pubOnly = Commons.getIssuerKey().publicCopy();
@@ -175,7 +176,7 @@ class KeyTest {
     @Test
     void contextTest1() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
-        Key key = Key.generateKey(List.of(Key.Use.SIGN), context);
+        Key key = Key.generateKey(List.of(KeyCapability.SIGN), context);
         assertEquals(context, key.getContext());
     }
 
@@ -183,7 +184,7 @@ class KeyTest {
     void contextTest2() {
         try {
             String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
-            Key key1 = Key.generateKey(List.of(Key.Use.SIGN), context);
+            Key key1 = Key.generateKey(List.of(KeyCapability.SIGN), context);
             String exported = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported);
             assertNotNull(key2);
@@ -197,7 +198,7 @@ class KeyTest {
     void contextTest3() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            Key.generateKey(List.of(Key.Use.SIGN), context);
+            Key.generateKey(List.of(KeyCapability.SIGN), context);
         } catch (IllegalArgumentException e) { return; } // All is well
         fail("Should not happen.");
     }

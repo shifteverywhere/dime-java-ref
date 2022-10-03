@@ -1,6 +1,6 @@
 //
 //  ICrypto.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -10,8 +10,7 @@
 package io.dimeformat.crypto;
 
 import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.Key;
-
+import io.dimeformat.enums.KeyCapability;
 import java.util.List;
 
 /**
@@ -64,23 +63,23 @@ public interface ICryptoSuite {
 
     /**
      * Generates a cryptographic key for the provided usage, if possible.
-     * @param use The intended usage of the generated key, i.e. {#{@link Key.Use#SIGN}}.
+     * @param capabilities The intended capabilities of the generated key, i.e. {#{@link KeyCapability#SIGN}}.
      * @return The generated key.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
-    byte[][] generateKey(List<Key.Use> use) throws DimeCryptographicException;
+    byte[][] generateKey(List<KeyCapability> capabilities) throws DimeCryptographicException;
 
     /**
-     *  Generates a shared secret from two keys or key pars. These keys must have {#{@link Key.Use#EXCHANGE}} listad as
-     *  usage. The server/issuer of a key exchange is always the initiator and the client/audience is always the
-     *  receiver (no matter on which side this method is called).
+     *  Generates a shared secret from two keys or key pars. These keys must have {#{@link KeyCapability#EXCHANGE}}
+     *  listed as a capability. The server/issuer of a key exchange is always the initiator and the client/audience is
+     *  always the receiver (no matter on which side this method is called).
      * @param clientKey The key or key pair from the client (usually the audience).
      * @param serverKey The key or key pair from the server (usually the issuer).
-     * @param use The intended use of the generated key, i.e. {#{@link Key.Use#ENCRYPT}}.
+     * @param capabilities The intended capabilities of the generated key, i.e. {#{@link KeyCapability#ENCRYPT}}.
      * @return The generated shared key.
      * @throws DimeCryptographicException If any cryptographic operations goes wrong.
      */
-    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<Key.Use> use) throws DimeCryptographicException;
+    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws DimeCryptographicException;
 
     /**
      * Encrypts a plain text byte array using the provided key.

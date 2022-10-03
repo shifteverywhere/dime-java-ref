@@ -1,6 +1,6 @@
 //
 //  MessageTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -11,10 +11,8 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.exceptions.DimeDateException;
 import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.DimeIntegrityException;
-
+import io.dimeformat.enums.KeyCapability;
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -136,10 +134,10 @@ class MessageTest {
     @Test
     void verifyTest2() {
         try {
-            Key key = Key.generateKey(List.of(Key.Use.SIGN));
-            Identity untrustedSender = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), 120, key, Commons.SYSTEM_NAME, null);
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN));
+            Identity untrustedSender = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME, null);
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), 120);
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key);
             message.verify(Commons.getIssuerKey());
@@ -155,7 +153,7 @@ class MessageTest {
     void verifyTest3() {
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 120);
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerIdentity().getPublicKey());
@@ -197,8 +195,7 @@ class MessageTest {
         }
     }
 
-    /*
-    // This test is commented since it difficult to pass when build server is running all tests at the same time.
+
     @Test
     void verifyTest6() {
         try {
@@ -210,10 +207,9 @@ class MessageTest {
             Dime.setTimeModifier(-2);
             message.verify(Commons.getIssuerIdentity().getPublicKey());
         } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
+            fail("(Note this may happen if running tests in parallel) Unexpected exception thrown: " + e);
         }
     }
-    */
 
     @Test
     void verifyTest7() {
@@ -310,9 +306,9 @@ class MessageTest {
     void signTest3() {
         // Multiple signatures
         try {
-            Key key1 = Key.generateKey(List.of(Key.Use.SIGN));
-            Key key2 = Key.generateKey(List.of(Key.Use.SIGN));
-            Key key3 = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key1 = Key.generateKey(List.of(KeyCapability.SIGN));
+            Key key2 = Key.generateKey(List.of(KeyCapability.SIGN));
+            Key key3 = Key.generateKey(List.of(KeyCapability.SIGN));
             Message message = new Message(Commons.getIssuerIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key1);
@@ -368,8 +364,8 @@ class MessageTest {
     @Test
     void setPayloadTest3() {
         try {
-            Key localKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
-            Key remoteKey = Key.generateKey(List.of(Key.Use.EXCHANGE)).publicCopy();
+            Key localKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+            Key remoteKey = Key.generateKey(List.of(KeyCapability.EXCHANGE)).publicCopy();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), localKey, remoteKey);
             assertNotEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
@@ -381,8 +377,8 @@ class MessageTest {
     @Test
     void setPayloadTest4() {
         try {
-            Key issuerKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
-            Key audienceKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+            Key issuerKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setKeyId(issuerKey.getUniqueId());
             message.setPublicKey(audienceKey);
@@ -398,8 +394,8 @@ class MessageTest {
     @Test
     void setPayloadTest5() {
         try {
-            Key issuerKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
-            Key audienceKey = Key.generateKey(List.of(Key.Use.EXCHANGE));
+            Key issuerKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+            Key audienceKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
             Message message1 = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
             message1.sign(Commons.getIssuerKey());
@@ -415,7 +411,7 @@ class MessageTest {
     @Test
     void setPayloadTest6() {
         try {
-            Key key = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key, key);
         } catch (IllegalArgumentException e) {
@@ -454,7 +450,7 @@ class MessageTest {
             Commons.initializeKeyRing();
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
-            message.addItemLink(Key.generateKey(List.of(Key.Use.EXCHANGE)));
+            message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
             message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
         } catch (VerificationException e) {
@@ -472,7 +468,7 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.addItemLink(Key.generateKey(List.of(Key.Use.EXCHANGE)));
+            message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE)));
         } catch (IllegalStateException e) { 
             return; // All is well
         } catch (Exception e) {
@@ -586,18 +582,22 @@ class MessageTest {
         try {
             String text = Commons.PAYLOAD;
             Key clientKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiIzOWYxMzkzMC0yYTJhLTQzOWEtYjBkNC1lMzJkMzc4ZDgyYzciLCJwdWIiOiIyREJWdG5NWlVjb0dZdHd3dmtjYnZBSzZ0Um1zOUZwNGJ4dHBlcWdha041akRVYkxvOXdueWRCUG8iLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0LjQ0NDA0MVoiLCJrZXkiOiIyREJWdDhWOEF4UWR4UFZVRkJKOWdScFA1WDQzNnhMbVBrWW9RNzE1cTFRd2ZFVml1NFM3RExza20ifQ");
+            assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiJjY2U1ZDU1Yi01NDI4LTRhMDUtOTZmYi1jZmU4ZTE4YmM3NWIiLCJwdWIiOiIyREJWdG5NYTZrcjNWbWNOcXNMSmRQMW90ZGtUMXlIMTZlMjV0QlJiY3pNaDFlc3J3a2hqYTdaWlEiLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0Ljg0NjEyMVoiLCJrZXkiOiIyREJWdDhWOTV5N2lvb1A0bmRDajd6d3dqNW1MVExydVhaaGg0RTJuMUE0SHoxQkIycHB5WXY1blIifQ");
+            assertNotNull(serverKey);
             // This is received by the client //
             Message message = Item.importFromEncoded("Di:MSG.eyJpc3MiOiIzOTA3MWIyNC04MGRmLTQyYzEtYWQwZS1jNmQ2ZmNmMjg5YmIiLCJ1aWQiOiJjNjExOWYxMC0wZDE3LTQ3NTItYTkwZS1lODlhOGI2OGIyY2MiLCJpYXQiOiIyMDIyLTA2LTAzVDEzOjU0OjM2Ljg4MDM3MVoifQ.8sdEJ3CuHLaA/DmYcCce+8iflhQwESkDwIF8xu69R4h6Pvt+k6HfDJjK+sYm4goKoA04hb8Zaq9wMGiuxXoqqBHAGqd/.WorEis9t8WdQiOW+yK2F8gLfBfrnlFk/W7FMmjBhPWpp7SAddq2UPvE0nRo1TvWdqonhb2gm2TPMp0O0X4ULAQ");
+            assertNotNull(message);
             byte[] payload = message.getPayload(serverKey.publicCopy(), clientKey);
             assertEquals(text, new String(payload, StandardCharsets.UTF_8));
             // Client generate a response (to be sent to the server) //
             Message response = new Message(UUID.randomUUID());
             response.setPayload(text.getBytes(StandardCharsets.UTF_8), serverKey.publicCopy(), clientKey);
-            response.sign(Key.generateKey(List.of(Key.Use.SIGN)));
+            response.sign(Key.generateKey(List.of(KeyCapability.SIGN)));
             String exported = response.exportToEncoded();
             // This would really happen on the server side //
             Message received = Item.importFromEncoded(exported);
+            assertNotNull(received);
             byte[] payload2 = received.getPayload(serverKey, clientKey.publicCopy());
             assertEquals(text, new String(payload2, StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -609,7 +609,7 @@ class MessageTest {
     void alienMessageEncryptionTest2() {
         try {
             Key clientLegacyKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiI1MTllNWE5Mi01Yjc1LTQxMTctODZjMS1jMTFjZjI0MDY1YmUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc3MTQ2OFoiLCJwdWIiOiIyREJWdG5NYTFZM1B6a25FN3ZXTnJybkgyM0JVVlJROXVwRGM1Umd0MnloVFNEMUZoOFNiMXBhR3cifQ");
-            Key serverKey = Item.importFromEncoded("Di:KEY.eyJpYXQiOiIyMDIyLTA3LTAxVDA4OjM2OjIwLjI2ODQ1M1oiLCJrZXkiOiJTVE4uOHZ2NWVKc2Q3dXVZUjlqNUhlbndCZ3Y3ZVVmWldpOVE3U2l4RHNYVVpobWp0azl6VyIsInB1YiI6IlNUTi4yTWZrcjhqTExHeGtMN2NQaUtiZGM4U3JqZTdnSDE4dmpzbUdaRXBlQlNaSkZiNlA2ZCIsInVpZCI6IjllOTMzMTRjLTZmMDAtNDFjMC1iNDEwLWQyOGI1YjNiOWU1ZSIsInVzZSI6WyJleGNoYW5nZSJdfQ");
+            Key serverKey = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsiZXhjaGFuZ2UiXSwiaWF0IjoiMjAyMi0wNy0wMVQwODozNjoyMC4yNjg0NTNaIiwia2V5IjoiU1ROLjh2djVlSnNkN3V1WVI5ajVIZW53Qmd2N2VVZlpXaTlRN1NpeERzWFVaaG1qdGs5elciLCJwdWIiOiJTVE4uMk1ma3I4akxMR3hrTDdjUGlLYmRjOFNyamU3Z0gxOHZqc21HWkVwZUJTWkpGYjZQNmQiLCJ1aWQiOiI5ZTkzMzE0Yy02ZjAwLTQxYzAtYjQxMC1kMjhiNWIzYjllNWUifQ");
             Message legacyMessage = Item.importFromEncoded("Di:MSG.eyJ1aWQiOiJiOTMxOWNiZS0xNzAzLTQ4MTQtYjQ2OC0wMzdmODJmYjNlNDAiLCJpc3MiOiJlODQ5YWQ5OS05YWM4LTQ2ZTktYjUyNS1lZWNiMWEwNjE3NDUiLCJpYXQiOiIyMDIyLTA3LTAxVDA5OjEwOjEwLjc4MDAzN1oifQ.fS10Cu3KBf/J+cKw6guu6cCO+NBdjrTsJudXNjmgoC4TtX4+HsHY8vmUMYuTLPwKYAQ7dNSchz52l7edgESIuemW1yzA.9bzv07SHm2Hd89iyjjUYLCY3LbvD/+Jw5drKqWnpZNGZRgK2VwWKJTLM0ffQcrvm2P572RBJ5mWhpPnZxLoPCA");
             assertNotNull(legacyMessage);
             assertEquals(Commons.PAYLOAD, new String(legacyMessage.getPayload(clientLegacyKey, serverKey), StandardCharsets.UTF_8));

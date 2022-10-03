@@ -81,7 +81,7 @@ public class Tag extends Item {
 
     @Override
     protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM && claim != Claim.PRI && claim != Claim.USE;
+        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM && claim != Claim.PRI;
     }
 
     @Override

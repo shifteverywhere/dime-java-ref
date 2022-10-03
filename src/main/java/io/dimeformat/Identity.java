@@ -11,6 +11,8 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import io.dimeformat.enums.IdentityCapability;
+import io.dimeformat.enums.KeyCapability;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -27,35 +29,6 @@ import static java.util.stream.Collectors.toList;
 public class Identity extends Item {
 
     /// PUBLIC ///
-
-    /**
-     * Defines the capability or capabilities of an identity. This usually relates to what an identity may be used for.
-     */
-    public enum Capability {
-
-        /**
-         * Capability set if the identity has been self-signed. This capability often indicates a root identity, the start
-         * of a trust chain.
-         */
-        SELF,
-        /**
-         * A generic capability, may have been set after a simple registration. Depending on the application, the identity
-         * may have limited usage.
-         */
-        GENERIC,
-        /**
-         * A capability that indicates that the identity have been verified and is associated with a higher level of
-         * assurance. This may be done through more in-depth registration or secondary verification.
-         */
-        IDENTIFY,
-        /**
-         * This capability allows an identity to sign and issue other identities, thus creating leaf identities in a trust
-         * chain. A root identity does often have this capability. However, it may be assigned to other identities further
-         * down in a trust chain.
-         */
-        ISSUE
-
-    }
 
     /** The item type identifier for Di:ME Identity items. */
     public static final String ITEM_IDENTIFIER = "ID";
@@ -91,7 +64,7 @@ public class Identity extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             try {
-                return new Key(List.of(Key.Use.SIGN), getClaim(Claim.PUB), Claim.PUB);
+                _publicKey = new Key(List.of(KeyCapability.SIGN), getClaim(Claim.PUB), Claim.PUB);
             } catch (DimeCryptographicException e) {
                 return null; // Ignored for now
             }
@@ -106,14 +79,14 @@ public class Identity extends Item {
      * determine what an entity may do with its issued identity.
      * @return An immutable list of Capability instances.
      */
-    public List<Capability> getCapabilities() {
+    public List<IdentityCapability> getCapabilities() {
         if (_capabilities == null) {
             List<String> caps = getClaim(Claim.CAP);
-            _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
+            _capabilities = caps.stream().map(IdentityCapability::fromString).collect(toList());
         }
         return _capabilities;
     }
-    private List<Capability> _capabilities;
+    private List<IdentityCapability> _capabilities;
 
     /**
      * Returns all principles assigned to an identity. These are key-value fields that further provide information about
@@ -130,17 +103,6 @@ public class Identity extends Item {
         return _principles;
     }
     private Map<String, Object> _principles;
-
-    /**
-     * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
-     * may be used.
-     * @return An immutable ambit list (as String instances).
-     * @deprecated Will be removed in a future release, use {{@link #getAmbitList()}} instead.
-     */
-    @Deprecated
-    public List<String> getAmbits() {
-        return getClaim(Claim.AMB);
-    }
 
     /**
      * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
@@ -174,7 +136,7 @@ public class Identity extends Item {
      * @return true or false
      */
     public boolean isSelfIssued() {
-        return getSubjectId().compareTo(getIssuerId()) == 0 && hasCapability(Capability.SELF);
+        return getSubjectId().compareTo(getIssuerId()) == 0 && hasCapability(IdentityCapability.SELF);
     }
 
     @Override
@@ -197,7 +159,7 @@ public class Identity extends Item {
      * @param capability The capability to check for.
      * @return true or false.
      */
-    public boolean hasCapability(Capability capability) {
+    public boolean hasCapability(IdentityCapability capability) {
         return getCapabilities().contains(capability);
     }
 
@@ -207,7 +169,7 @@ public class Identity extends Item {
      * @return true or false.
      */
     public boolean hasAmbit(String ambit) {
-        List<String> ambitList = getAmbits();
+        List<String> ambitList = getAmbitList();
         if (ambitList != null) {
             return ambitList.contains(ambit);
         }
@@ -218,7 +180,7 @@ public class Identity extends Item {
     public void convertToLegacy() {
         if (isLegacy()) { return; }
         super.convertToLegacy();
-        Key.convertKeyToLegacy(this, Key.Use.SIGN, Claim.PUB);
+        Key.convertKeyToLegacy(this, KeyCapability.SIGN, Claim.PUB);
     }
 
     public void sign(Identity issuer, Key key, boolean includeChain) throws DimeCryptographicException {
@@ -261,7 +223,7 @@ public class Identity extends Item {
 
     @Override
     protected boolean validClaim(Claim claim) {
-        return claim != Claim.MIM && claim != Claim.KEY && claim != Claim.USE;
+        return claim != Claim.MIM && claim != Claim.KEY;
     }
 
     @Override

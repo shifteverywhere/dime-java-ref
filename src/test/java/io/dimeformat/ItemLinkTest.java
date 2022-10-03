@@ -1,6 +1,6 @@
 //
 //  ItemLinkTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -11,8 +11,8 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.exceptions.VerificationException;
+import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +23,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest1() {
         try {
-            Key key = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             ItemLink link = new ItemLink(key);
             assertNotNull(link);
             assertEquals(key.getItemIdentifier(), link.itemIdentifier);
@@ -49,7 +49,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest3() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(KeyCapability.SIGN);
             ItemLink link = new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), key.getUniqueId());
             assertNotNull(link);
             assertEquals(Key.ITEM_IDENTIFIER, link.itemIdentifier);
@@ -63,7 +63,7 @@ class ItemLinkTest {
     @Test
     void itemLinkTest4() {
         try {
-            Key key = Key.generateKey(KeyType.IDENTITY);
+            Key key = Key.generateKey(KeyCapability.SIGN);
             try {
                 new ItemLink(null, key.thumbprint(), key.getUniqueId());
                 fail("Exception should have been thrown");
@@ -194,8 +194,7 @@ class ItemLinkTest {
     @Test
     void toEncodedListTest3() {
         try {
-            String encoded = ItemLink.toEncoded(null);
-            assertNull(encoded);
+            assertNull(ItemLink.toEncoded(null));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -230,9 +229,9 @@ class ItemLinkTest {
     @Test
     void fromEncodedListTest1() {
         try {
-            String lnk1 = new ItemLink(Key.generateKey(KeyType.IDENTITY)).toEncoded();
-            String lnk2 = new ItemLink(Key.generateKey(KeyType.EXCHANGE)).toEncoded();
-            String lnk3 = new ItemLink(Key.generateKey(KeyType.ENCRYPTION)).toEncoded();
+            String lnk1 = new ItemLink(Key.generateKey(KeyCapability.SIGN)).toEncoded();
+            String lnk2 = new ItemLink(Key.generateKey(KeyCapability.EXCHANGE)).toEncoded();
+            String lnk3 = new ItemLink(Key.generateKey(KeyCapability.EXCHANGE)).toEncoded();
             List<ItemLink> links = ItemLink.fromEncodedList(lnk1 + ":" + lnk2 + ":" + lnk3);
             assertNotNull(links);
             assertEquals(3, links.size());

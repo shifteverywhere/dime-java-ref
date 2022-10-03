@@ -9,12 +9,6 @@
 //
 package io.dimeformat.enums;
 
-import java.lang.reflect.Type;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 /**
  * Standard claim names.
  */
@@ -87,11 +81,7 @@ public enum Claim {
     /**
      * Unique ID
      */
-    UID,
-    /**
-     * Key usage
-     */
-    USE;
+    UID;
 
     @Override
     public String toString() {

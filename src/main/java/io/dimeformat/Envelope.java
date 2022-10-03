@@ -275,7 +275,7 @@ public class Envelope extends Item {
     @Override
     protected boolean validClaim(Claim claim) {
         return claim != Claim.AMB && claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM
-                && claim != Claim.MTD  && claim != Claim.PRI && claim != Claim.SUB && claim != Claim.USE;
+                && claim != Claim.MTD  && claim != Claim.PRI && claim != Claim.SUB;
     }
 
     @Override

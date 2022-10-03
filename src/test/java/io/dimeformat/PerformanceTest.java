@@ -1,6 +1,6 @@
 //
 //  PerformanceTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,9 +9,9 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.KeyType;
+import io.dimeformat.enums.IdentityCapability;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.Identity.Capability;
+import io.dimeformat.enums.KeyCapability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class PerformanceTest {
         long totalStart = System.nanoTime();
 
         Commons.initializeKeyRing();
-        Capability[] caps = new Capability[] { Capability.GENERIC, Capability.IDENTIFY };
+        IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.IDENTIFY };
         List<Key> keyList = new ArrayList<>();
         List<IdentityIssuingRequest> iirList = new ArrayList<>();
         List<Identity> identityList = new ArrayList<>();
@@ -40,7 +40,7 @@ public class PerformanceTest {
         System.out.flush();
         long start = System.nanoTime();
         for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
-            Key key = Key.generateKey(List.of(Key.Use.SIGN));
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             keyList.add(key);
         }
         long end = System.nanoTime();

@@ -9,7 +9,8 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.Identity.Capability;
+import io.dimeformat.enums.KeyCapability;
+import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import java.time.Instant;
@@ -50,7 +51,7 @@ public class IdentityIssuingRequest extends Item {
     public Key getPublicKey() {
         if (_publicKey == null) {
             try {
-                return new Key(List.of(Key.Use.SIGN), getClaim(Claim.PUB), Claim.PUB);
+                _publicKey = new Key(List.of(KeyCapability.SIGN), getClaim(Claim.PUB), Claim.PUB);
             } catch (DimeCryptographicException e) {
                 return null; // Ignored for now
             }
@@ -64,14 +65,14 @@ public class IdentityIssuingRequest extends Item {
      * determine what an entity may do with its issued identity.
      * @return An immutable list of Capability instances.
      */
-    public List<Capability> getCapabilities() {
+    public List<IdentityCapability> getCapabilities() {
         if (_capabilities == null) {
             List<String> caps = getClaim(Claim.CAP);
-            _capabilities = caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(toList());
+            _capabilities = caps.stream().map(IdentityCapability::fromString).collect(toList());
         }
         return _capabilities;
     }
-    private List<Capability> _capabilities;
+    private List<IdentityCapability> _capabilities;
 
     /**
      * Returns all principles provided in the IIR. These are key-value fields that further provide information about
@@ -107,7 +108,7 @@ public class IdentityIssuingRequest extends Item {
      * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities) throws DimeCryptographicException {
+    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities) throws DimeCryptographicException {
         return generateIIR(key, capabilities, null);
     }
 
@@ -120,8 +121,8 @@ public class IdentityIssuingRequest extends Item {
      * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
      * @throws DimeCryptographicException If something goes wrong.
      */
-    public static IdentityIssuingRequest generateIIR(Key key, Capability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
-        if (!key.getUse().contains(Key.Use.SIGN)) { throw new IllegalArgumentException("Key must have SIGN usage set."); }
+    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
+        if (!key.getCapability().contains(KeyCapability.SIGN)) { throw new IllegalArgumentException("Key must have SIGN capability set."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
@@ -129,10 +130,10 @@ public class IdentityIssuingRequest extends Item {
         iir.putClaim(Claim.IAT, Utility.createTimestamp());
         iir.putClaim(Claim.PUB, key.getPublic());
         if (capabilities == null || capabilities.length == 0) {
-            capabilities = new Capability[] { Capability.GENERIC };
+            capabilities = new IdentityCapability[] { IdentityCapability.GENERIC };
         }
-        List<Capability> caps = List.of(capabilities);
-        iir.putClaim(Claim.CAP, caps.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
+        List<IdentityCapability> caps = List.of(capabilities);
+        iir.putClaim(Claim.CAP, caps.stream().map(IdentityCapability::toString).collect(Collectors.toList()));
         if (principles != null && !principles.isEmpty()) {
             iir.putClaim(Claim.PRI, principles);
         }
@@ -169,7 +170,7 @@ public class IdentityIssuingRequest extends Item {
      * @param capability The capability to check for.
      * @return true or false.
      */
-    public boolean wantsCapability(Capability capability) {
+    public boolean wantsCapability(IdentityCapability capability) {
         return getCapabilities().contains(capability);
     }
 
@@ -189,13 +190,11 @@ public class IdentityIssuingRequest extends Item {
      * @param allowedCapabilities A list of capabilities that may be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
-     * @throws DimeDateException If the issuing identity has expired (or has an issued at date in the future).
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
-     * @throws DimeUntrustedIdentityException If the issuing identity can not be trusted.
      * @throws VerificationException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, null, null);
     }
 
@@ -221,7 +220,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws VerificationException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName,  String[] ambit) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambit, null);
     }
     /**
@@ -247,7 +246,7 @@ public class IdentityIssuingRequest extends Item {
      * @throws VerificationException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
         return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambit, methods);
@@ -311,14 +310,14 @@ public class IdentityIssuingRequest extends Item {
     public void convertToLegacy() {
         if (isLegacy()) { return; }
         super.convertToLegacy();
-        Key.convertKeyToLegacy(this, Key.Use.SIGN, Claim.PUB);
+        Key.convertKeyToLegacy(this, KeyCapability.SIGN, Claim.PUB);
     }
 
     /// PROTECTED ///
 
     @Override
     protected boolean validClaim(Claim claim) {
-        return claim != Claim.MIM && claim != Claim.KEY && claim != Claim.USE;
+        return claim != Claim.MIM && claim != Claim.KEY;
     }
 
     @Override
@@ -335,12 +334,12 @@ public class IdentityIssuingRequest extends Item {
 
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, Capability[] allowedCapabilities, Capability[] requiredCapabilities, String[] ambit, String[] methods) throws VerificationException, DimeCapabilityException, DimeCryptographicException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws VerificationException, DimeCapabilityException, DimeCryptographicException {
         verify(this.getPublicKey());
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         strip();
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
-        if (isSelfSign || issuerIdentity.hasCapability(Capability.ISSUE))
+        if (isSelfSign || issuerIdentity.hasCapability(IdentityCapability.ISSUE))
         {
             Instant now = Utility.createTimestamp();
             Instant expires = now.plusSeconds(validFor);
@@ -368,20 +367,20 @@ public class IdentityIssuingRequest extends Item {
             identity.sign(issuerKey);
             return identity;
         }
-        throw new DimeCapabilityException("Issuing identity missing 'issue' capability.");
+        throw new DimeCapabilityException("Issuing identity missing ISSUE capability.");
     }
 
-    private void completeCapabilities(Capability[] allowedCapabilities, Capability[] requiredCapabilities, boolean isSelfIssue) throws DimeCapabilityException {
-        ArrayList<Capability> capabilities;
+    private void completeCapabilities(IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, boolean isSelfIssue) throws DimeCapabilityException {
+        ArrayList<IdentityCapability> capabilities;
         ArrayList<String> caps = getClaim(Claim.CAP);
         if (caps != null) {
-            capabilities = (ArrayList<Capability>) caps.stream().map(cap -> Capability.valueOf(cap.toUpperCase())).collect(Collectors.toList());
+            capabilities = (ArrayList<IdentityCapability>) caps.stream().map(IdentityCapability::fromString).collect(Collectors.toList());
         } else {
             capabilities = new ArrayList<>();
         }
         if (isSelfIssue) {
-            if (!wantsCapability(Capability.SELF)) {
-                capabilities.add(Capability.SELF);
+            if (!wantsCapability(IdentityCapability.SELF)) {
+                capabilities.add(IdentityCapability.SELF);
             }
         } else {
             if ((allowedCapabilities == null || allowedCapabilities.length == 0) && (requiredCapabilities == null || requiredCapabilities.length == 0)) {
@@ -389,7 +388,7 @@ public class IdentityIssuingRequest extends Item {
             }
             // First check include any missing required capabilities to the iir
             if (requiredCapabilities != null && requiredCapabilities.length > 0) {
-                List<Capability> tempRequiredCapabilities = new ArrayList<>(Arrays.asList(requiredCapabilities));
+                List<IdentityCapability> tempRequiredCapabilities = new ArrayList<>(Arrays.asList(requiredCapabilities));
                 tempRequiredCapabilities.removeAll(capabilities);
                 if (!tempRequiredCapabilities.isEmpty()) {
                     capabilities.addAll(tempRequiredCapabilities);
@@ -397,7 +396,7 @@ public class IdentityIssuingRequest extends Item {
             }
             // Then check so there are no capabilities included that are not allowed
             if (allowedCapabilities != null && allowedCapabilities.length > 0) {
-                List<Capability> tempCap = new ArrayList<>(capabilities);
+                List<IdentityCapability> tempCap = new ArrayList<>(capabilities);
                 tempCap.removeAll(Arrays.asList(allowedCapabilities));
                 if (!tempCap.isEmpty()) {
                     throw new DimeCapabilityException("Identity issuing request contains one or more disallowed capabilities.");

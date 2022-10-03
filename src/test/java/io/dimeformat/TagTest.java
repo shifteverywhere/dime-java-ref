@@ -9,8 +9,9 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.enums.KeyType;
+
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -44,7 +45,7 @@ class TagTest {
     @Test
     void tagTest3() {
         try {
-            Tag tag = new Tag(null);
+            new Tag(null);
         } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
     }
 
@@ -52,14 +53,14 @@ class TagTest {
     void tagTest4() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), context);
+            new Tag(Commons.getIssuerIdentity().getSubjectId(), context);
         } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
     }
 
     @Test
     void tagTest5() {
         try {
-            List<Item> items = List.of(Key.generateKey(KeyType.IDENTITY), Key.generateKey(KeyType.EXCHANGE));
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
             assertEquals(Commons.getIssuerIdentity().getSubjectId(), tag.getIssuerId());
             assertEquals(Commons.CONTEXT, tag.getContext());
@@ -74,7 +75,7 @@ class TagTest {
     void addItemLinkTest1() {
         try {
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            tag.addItemLink(Key.generateKey(KeyType.IDENTITY));
+            tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
             assertEquals(Key.ITEM_IDENTIFIER, tag.getItemLinks().get(0).itemIdentifier);
@@ -100,8 +101,8 @@ class TagTest {
     void addItemLinkTest3() {
         try {
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             tag.addItemLink(message);
             assertNotNull(tag.getItemLinks());
@@ -116,7 +117,7 @@ class TagTest {
     void addItemLinkTest4() {
         try {
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            tag.addItemLink(Key.generateKey(KeyType.IDENTITY));
+            tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             tag.sign(Commons.getIssuerKey());
             tag.addItemLink(Commons.getIssuerIdentity());
             fail("Expected exception not thrown.");
@@ -163,11 +164,11 @@ class TagTest {
     void exportTest1() {
         try {
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
-            message.setPayload("Racecar is racecar backwards.".getBytes(StandardCharsets.UTF_8));
+            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             tag.addItemLink(message);
-            tag.addItemLink(Key.generateKey(KeyType.IDENTITY));
+            tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             tag.addItemLink(Commons.getIssuerIdentity());
             tag.sign(Commons.getIssuerKey());
             String encoded = tag.exportToEncoded();
@@ -184,7 +185,7 @@ class TagTest {
     void exportTest2() {
         try {
             Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            tag.addItemLink(Key.generateKey(KeyType.IDENTITY));
+            tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             tag.exportToEncoded();
             fail("Expected exception not thrown.");
         } catch (IllegalStateException e) {

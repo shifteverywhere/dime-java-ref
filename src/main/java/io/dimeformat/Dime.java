@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.crypto.Crypto;
+import io.dimeformat.crypto.KeyRing;
 
 import java.time.Instant;
 
