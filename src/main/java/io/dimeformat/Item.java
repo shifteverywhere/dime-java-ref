@@ -389,7 +389,10 @@ public abstract class Item {
     @SuppressWarnings("unchecked")
     static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
         try {
-            var t = Item.classFromTag(encoded.substring(0, encoded.indexOf(Dime.COMPONENT_DELIMITER)));
+            int index = encoded.indexOf(Dime.COMPONENT_DELIMITER);
+            if (index == -1) { return null; }
+            var t = Item.classFromTag(encoded.substring(0, index));
+            if (t == null) { return null; }
             T item;
             try {
                 item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
@@ -421,10 +424,7 @@ public abstract class Item {
     }
 
     protected final boolean hasClaims() {
-        if (this._claims == null && this.components != null) {
-            return this.components.size() >= Item.MINIMUM_NBR_COMPONENTS;
-        }
-        return this._claims != null && this._claims.size() > 0;
+        return getClaimMap().size() > 0;
     }
 
     protected final List<Signature> getSignatures() {
@@ -439,11 +439,13 @@ public abstract class Item {
     }
 
     protected static void verifyDates(Item item) throws VerificationException {
-        Instant now = Utility.createTimestamp();
-        if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { throw new VerificationException(VerificationException.Reason.USE_BEFORE, item, "Unable to verify, issued at date in the future."); }
-        if (item.getExpiresAt() != null) {
-            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { throw new VerificationException(VerificationException.Reason.DATE_MISMATCH, item, "Unable to verify, expires at before issued at date."); }
-            if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { throw new VerificationException(VerificationException.Reason.USE_AFTER, item, "Unable to verify, passed expires at date."); }
+        if (item.hasClaims()) {
+            Instant now = Utility.createTimestamp();
+            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { throw new VerificationException(VerificationException.Reason.USE_BEFORE, item, "Unable to verify, issued at date in the future."); }
+            if (item.getExpiresAt() != null) {
+                if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { throw new VerificationException(VerificationException.Reason.DATE_MISMATCH, item, "Unable to verify, expires at before issued at date."); }
+                if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { throw new VerificationException(VerificationException.Reason.USE_AFTER, item, "Unable to verify, passed expires at date."); }
+            }
         }
     }
 

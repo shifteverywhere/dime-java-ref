@@ -135,15 +135,22 @@ public class Envelope extends Item {
         // 0: ENVELOPE
         String[] array = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
         Envelope envelope = new Envelope();
-        envelope.components = new ArrayList(Arrays.asList(array));
-        // 1 to LAST or LAST - 1
-        int endIndex = envelope.isAnonymous() ? sections.length : sections.length - 1; // end index dependent on anonymous Di:ME or not
-        ArrayList<Item> items = new ArrayList<>(endIndex - 1);
-        for (int index = 1; index < endIndex; index++) {
-            items.add(Item.fromEncoded(sections[index]));
+        envelope.components = new ArrayList<>(Arrays.asList(array));
+        ArrayList<Item> items = new ArrayList<>(sections.length);
+        for (int index = 1; index < sections.length; index++) {
+            Item item = Item.fromEncoded(sections[index]);
+            if (item == null) {
+                if (index == sections.length - 1) { // This is most likely a signature
+                    envelope.isSigned = true;
+                } else {
+                    throw new DimeFormatException("Unable to import envelope, encountered invalid items.");
+                }
+            } else {
+                items.add(item);
+            }
         }
         envelope.items = items;
-        if (envelope.isAnonymous()) {
+        if (!envelope.isSigned()) {
             envelope.encoded = encoded;
         } else {
             envelope.isSigned = true;
@@ -248,7 +255,7 @@ public class Envelope extends Item {
     public String exportToEncoded() {
         if (!isAnonymous() && !isSigned()) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
         try {
-            return encoded(!isAnonymous());
+            return encoded(isSigned());
         } catch (DimeFormatException e) {
             return null;
         }

@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.webpki.jcs.JsonCanonicalizer;
 
@@ -32,16 +33,18 @@ class ClaimsMap {
     }
 
     String toJSON() throws IOException {
+        if (_claims == null) { return null; }
         JSONObject jsonObject = new JSONObject(this._claims);
         JsonCanonicalizer jsonCanonicalizer = new JsonCanonicalizer(jsonObject.toString());
         return jsonCanonicalizer.getEncodedString();
     }
 
     int size() {
-        return _claims.size();
+        return _claims != null ?_claims.size() : 0;
     }
 
     <T> T get(Claim claim) {
+        if (_claims == null) { return null; }
         Object value = null;
         switch (claim) {
             // UUID
@@ -70,6 +73,7 @@ class ClaimsMap {
 
     void put(Claim claim, Object value) {
         if (value != null) {
+            if (_claims == null) { _claims = new HashMap<>(); }
             if (value instanceof byte[]) {
                 _claims.put(claim.toString(), Base58.encode((byte[])value));
             } else {
@@ -79,16 +83,21 @@ class ClaimsMap {
     }
 
     void remove(Claim claim) {
+        if (_claims == null) { return; }
         _claims.remove(claim.toString());
     }
 
     /// PRIVATE ///
 
-    protected final HashMap<String, Object> _claims;
+    protected HashMap<String, Object> _claims;
 
     private static HashMap<String, Object> fromJSON(String json) {
-        JSONObject jsonObject = new JSONObject(json);
-        return (HashMap<String, Object>)jsonObject.toMap();
+        try {
+            JSONObject jsonObject = new JSONObject(json);
+            return (HashMap<String, Object>)jsonObject.toMap();
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     private UUID getUUID(Claim claim) {
