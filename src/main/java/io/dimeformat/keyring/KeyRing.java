@@ -10,8 +10,8 @@
 package io.dimeformat.keyring;
 
 import io.dimeformat.*;
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.CryptographyException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.exceptions.IntegrityStateException;
 
 import java.util.Collection;
@@ -164,10 +164,10 @@ public class KeyRing {
      *  signature of the envelope is first verified before any items are imported.
      * @param encoded The DiME encoded string with items that should be imported.
      * @param verifyKey A key to verify the signature of the DiME encoded string, may be null to skip the verification.
-     * @throws DimeFormatException If something is wrong with the encoded string.
+     * @throws InvalidFormatException If something is wrong with the encoded string.
      * @throws IntegrityStateException If the verification of the signature fails.
      */
-    public void importFromEncoded(String encoded, Key verifyKey) throws DimeFormatException, IntegrityStateException {
+    public void importFromEncoded(String encoded, Key verifyKey) throws InvalidFormatException, IntegrityStateException {
         Envelope envelope = Envelope.importFromEncoded(encoded);
         if (verifyKey != null) {
             IntegrityState state = envelope.verify(verifyKey);
@@ -192,9 +192,9 @@ public class KeyRing {
      * DiME envelope will be signed by this key.
      * @param signingKey A key to sign the generated DiME envelope, may be null.
      * @return A DiME encoded string, null if the key ring is empty.
-     * @throws DimeCryptographicException If something goes wrong while signing the generated envelope.
+     * @throws CryptographyException If something goes wrong while signing the generated envelope.
      */
-    public String exportToEncoded(Key signingKey) throws DimeCryptographicException {
+    public String exportToEncoded(Key signingKey) throws CryptographyException {
         if (_keyRing != null && !_keyRing.isEmpty()) {
             Envelope envelope = new Envelope();
             for (String name: nameSet()) {

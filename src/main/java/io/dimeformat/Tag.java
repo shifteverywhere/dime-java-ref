@@ -10,7 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,7 +85,7 @@ public class Tag extends Item {
     }
 
     @Override
-    protected String forExport() throws DimeFormatException {
+    protected String forExport() throws InvalidFormatException {
         if (this.itemLinks == null || this.itemLinks.isEmpty()) { throw new IllegalStateException("Unable to export tag, must contain at least 1 linked item."); }
         if (!isSigned()) { throw new IllegalStateException("Unable to export tag, must be signed first."); }
         return super.forExport();

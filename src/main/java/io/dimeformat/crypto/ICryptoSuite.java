@@ -9,7 +9,7 @@
 //
 package io.dimeformat.crypto;
 
-import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.enums.KeyCapability;
 import java.util.List;
 
@@ -48,9 +48,9 @@ public interface ICryptoSuite {
      * @param data The data that should be signed.
      * @param key The key to use when signing the data.
      * @return The signature as a byte array.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateSignature(byte[] data, byte[] key) throws DimeCryptographicException;
+    byte[] generateSignature(byte[] data, byte[] key) throws CryptographyException;
 
     /**
      * Verifies a cryptographic signature for a data byte array using the provided key.
@@ -65,9 +65,9 @@ public interface ICryptoSuite {
      * Generates a cryptographic key for the provided usage, if possible.
      * @param capabilities The intended capabilities of the generated key, i.e. {#{@link KeyCapability#SIGN}}.
      * @return The generated key.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[][] generateKey(List<KeyCapability> capabilities) throws DimeCryptographicException;
+    byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException;
 
     /**
      *  Generates a shared secret from two keys or key pars. These keys must have {#{@link KeyCapability#EXCHANGE}}
@@ -77,34 +77,34 @@ public interface ICryptoSuite {
      * @param serverKey The key or key pair from the server (usually the issuer).
      * @param capabilities The intended capabilities of the generated key, i.e. {#{@link KeyCapability#ENCRYPT}}.
      * @return The generated shared key.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws DimeCryptographicException;
+    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws CryptographyException;
 
     /**
      * Encrypts a plain text byte array using the provided key.
      * @param data The byte array to encrypt.
      * @param key The key to use for the encryption.
      * @return The encrypted cipher text as a byte array.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] encrypt(byte[] data, byte[] key) throws DimeCryptographicException;
+    byte[] encrypt(byte[] data, byte[] key) throws CryptographyException;
 
     /**
      * Decrypts a cipher text byte array using the provided key.
      * @param data The byte array to decrypt.
      * @param key The key to use for the decryption.
      * @return The plain text as a byte array.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] decrypt(byte[] data, byte[] key) throws DimeCryptographicException;
+    byte[] decrypt(byte[] data, byte[] key) throws CryptographyException;
 
     /**
      * Generates a secure hash digest of the provided data.
      * @param data The data that should be hashed.
      * @return The hash digest of the provided data.
-     * @throws DimeCryptographicException If any cryptographic operations goes wrong.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateHash(byte[] data) throws DimeCryptographicException;
+    byte[] generateHash(byte[] data) throws CryptographyException;
 
 }

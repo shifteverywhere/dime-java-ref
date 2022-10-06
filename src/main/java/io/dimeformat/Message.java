@@ -74,7 +74,7 @@ public class Message extends Data {
         if (pub != null && pub.length() > 0) {
             try {
                 return new Key(List.of(KeyCapability.EXCHANGE), pub, Claim.PUB);
-            } catch (DimeCryptographicException ignored) { /* ignored */ }
+            } catch (CryptographyException ignored) { /* ignored */ }
         }
         return null;
     }
@@ -149,7 +149,7 @@ public class Message extends Data {
     }
 
     @Override
-    public String thumbprint() throws DimeCryptographicException {
+    public String thumbprint() throws CryptographyException {
         if (!isSigned()) { throw new IllegalStateException("Unable to generate thumbprint, must be signed first."); }
         return super.thumbprint();
     }
@@ -159,9 +159,9 @@ public class Message extends Data {
      * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws DimeCryptographicException {
+    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws CryptographyException {
         throwIfSigned();
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Unable to set payload, payload must not be null or empty."); }
         if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
@@ -175,9 +175,9 @@ public class Message extends Data {
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
      * @return The message payload.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] getPayload(Key issuerKey, Key audienceKey) throws DimeCryptographicException {
+    public byte[] getPayload(Key issuerKey, Key audienceKey) throws CryptographyException {
         if (issuerKey == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
         if (audienceKey == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
         Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyCapability.ENCRYPT));
@@ -199,13 +199,13 @@ public class Message extends Data {
     }
 
     @Override
-    protected String forExport() throws DimeFormatException {
+    protected String forExport() throws InvalidFormatException {
         if (!isSigned()) { throw new IllegalStateException("Unable to encode message, must be signed first."); }
         return super.forExport();
     }
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
+    protected void customDecoding(List<String> components) throws InvalidFormatException {
        super.customDecoding(components);
        this.isSigned = true; // Messages are always signed
     }

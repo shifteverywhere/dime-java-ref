@@ -9,7 +9,7 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.util.Arrays;
@@ -215,7 +215,7 @@ class ItemLinkTest {
         try {
             ItemLink.fromEncoded(Commons.PAYLOAD);
             fail("Exception should have been thrown");
-        } catch (DimeFormatException e) {
+        } catch (InvalidFormatException e) {
             /* All is well, carry on. */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -241,7 +241,7 @@ class ItemLinkTest {
         try {
             ItemLink.fromEncodedList(Commons.PAYLOAD);
             fail("Exception should have been thrown");
-        } catch (DimeFormatException e) {
+        } catch (InvalidFormatException e) {
             /* All is well, carry on. */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

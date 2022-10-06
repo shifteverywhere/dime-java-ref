@@ -114,7 +114,7 @@ public class Data extends Item {
     }
 
     @Override
-    public void sign(Key key) throws DimeCryptographicException {
+    public void sign(Key key) throws CryptographyException {
         if (this.payload == null) { throw new IllegalStateException("Unable to sign item, no payload added."); }
         super.sign(key);
     }
@@ -126,7 +126,7 @@ public class Data extends Item {
     }
 
     @Override
-    public String thumbprint() throws DimeCryptographicException {
+    public String thumbprint() throws CryptographyException {
         if (payload == null) { throw new IllegalStateException("Unable to generate thumbprint, no payload added."); }
         return super.thumbprint();
     }
@@ -145,14 +145,14 @@ public class Data extends Item {
     }
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Data.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Data.MAXIMUM_NBR_COMPONENTS); }
+    protected void customDecoding(List<String> components) throws InvalidFormatException {
+        if (components.size() > Data.MAXIMUM_NBR_COMPONENTS) { throw new InvalidFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Data.MAXIMUM_NBR_COMPONENTS); }
         this.payload = components.get(COMPONENTS_PAYLOAD_INDEX);
         this.isSigned = components.size() == Data.MAXIMUM_NBR_COMPONENTS;
     }
 
     @Override
-    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
+    protected void customEncoding(StringBuilder builder) throws InvalidFormatException {
         super.customEncoding(builder);
         builder.append(Dime.COMPONENT_DELIMITER);
         builder.append(this.payload);

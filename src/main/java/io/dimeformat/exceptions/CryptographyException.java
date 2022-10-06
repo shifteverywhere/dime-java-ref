@@ -1,6 +1,6 @@
 //
-//  DimeKeyMismatchException.java
-//  Di:ME - Data Identity Message Envelope
+//  CryptographyException.java
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -10,16 +10,17 @@
 package io.dimeformat.exceptions;
 
 /**
- * Exception that is thrown if there is any mismatch between keys provided to a 
- * method. This may happen when using a key of the wrong type.
+ * Exception that is thrown if there is any problems with capabilities cryptographic 
+ * operations. This may be when verifying signatures, generating keys or decryption data.
  */
-public class DimeKeyMismatchException extends  Exception {
-    
+public class CryptographyException extends Exception {
+
     /**
      * Create a new exception with a description.
      * @param message A short description of what happened.
      */
-    public DimeKeyMismatchException(String message) {
+    public CryptographyException(String message) {
         super(message);
     }
+
 }

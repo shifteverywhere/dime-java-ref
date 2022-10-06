@@ -9,8 +9,8 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.CryptographyException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.keyring.IntegrityState;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public final class ItemLink {
         this.itemIdentifier = item.getItemIdentifier();
         try {
             this.thumbprint = item.thumbprint();
-        } catch (DimeCryptographicException e) {
+        } catch (CryptographyException e) {
             throw new IllegalArgumentException("Unable to create item link, exception caught: " + e);
         }
         this.uniqueId = item.getUniqueId();
@@ -72,12 +72,12 @@ public final class ItemLink {
      * Returns an ItemLink instance from an encoded string.
      * @param encoded The encoded string.
      * @return Decoded ItemLink instance.
-     * @throws DimeFormatException If unable to decode the provided string.
+     * @throws InvalidFormatException If unable to decode the provided string.
      */
-    public static ItemLink fromEncoded(String encoded) throws DimeFormatException {
+    public static ItemLink fromEncoded(String encoded) throws InvalidFormatException {
         if (encoded == null || encoded.isEmpty()) { throw new IllegalArgumentException("Encoded item link must not be null or empty."); }
         String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (components.length != 3) { throw new DimeFormatException("Invalid item link format."); }
+        if (components.length != 3) { throw new InvalidFormatException("Invalid item link format."); }
         return new ItemLink(components[0], components[2], UUID.fromString(components[1]));
     }
 
@@ -85,9 +85,9 @@ public final class ItemLink {
      * Returns a list of ItemLink instances from an encoded string.
      * @param encodedList The encoded string.
      * @return Decoded ItemLink instances in a list.
-     * @throws DimeFormatException If unable to decode the provided string.
+     * @throws InvalidFormatException If unable to decode the provided string.
      */
-    public static List<ItemLink> fromEncodedList(String encodedList) throws DimeFormatException {
+    public static List<ItemLink> fromEncodedList(String encodedList) throws InvalidFormatException {
         if (encodedList == null || encodedList.isEmpty()) { throw new IllegalArgumentException("Encoded list of item links must not be null or empty."); }
         String[] items = encodedList.split("\\" + Dime.SECTION_DELIMITER);
         ArrayList<ItemLink> links = new ArrayList<>();
@@ -108,7 +108,7 @@ public final class ItemLink {
             return uniqueId.equals(item.getUniqueId())
                     && itemIdentifier.equals(item.getItemIdentifier())
                     && thumbprint.equals(item.thumbprint());
-        } catch (DimeCryptographicException e) {
+        } catch (CryptographyException e) {
             return false;
         }
     }
@@ -130,7 +130,7 @@ public final class ItemLink {
                         if (!link.itemIdentifier.equals(item.getItemIdentifier()) || !link.thumbprint.equals(item.thumbprint())) {
                             return IntegrityState.ERR_LINKED_ITEM_FAULT;
                         }
-                    } catch (DimeCryptographicException e) {
+                    } catch (CryptographyException e) {
                         return IntegrityState.ERR_INTERNAL_FAULT;
                     }
                 }

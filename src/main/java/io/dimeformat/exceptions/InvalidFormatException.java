@@ -1,6 +1,6 @@
 //
-//  DimeFormatException.java
-//  Di:ME - Data Identity Message Envelope
+//  InvalidFormatException.java
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -13,13 +13,13 @@ package io.dimeformat.exceptions;
  * Exception that is thrown if there is any problems when parsing Di:ME items or
  * envelopes.
  */
-public class DimeFormatException extends Exception {
+public class InvalidFormatException extends Exception {
 
     /**
      * Create a new exception with a description.
      * @param message A short description of what happened.
      */
-    public DimeFormatException(String message) {
+    public InvalidFormatException(String message) {
         super(message);
     }
 
@@ -29,7 +29,7 @@ public class DimeFormatException extends Exception {
      * @param message A short description of what happened.
      * @param exception The causing exception.
      */
-    public DimeFormatException(String message, Exception exception) {
+    public InvalidFormatException(String message, Exception exception) {
         super(message, exception);
     }
 }

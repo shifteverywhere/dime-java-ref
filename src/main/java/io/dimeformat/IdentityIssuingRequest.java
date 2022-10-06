@@ -53,7 +53,7 @@ public class IdentityIssuingRequest extends Item {
         if (_publicKey == null) {
             try {
                 _publicKey = new Key(List.of(KeyCapability.SIGN), getClaim(Claim.PUB), Claim.PUB);
-            } catch (DimeCryptographicException e) {
+            } catch (CryptographyException e) {
                 return null; // Ignored for now
             }
         }
@@ -95,9 +95,9 @@ public class IdentityIssuingRequest extends Item {
      * This will generate a new IIR from a Key instance. The Key instance must be of type IDENTITY.
      * @param key The Key instance to use.
      * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public static IdentityIssuingRequest generateIIR(Key key) throws DimeCryptographicException {
+    public static IdentityIssuingRequest generateIIR(Key key) throws CryptographyException {
         return generateIIR(key, null, null);
     }
 
@@ -107,9 +107,9 @@ public class IdentityIssuingRequest extends Item {
      * @param key The Key instance to use.
      * @param capabilities A list of capabilities that should be requested.
      * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities) throws DimeCryptographicException {
+    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities) throws CryptographyException {
         return generateIIR(key, capabilities, null);
     }
 
@@ -120,9 +120,9 @@ public class IdentityIssuingRequest extends Item {
      * @param capabilities A list of capabilities that should be requested.
      * @param principles A map of key-value fields that should be included in an issued identity.
      * @return An IIR that can be used to issue a new identity (or sent to a trusted entity for issuing).
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities, Map<String, Object> principles) throws DimeCryptographicException {
+    public static IdentityIssuingRequest generateIIR(Key key, IdentityCapability[] capabilities, Map<String, Object> principles) throws CryptographyException {
         if (!key.getCapability().contains(KeyCapability.SIGN)) { throw new IllegalArgumentException("Key must have SIGN capability set."); }
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
@@ -177,11 +177,11 @@ public class IdentityIssuingRequest extends Item {
      * @param allowedCapabilities A list of capabilities that may be present in the IIR to allow issuing.
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
-     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws CapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws IntegrityStateException If verification fails.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities) throws CapabilityException, CryptographyException, IntegrityStateException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, null, null);
     }
 
@@ -203,11 +203,11 @@ public class IdentityIssuingRequest extends Item {
      * @param systemName The name of the system, or network, that the identity should be a part of.
      * @param ambit An ambit list that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
-     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws CapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws IntegrityStateException If verification fails.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit) throws CapabilityException, CryptographyException, IntegrityStateException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambit, null);
     }
     /**
@@ -229,11 +229,11 @@ public class IdentityIssuingRequest extends Item {
      * @param ambit An ambit list that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
-     * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
+     * @throws CapabilityException If the IIR contains any capabilities that are not allowed.
      * @throws IntegrityStateException If verification fails.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws CapabilityException, CryptographyException, IntegrityStateException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
         return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambit, methods);
@@ -248,9 +248,9 @@ public class IdentityIssuingRequest extends Item {
      * @param issuerKey The Key of the issuing entity, must contain a secret key of type IDENTIFY.
      * @param systemName The name of the system, or network, that the identity should be a part of.
      * @return A self-issued Identity instance.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName) throws DimeCryptographicException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName) throws CryptographyException {
         return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, null, null);
     }
 
@@ -264,9 +264,9 @@ public class IdentityIssuingRequest extends Item {
      * @param systemName The name of the system, or network, that the identity should be a part of.
      * @param ambit An ambit list that will apply to the issued identity.
      * @return A self-issued Identity instance.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws DimeCryptographicException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit) throws CryptographyException {
         return selfIssueIdentity(subjectId, validFor, issuerKey, systemName, ambit, null);
     }
 
@@ -281,13 +281,13 @@ public class IdentityIssuingRequest extends Item {
      * @param ambit An ambit list that will apply to the issued identity.
      * @param methods A list of methods that will apply to the issued identity.
      * @return A self-issued Identity instance.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit, String[] methods) throws DimeCryptographicException {
+    public Identity selfIssueIdentity(UUID subjectId, long validFor, Key issuerKey, String systemName, String[] ambit, String[] methods) throws CryptographyException {
         try {
             if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
             return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, false, null, null, ambit, methods);
-        } catch (DimeCapabilityException | IntegrityStateException e) {
+        } catch (CapabilityException | IntegrityStateException e) {
             return null; // These exceptions will not be thrown when issuing a self-issued identity.
         }
 
@@ -321,7 +321,7 @@ public class IdentityIssuingRequest extends Item {
 
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, DimeCapabilityException, DimeCryptographicException {
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, CapabilityException, CryptographyException {
         IntegrityState state = verify(this.getPublicKey());
         if (!state.isValid()) {
             throw new IntegrityStateException(state, "Unable to verify IIR.");
@@ -363,10 +363,10 @@ public class IdentityIssuingRequest extends Item {
             identity.sign(issuerKey);
             return identity;
         }
-        throw new DimeCapabilityException("Issuing identity missing ISSUE capability.");
+        throw new CapabilityException("Issuing identity missing ISSUE capability.");
     }
 
-    private void completeCapabilities(IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, boolean isSelfIssue) throws DimeCapabilityException {
+    private void completeCapabilities(IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, boolean isSelfIssue) throws CapabilityException {
         ArrayList<IdentityCapability> capabilities;
         ArrayList<String> caps = getClaim(Claim.CAP);
         if (caps != null) {
@@ -395,7 +395,7 @@ public class IdentityIssuingRequest extends Item {
                 List<IdentityCapability> tempCap = new ArrayList<>(capabilities);
                 tempCap.removeAll(Arrays.asList(allowedCapabilities));
                 if (!tempCap.isEmpty()) {
-                    throw new DimeCapabilityException("Identity issuing request contains one or more disallowed capabilities.");
+                    throw new CapabilityException("Identity issuing request contains one or more disallowed capabilities.");
                 }
             }
         }

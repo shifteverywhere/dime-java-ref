@@ -119,14 +119,14 @@ public abstract class Item {
      * @param encoded The Di:ME encoded string to import an item from.
      * @param <T> The subclass of item of the imported Di:ME item.
      * @return The imported Di:ME item.
-     * @throws DimeFormatException If the encoded string is of a Di:ME envelope.
+     * @throws InvalidFormatException If the encoded string is of a Di:ME envelope.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Item> T importFromEncoded(String encoded) throws DimeFormatException {
+    public static <T extends Item> T importFromEncoded(String encoded) throws InvalidFormatException {
         try {
             Envelope envelope = Envelope.importFromEncoded(encoded);
             List<Item> items = envelope.getItems();
-            if (items.size() > 1) { throw new DimeFormatException("Multiple items found, import as 'Envelope' instead. (I1001)"); }
+            if (items.size() > 1) { throw new InvalidFormatException("Multiple items found, import as 'Envelope' instead. (I1001)"); }
             return (T)items.get(0);
         } catch (ClassCastException e) {
             return null; // This is unlikely to happen
@@ -149,9 +149,9 @@ public abstract class Item {
     /**
      * Will sign an item with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
      * @param key The key to sign the item with, must be of type IDENTITY.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public void sign(Key key) throws DimeCryptographicException {
+    public void sign(Key key) throws CryptographyException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, key for signing must not be null. (I1004)"); }
         if (isSigned() && Signature.find(Dime.crypto.generateKeyName(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
@@ -160,8 +160,8 @@ public abstract class Item {
             String name = isLegacy() ? null : Dime.crypto.generateKeyName(key);
             getSignatures().add(new Signature(signature, name));
             this.isSigned = true;
-        } catch (DimeFormatException e) {
-            throw new DimeCryptographicException("Unable to sign item, invalid data.");
+        } catch (InvalidFormatException e) {
+            throw new CryptographyException("Unable to sign item, invalid data.");
         }
     }
 
@@ -198,13 +198,13 @@ public abstract class Item {
      * changed. This is created by securely hashing the item and will be unique and change as soon as any content
      * changes.
      * @return The hash of the item as a hex string.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public String thumbprint() throws DimeCryptographicException {
+    public String thumbprint() throws CryptographyException {
         try {
             return Item.thumbprint(encoded(true));
-        } catch (DimeFormatException e) {
-            throw new DimeCryptographicException("Unable to generate thumbprint for item, data invalid.");
+        } catch (InvalidFormatException e) {
+            throw new CryptographyException("Unable to generate thumbprint for item, data invalid.");
         }
     }
 
@@ -215,9 +215,9 @@ public abstract class Item {
      * unchanged) item.
      * @param encoded The DiME encoded item string.
      * @return The hash of the item as a hex string.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public static String thumbprint(String encoded) throws DimeCryptographicException {
+    public static String thumbprint(String encoded) throws CryptographyException {
         return Item.thumbprint(encoded, Dime.crypto.getDefaultSuiteName());
     }
 
@@ -229,9 +229,9 @@ public abstract class Item {
      * @param encoded The DiME encoded item string.
      * @param suiteName The name of the cryptographic suite to use, may be null.
      * @return The hash of the item as a hex string.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public static String thumbprint(String encoded, String suiteName) throws DimeCryptographicException {
+    public static String thumbprint(String encoded, String suiteName) throws CryptographyException {
         return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
@@ -280,7 +280,7 @@ public abstract class Item {
                 if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, trustedKey)) {
                     return IntegrityState.ERR_NOT_TRUSTED;
                 }
-            } catch (DimeFormatException | DimeCryptographicException e) {
+            } catch (InvalidFormatException | CryptographyException e) {
                 return IntegrityState.ERR_INTERNAL_FAULT;
             }
         }
@@ -390,7 +390,7 @@ public abstract class Item {
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends Item> T fromEncoded(String encoded) throws DimeFormatException {
+    static <T extends Item> T fromEncoded(String encoded) throws InvalidFormatException {
         try {
             int index = encoded.indexOf(Dime.COMPONENT_DELIMITER);
             if (index == -1) { return null; }
@@ -400,7 +400,7 @@ public abstract class Item {
             try {
                 item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                throw new DimeFormatException("Unexpected exception (I1002).", e);
+                throw new InvalidFormatException("Unexpected exception (I1002).", e);
             }
             item.decode(encoded);
             return item;
@@ -409,7 +409,7 @@ public abstract class Item {
         }
     }
 
-    String forExport() throws DimeFormatException {
+    String forExport() throws InvalidFormatException {
         return encoded(true);
     }
 
@@ -466,7 +466,7 @@ public abstract class Item {
 
     /// --- ENCODING/DECODING --- ///
 
-    protected String encoded(boolean withSignature) throws DimeFormatException {
+    protected String encoded(boolean withSignature) throws InvalidFormatException {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             customEncoding(builder);
@@ -478,7 +478,7 @@ public abstract class Item {
         return this.encoded;
     }
 
-    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
+    protected void customEncoding(StringBuilder builder) throws InvalidFormatException {
         builder.append(this.getItemIdentifier());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
@@ -487,15 +487,15 @@ public abstract class Item {
         try {
             builder.append(Utility.toBase64(this._claims.toJSON()));
         } catch (IOException e) {
-            throw new DimeFormatException("Unexpected exception while encoding item: " + e);
+            throw new InvalidFormatException("Unexpected exception while encoding item: " + e);
         }
 
     }
 
-    protected final void decode(String encoded) throws DimeFormatException {
+    protected final void decode(String encoded) throws InvalidFormatException {
         String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (array.length < getMinNbrOfComponents()) { throw new DimeFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
-        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new DimeFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
+        if (array.length < getMinNbrOfComponents()) { throw new InvalidFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
+        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new InvalidFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
         this.components = new ArrayList<>(Arrays.asList(array));
         customDecoding(this.components);
         if (isSigned()) {
@@ -508,7 +508,7 @@ public abstract class Item {
         }
     }
 
-    protected abstract void customDecoding(List<String> components) throws DimeFormatException;
+    protected abstract void customDecoding(List<String> components) throws InvalidFormatException;
 
     protected int getMinNbrOfComponents() {
         return Item.MINIMUM_NBR_COMPONENTS;

@@ -133,7 +133,7 @@ class ClaimsMap {
         if (string == null || string.length() == 0) { return null; }
         try {
             return ItemLink.fromEncodedList(string);
-        } catch (DimeFormatException e) {
+        } catch (InvalidFormatException e) {
             return null;
         }
     }

@@ -12,7 +12,7 @@ package io.dimeformat.crypto;
 import io.dimeformat.Key;
 import io.dimeformat.Utility;
 import io.dimeformat.enums.Claim;
-import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.enums.KeyCapability;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -72,7 +72,7 @@ public final class Crypto {
             if (id != null) {
                 return Utility.toHex(id);
             }
-        } catch (DimeCryptographicException e) { /* ignored */ }
+        } catch (CryptographyException e) { /* ignored */ }
         return null;
     }
 
@@ -81,9 +81,9 @@ public final class Crypto {
      * @param data The string to sign.
      * @param key The key to use for the signature.
      * @return The signature that was generated.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateSignature(String data, Key key) throws DimeCryptographicException {
+    public byte[] generateSignature(String data, Key key) throws CryptographyException {
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Unable to sign, data must not be null or of length zero."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
         if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
@@ -96,9 +96,9 @@ public final class Crypto {
      * @param data The string that should be verified with the signature.
      * @param signature The signature that should be verified.
      * @param key The key that should be used for the verification.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public boolean verifySignature(String data, byte[] signature, Key key) throws DimeCryptographicException {
+    public boolean verifySignature(String data, byte[] signature, Key key) throws CryptographyException {
         if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
         if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
         if (signature == null || signature.length == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
@@ -113,9 +113,9 @@ public final class Crypto {
      * default.
      * @param capabilities The capabilities of the key to generate.
      * @return The generated key.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[][] generateKey(List<KeyCapability> capabilities) throws DimeCryptographicException {
+    public byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException {
         return generateKey(capabilities, getDefaultSuiteName());
     }
 
@@ -125,8 +125,8 @@ public final class Crypto {
      * @param suiteName The cryptographic suite that should be used when generating the key.
      * @return The generated key.
      */
-    public byte[][] generateKey(List<KeyCapability> capabilities, String suiteName) throws DimeCryptographicException {
-        if (capabilities == null || capabilities.size() == 0) { throw new DimeCryptographicException("Key usage must not be null or empty."); }
+    public byte[][] generateKey(List<KeyCapability> capabilities, String suiteName) throws CryptographyException {
+        if (capabilities == null || capabilities.size() == 0) { throw new CryptographyException("Key usage must not be null or empty."); }
         ICryptoSuite impl = getCryptoSuite(suiteName);
         return impl.generateKey(capabilities);
     }
@@ -139,9 +139,9 @@ public final class Crypto {
      * @param serverKey The server key to use (the initiator of the exchange).
      * @param capabilities The capabilities that should be specified for the generated key.
      * @return The generated shared secret key.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<KeyCapability> capabilities) throws DimeCryptographicException {
+    public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<KeyCapability> capabilities) throws CryptographyException {
         if (!clientKey.hasCapability(KeyCapability.EXCHANGE) || !serverKey.hasCapability(KeyCapability.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
         if (!clientKey.getCryptoSuiteName().equals(serverKey.getCryptoSuiteName())) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
         ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
@@ -155,12 +155,12 @@ public final class Crypto {
      * @param plainText The byte array to encrypt.
      * @param key The key to use for the encryption.
      * @return The encrypted cipher text.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] encrypt(byte[] plainText, Key key) throws DimeCryptographicException {
+    public byte[] encrypt(byte[] plainText, Key key) throws CryptographyException {
         if (plainText == null || plainText.length == 0) { throw new IllegalArgumentException("Plain text to encrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new CryptographyException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         return impl.encrypt(plainText, key.getKeyBytes(Claim.KEY));
     }
@@ -170,12 +170,12 @@ public final class Crypto {
      * @param cipherText The byte array to decrypt.
      * @param key The key to use for the decryption.
      * @return The decrypted plain text.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] decrypt(byte[] cipherText, Key key) throws DimeCryptographicException {
+    public byte[] decrypt(byte[] cipherText, Key key) throws CryptographyException {
         if (cipherText == null ||cipherText.length == 0) { throw new IllegalArgumentException("Cipher text to decrypt must not be null and not have a length of 0."); }
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
-        if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new DimeCryptographicException("Provided key does not specify ENCRYPT usage."); }
+        if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new CryptographyException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         return impl.decrypt(cipherText, key.getKeyBytes(Claim.KEY));
     }
@@ -184,9 +184,9 @@ public final class Crypto {
      * Generates a secure hash of a byte array. This will use the cryptographic suite that is set as the default.
      * @param data The data that should be hashed.
      * @return The generated secure hash.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateHash(byte[] data) throws DimeCryptographicException {
+    public byte[] generateHash(byte[] data) throws CryptographyException {
         return generateHash(data, getDefaultSuiteName());
     }
 
@@ -195,9 +195,9 @@ public final class Crypto {
      * @param data The data that should be hashed.
      * @param suiteName The cryptographic suite that should be used to generate the hash.
      * @return The generated secure hash.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateHash(byte[] data, String suiteName) throws DimeCryptographicException {
+    public byte[] generateHash(byte[] data, String suiteName) throws CryptographyException {
         ICryptoSuite crypto = getCryptoSuite(suiteName);
         return crypto.generateHash(data);
     }
@@ -242,13 +242,13 @@ public final class Crypto {
     private HashMap<String, ICryptoSuite> _suiteMap;
     private String _defaultSuiteName;
 
-    private ICryptoSuite getCryptoSuite(String name) throws DimeCryptographicException {
+    private ICryptoSuite getCryptoSuite(String name) throws CryptographyException {
         if (_suiteMap == null || _suiteMap.isEmpty()) {
-            throw new DimeCryptographicException("Unable to perform cryptographic operation, no suites registered.");
+            throw new CryptographyException("Unable to perform cryptographic operation, no suites registered.");
         }
         ICryptoSuite impl = _suiteMap.get(name);
         if (impl == null) {
-            throw new DimeCryptographicException("Unable to find cryptographic suite with name: " + name);
+            throw new CryptographyException("Unable to find cryptographic suite with name: " + name);
         }
         return impl;
     }

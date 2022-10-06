@@ -1,6 +1,6 @@
 //
-//  DimeCapabilityException.java
-//  Di:ME - Data Identity Message Envelope
+//  CapabilityException.java
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -15,13 +15,13 @@ package io.dimeformat.exceptions;
  * contains more capabilities than allowed. It may also happen when an identity that is
  * missing the ISSUE capability is trying to issue a new identity from an IIR.
  */
-public class DimeCapabilityException extends Exception {
+public class CapabilityException extends Exception {
 
     /**
      * Create a new exception with a description.
      * @param message A short description of what happened.
      */
-    public DimeCapabilityException(String message) {
+    public CapabilityException(String message) {
         super(message);
     }
 

@@ -67,7 +67,7 @@ public class Identity extends Item {
         if (_publicKey == null) {
             try {
                 _publicKey = new Key(List.of(KeyCapability.SIGN), getClaim(Claim.PUB), Claim.PUB);
-            } catch (DimeCryptographicException e) {
+            } catch (CryptographyException e) {
                 return null; // Ignored for now
             }
         }
@@ -194,7 +194,7 @@ public class Identity extends Item {
         Key.convertKeyToLegacy(this, KeyCapability.SIGN, Claim.PUB);
     }
 
-    public void sign(Identity issuer, Key key, boolean includeChain) throws DimeCryptographicException {
+    public void sign(Identity issuer, Key key, boolean includeChain) throws CryptographyException {
 
         if (includeChain) {
             setTrustChain(issuer);
@@ -238,8 +238,8 @@ public class Identity extends Item {
     }
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Identity.MAXIMUM_NBR_COMPONENTS) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Identity.MAXIMUM_NBR_COMPONENTS); }
+    protected void customDecoding(List<String> components) throws InvalidFormatException {
+        if (components.size() > Identity.MAXIMUM_NBR_COMPONENTS) { throw new InvalidFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + Identity.MAXIMUM_NBR_COMPONENTS); }
         if (components.size() == Identity.MAXIMUM_NBR_COMPONENTS) { // There is also a trust chain identity
             byte[] issuer = Utility.fromBase64(components.get(Identity.COMPONENTS_CHAIN_INDEX));
             this.trustChain = Identity.fromEncodedIdentity(new String(issuer, StandardCharsets.UTF_8));
@@ -248,7 +248,7 @@ public class Identity extends Item {
     }
 
     @Override
-    protected void customEncoding(StringBuilder builder) throws DimeFormatException {
+    protected void customEncoding(StringBuilder builder) throws InvalidFormatException {
         super.customEncoding(builder);
         if (this.trustChain != null) {
             builder.append(Dime.COMPONENT_DELIMITER);
@@ -268,7 +268,7 @@ public class Identity extends Item {
     private static final int COMPONENTS_CHAIN_INDEX = 2;
     private Identity trustChain;
 
-    private static Identity fromEncodedIdentity(String encoded) throws DimeFormatException {
+    private static Identity fromEncodedIdentity(String encoded) throws InvalidFormatException {
         Identity identity = new Identity();
         identity.decode(encoded);
         return identity;

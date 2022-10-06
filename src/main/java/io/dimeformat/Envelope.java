@@ -128,10 +128,10 @@ public class Envelope extends Item {
      * this has to be done by calling verify separately.
      * @param encoded The encoded Di:ME envelope to import.
      * @return The imported Envelope instance.
-     * @throws DimeFormatException If the format of the encoded envelope is wrong.
+     * @throws InvalidFormatException If the format of the encoded envelope is wrong.
      */
-    public static Envelope importFromEncoded(String encoded) throws DimeFormatException {
-        if (!encoded.startsWith(Envelope.HEADER)) { throw new DimeFormatException("Not a Dime envelope object, invalid header."); }
+    public static Envelope importFromEncoded(String encoded) throws InvalidFormatException {
+        if (!encoded.startsWith(Envelope.HEADER)) { throw new InvalidFormatException("Not a Dime envelope object, invalid header."); }
         String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
         // 0: ENVELOPE
         String[] array = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
@@ -144,7 +144,7 @@ public class Envelope extends Item {
                 if (index == sections.length - 1) { // This is most likely a signature
                     envelope.isSigned = true;
                 } else {
-                    throw new DimeFormatException("Unable to import envelope, encountered invalid items.");
+                    throw new InvalidFormatException("Unable to import envelope, encountered invalid items.");
                 }
             } else {
                 items.add(item);
@@ -228,10 +228,10 @@ public class Envelope extends Item {
      * anonymous envelope. It is also not possible to sign an envelope if it already has been signed or does not
      * contain any Di:ME items.
      * @param key The key to use when signing.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
     @Override
-    public void sign(Key key) throws DimeCryptographicException {
+    public void sign(Key key) throws CryptographyException {
         if (isLegacy()) {
             if (isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
             if (isSigned()) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
@@ -257,7 +257,7 @@ public class Envelope extends Item {
         if (!isAnonymous() && !isSigned()) { throw new IllegalStateException("Unable to export, envelope is not signed."); }
         try {
             return encoded(isSigned());
-        } catch (DimeFormatException e) {
+        } catch (InvalidFormatException e) {
             return null;
         }
     }
@@ -267,14 +267,14 @@ public class Envelope extends Item {
      * envelope has been changed. This is created by securely hashing the envelope and will be unique and change as
      * soon as any content changes.
      * @return The hash of the envelope as a hex string.
-     * @throws DimeCryptographicException If something goes wrong.
+     * @throws CryptographyException If something goes wrong.
      */
     @Override
-    public String thumbprint() throws DimeCryptographicException {
+    public String thumbprint() throws CryptographyException {
         try {
             return Envelope.thumbprint(encoded(!isAnonymous()));
-        } catch (DimeFormatException e) {
-            throw new DimeCryptographicException("Unable to generate thumbprint for item, data invalid.");
+        } catch (InvalidFormatException e) {
+            throw new CryptographyException("Unable to generate thumbprint for item, data invalid.");
         }
     }
 
@@ -287,7 +287,7 @@ public class Envelope extends Item {
     }
 
     @Override
-    protected String encoded(boolean withSignature) throws DimeFormatException {
+    protected String encoded(boolean withSignature) throws InvalidFormatException {
         if (this.encoded == null) {
             StringBuilder builder = new StringBuilder();
             builder.append(Envelope.HEADER);
@@ -296,7 +296,7 @@ public class Envelope extends Item {
                 try {
                     builder.append(Utility.toBase64(exportClaims()));
                 } catch (IOException e) {
-                    throw new DimeFormatException("Unexpected exception while encoding item: " + e);
+                    throw new InvalidFormatException("Unexpected exception while encoding item: " + e);
                 }
             }
             for (Item item : this.items) {

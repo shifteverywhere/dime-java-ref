@@ -12,7 +12,7 @@ package io.dimeformat.crypto;
 import com.goterl.lazysodium.SodiumJava;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.Utility;
-import io.dimeformat.exceptions.DimeCryptographicException;
+import io.dimeformat.exceptions.CryptographyException;
 
 import java.util.List;
 
@@ -39,15 +39,15 @@ class StandardSuite implements ICryptoSuite {
             try {
                 byte[] hash = generateHash(bytes);
                 identifier = Utility.subArray(hash, 0, 8); // First 8 bytes are used as an identifier
-            } catch (DimeCryptographicException e) { /* ignored */ }
+            } catch (CryptographyException e) { /* ignored */ }
         }
         return identifier;
     }
 
-    public byte[] generateSignature(byte[] data, byte[] key) throws DimeCryptographicException {
+    public byte[] generateSignature(byte[] data, byte[] key) throws CryptographyException {
         byte[] signature = new byte[StandardSuite.NBR_SIGNATURE_BYTES];
         if (this.sodium.crypto_sign_detached(signature, null, data, data.length, key) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed.");
+            throw new CryptographyException("Cryptographic operation failed.");
         }
         return signature;
     }
@@ -56,7 +56,7 @@ class StandardSuite implements ICryptoSuite {
         return (this.sodium.crypto_sign_verify_detached(signature, data, data.length, key) == 0);
     }
 
-    public byte[][] generateKey(List<KeyCapability> capabilities) throws DimeCryptographicException {
+    public byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException {
         if (capabilities == null || capabilities.size() != 1) { throw new IllegalArgumentException("Unable to generate, invalid key capabilities requested."); }
         KeyCapability firstUse = capabilities.get(0);
         if (firstUse == KeyCapability.ENCRYPT) {
@@ -76,58 +76,58 @@ class StandardSuite implements ICryptoSuite {
                     this.sodium.crypto_kx_keypair(publicKey, secretKey);
                     break;
                 default:
-                    throw new DimeCryptographicException("Unable to generate keypair for key type " + capabilities + ".");
+                    throw new CryptographyException("Unable to generate keypair for key type " + capabilities + ".");
             }
             return new byte[][] { secretKey, publicKey };
         }
     }
 
-    public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws DimeCryptographicException {
+    public byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws CryptographyException {
         if (!capabilities.contains(KeyCapability.ENCRYPT)) { throw new IllegalArgumentException("Unable to generate, key capability for shared secret must be ENCRYPT."); }
         if (capabilities.size() > 1) { throw new IllegalArgumentException("Unable to generate, key capability for shared secret may only be ENCRYPT."); }
         byte[] shared = new byte[StandardSuite.NBR_X_KEY_BYTES];
         if (clientKey[0] != null && clientKey.length == 2) { // has both private and public key
             byte[] secret = Utility.combine(clientKey[0], clientKey[1]);
             if (this.sodium.crypto_kx_client_session_keys(shared, null, clientKey[1], secret, serverKey[1]) != 0) {
-                throw new DimeCryptographicException("Unable to generate, cryptographic operation failed.");
+                throw new CryptographyException("Unable to generate, cryptographic operation failed.");
             }
         } else if (serverKey[0] != null && serverKey.length == 2) { // has both private and public key
             if (this.sodium.crypto_kx_server_session_keys(null, shared, serverKey[1], serverKey[0], clientKey[1]) != 0) {
-                throw new DimeCryptographicException("Unable to generate, cryptographic operation failed.");
+                throw new CryptographyException("Unable to generate, cryptographic operation failed.");
             }
         } else {
-            throw new DimeCryptographicException("Unable to generate, invalid keys provided.");
+            throw new CryptographyException("Unable to generate, invalid keys provided.");
         }
         return shared;
     }
 
-    public byte[] encrypt(byte[] data, byte[] key) throws DimeCryptographicException {
+    public byte[] encrypt(byte[] data, byte[] key) throws CryptographyException {
         byte[] nonce = Utility.randomBytes(StandardSuite.NBR_NONCE_BYTES);
         if (nonce.length > 0) {
             byte[] cipherText = new byte[StandardSuite.NBR_MAC_BYTES + data.length];
             if (this.sodium.crypto_secretbox_easy(cipherText, data, data.length, nonce, key) != 0) {
-                throw new DimeCryptographicException("Cryptographic operation failed.");
+                throw new CryptographyException("Cryptographic operation failed.");
             }
             return Utility.combine(nonce, cipherText);
         }
-        throw new DimeCryptographicException("Unable to generate sufficient nonce.");
+        throw new CryptographyException("Unable to generate sufficient nonce.");
 
     }
 
-    public byte[] decrypt(byte[] data, byte[] key) throws DimeCryptographicException {
+    public byte[] decrypt(byte[] data, byte[] key) throws CryptographyException {
         byte[] nonce = Utility.subArray(data, 0, StandardSuite.NBR_NONCE_BYTES);
         byte[] bytes = Utility.subArray(data, StandardSuite.NBR_NONCE_BYTES);
         byte[] plain = new byte[bytes.length - StandardSuite.NBR_MAC_BYTES];
         if (this.sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed.");
+            throw new CryptographyException("Cryptographic operation failed.");
         }
         return plain;
     }
 
-    public byte[] generateHash(byte[] data) throws DimeCryptographicException {
+    public byte[] generateHash(byte[] data) throws CryptographyException {
         byte[] hash = new byte[StandardSuite.NBR_HASH_BYTES];
         if (this.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
-            throw new DimeCryptographicException("Cryptographic operation failed.");
+            throw new CryptographyException("Cryptographic operation failed.");
         }
         return hash;
     }

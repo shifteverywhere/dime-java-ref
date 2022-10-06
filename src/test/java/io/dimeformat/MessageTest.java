@@ -10,7 +10,7 @@
 package io.dimeformat;
 
 import org.junit.jupiter.api.Test;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.enums.KeyCapability;
 import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
@@ -241,7 +241,7 @@ class MessageTest {
         try {
             Item.importFromEncoded(encoded);
             fail("Exception not thrown.");
-        } catch (DimeFormatException e) { /* all is well */ }
+        } catch (InvalidFormatException e) { /* all is well */ }
     }
 
     @Test

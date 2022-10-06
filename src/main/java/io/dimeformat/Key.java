@@ -11,8 +11,8 @@ package io.dimeformat;
 
 import io.dimeformat.crypto.ICryptoSuite;
 import io.dimeformat.enums.*;
-import io.dimeformat.exceptions.DimeCryptographicException;
-import io.dimeformat.exceptions.DimeFormatException;
+import io.dimeformat.exceptions.CryptographyException;
+import io.dimeformat.exceptions.InvalidFormatException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -85,7 +85,7 @@ public class Key extends Item {
             } else {
                 throw new IllegalArgumentException("Invalid claim for key provided: " + claim);
             }
-        } catch (DimeCryptographicException ignored) {
+        } catch (CryptographyException ignored) {
             return null;
         }
     }
@@ -188,7 +188,7 @@ public class Key extends Item {
             key.putClaim(Claim.ISS, issuerId);
             key.putClaim(Claim.CTX, context);
             return key;
-        } catch (DimeCryptographicException e) {
+        } catch (CryptographyException e) {
             throw new RuntimeException("Unexpected exception thrown when generating key: " + e);
         }
     }
@@ -215,9 +215,9 @@ public class Key extends Item {
      * @param key The other key to use with the key exchange (generation of shared key).
      * @param capabilities The requested capabilities of the generated shared key, usually {@link KeyCapability#ENCRYPT}.
      * @return The generated shared key.
-     * @throws DimeCryptographicException If anything goes wrong.
+     * @throws CryptographyException If anything goes wrong.
      */
-    public Key generateSharedSecret(Key key, List<KeyCapability> capabilities) throws DimeCryptographicException {
+    public Key generateSharedSecret(Key key, List<KeyCapability> capabilities) throws CryptographyException {
         byte[] sharedKey = Dime.crypto.generateSharedSecret(this, key, capabilities);
         return new Key(UUID.randomUUID(), capabilities, sharedKey, null, getCryptoSuiteName());
     }
@@ -270,7 +270,7 @@ public class Key extends Item {
         }
     }
 
-    Key(List<KeyCapability> capabilities, String key, Claim claim) throws DimeCryptographicException {
+    Key(List<KeyCapability> capabilities, String key, Claim claim) throws CryptographyException {
         this._capabilities = capabilities;
         putClaim(claim, key);
     }
@@ -300,8 +300,8 @@ public class Key extends Item {
     }
 
     @Override
-    protected void customDecoding(List<String> components) throws DimeFormatException {
-        if (components.size() > Item.MINIMUM_NBR_COMPONENTS + 1) { throw new DimeFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + (Item.MINIMUM_NBR_COMPONENTS + 1)); }
+    protected void customDecoding(List<String> components) throws InvalidFormatException {
+        if (components.size() > Item.MINIMUM_NBR_COMPONENTS + 1) { throw new InvalidFormatException("More components in item than expected, got " + components.size() + ", expected maximum " + (Item.MINIMUM_NBR_COMPONENTS + 1)); }
         this.isSigned = components.size() > Item.MINIMUM_NBR_COMPONENTS;
     }
 
@@ -330,7 +330,7 @@ public class Key extends Item {
         return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey);
     }
 
-    private void decodeKey(String encoded, Claim claim) throws DimeCryptographicException {
+    private void decodeKey(String encoded, Claim claim) throws CryptographyException {
         if (encoded == null || encoded.isEmpty()) { return; } // Do a silent return, no key to decode
         String[] components = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         String suiteName;
@@ -346,7 +346,7 @@ public class Key extends Item {
         if (this._suiteName == null) {
             this._suiteName = suiteName;
         } else if (!this._suiteName.equals(suiteName)) {
-            throw new DimeCryptographicException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
+            throw new CryptographyException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
         }
         byte[] rawKey;
         if (!legacyKey) {

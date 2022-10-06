@@ -10,7 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.IdentityCapability;
-import io.dimeformat.exceptions.DimeCapabilityException;
+import io.dimeformat.exceptions.CapabilityException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
 import java.util.Arrays;
@@ -83,7 +83,7 @@ class IdentityTest {
             IdentityCapability[] allowedCaps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.IDENTIFY };
             try {
                 IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), reqCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, allowedCaps, null);
-            } catch (DimeCapabilityException e) { return; } // All is well
+            } catch (CapabilityException e) { return; } // All is well
             fail("Should not happen.");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

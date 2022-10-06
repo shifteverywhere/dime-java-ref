@@ -13,7 +13,7 @@ import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.exceptions.IntegrityStateException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import io.dimeformat.exceptions.DimeCapabilityException;
+import io.dimeformat.exceptions.CapabilityException;
 import io.dimeformat.enums.KeyCapability;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -206,7 +206,7 @@ class IdentityIssuingRequestTest {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), requestedCapabilities);
             try {
                 iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, allowedCapabilities, null);
-            } catch (DimeCapabilityException e) { return; } // All is well
+            } catch (CapabilityException e) { return; } // All is well
             fail("Should not happen.");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -253,7 +253,7 @@ class IdentityIssuingRequestTest {
             IdentityCapability[] requiredCapabilities = new IdentityCapability[] { IdentityCapability.ISSUE };
             try {
                 IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), requiredCapabilities).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, allowedCapabilities, null);
-            } catch (DimeCapabilityException e) { return; } // All is well
+            } catch (CapabilityException e) { return; } // All is well
             fail("Should not happen.");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
