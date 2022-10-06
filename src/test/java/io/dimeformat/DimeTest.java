@@ -10,7 +10,6 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.IdentityCapability;
-import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
@@ -151,9 +150,9 @@ public class DimeTest {
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.IDENTIFY };
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), caps);
             Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, issuerIdentity, false, caps, null, null, null);
-            try { identity.verify(); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
+            assertFalse(identity.verify().isValid());
             identity.sign(trustedKey); // signs the identity with another trusted key
-            identity.verify();
+            assertTrue(identity.verify().isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

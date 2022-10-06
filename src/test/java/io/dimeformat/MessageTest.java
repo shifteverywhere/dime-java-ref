@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeFormatException;
 import io.dimeformat.enums.KeyCapability;
@@ -122,10 +121,7 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), -10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.verify(Commons.getIssuerKey());
-            fail("Exception not thrown.");
-        } catch (VerificationException e) {
-            /* all is well */
+            assertFalse(message.verify(Commons.getIssuerKey()).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -140,10 +136,7 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), untrustedSender.getSubjectId(), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key);
-            message.verify(Commons.getIssuerKey());
-            fail("Exception not thrown.");
-        } catch (VerificationException e) {
-           /* all is well */
+            assertFalse(message.verify(Commons.getIssuerKey()).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -183,10 +176,7 @@ class MessageTest {
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(1000);
-            try {
-                message.verify(Commons.getIssuerIdentity().getPublicKey());
-                fail("Exception not thrown.");
-            } catch (VerificationException e) { /* All is good */ }
+            assertFalse(message.verify(Commons.getIssuerIdentity().getPublicKey()).isValid());
             Dime.setGracePeriod(1L);
             message.verify(Commons.getIssuerIdentity().getPublicKey());
             Dime.setGracePeriod(0L);
@@ -220,10 +210,7 @@ class MessageTest {
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Thread.sleep(2000);
-            message.verify(Commons.getIssuerIdentity().getPublicKey());
-            fail("Exception not thrown.");
-        } catch (VerificationException e) {
-           /* all is good */
+            assertFalse(message.verify(Commons.getIssuerIdentity().getPublicKey()).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -312,14 +299,11 @@ class MessageTest {
             Message message = new Message(Commons.getIssuerIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 10);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key1);
-            message.verify(key1);
+            assertTrue(message.verify(key1).isValid());
             message.sign(key2);
-            message.verify(key1);
-            message.verify(key2);
-            try {
-                message.verify(key3);
-                fail("Exception not thrown.");
-            } catch (VerificationException e) { /* all is well */ }
+            assertTrue(message.verify(key1).isValid());
+            assertTrue(message.verify(key2).isValid());
+            assertFalse(message.verify(key3).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -452,13 +436,10 @@ class MessageTest {
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
-            message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey()));
-        } catch (VerificationException e) {
-            return; // All is well
+            assertFalse(message.verify(Commons.getIssuerKey(), List.of(Commons.getIssuerKey())).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        fail("Should not happen.");
     }
 
     @Test
@@ -468,13 +449,10 @@ class MessageTest {
             Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), 100);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
-            message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE)));
-        } catch (IllegalStateException e) { 
-            return; // All is well
+            try { message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE))); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        fail("Should not happen.");
     }
 
     @Test

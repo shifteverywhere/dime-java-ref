@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import io.dimeformat.keyring.IntegrityState;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -240,11 +241,11 @@ public class Envelope extends Item {
     }
 
     @Override
-    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
+    public IntegrityState verify(Key trustedKey, List<Item> linkedItems)  {
         if (isLegacy()) {
             if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         }
-        super.verify(trustedKey, linkedItems);
+        return super.verify(trustedKey, linkedItems);
     }
 
     /**

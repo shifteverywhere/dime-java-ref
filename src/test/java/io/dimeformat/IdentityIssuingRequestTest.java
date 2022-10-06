@@ -10,7 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.IdentityCapability;
-import io.dimeformat.exceptions.VerificationException;
+import io.dimeformat.exceptions.IntegrityStateException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.DimeCapabilityException;
@@ -78,7 +78,7 @@ class IdentityIssuingRequestTest {
             try {
                 iir2.issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, caps);
                 fail("Exception not thrown.");
-            } catch (VerificationException e) { /* all is well */ }
+            } catch (IntegrityStateException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

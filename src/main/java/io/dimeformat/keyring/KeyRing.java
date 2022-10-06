@@ -12,7 +12,7 @@ package io.dimeformat.keyring;
 import io.dimeformat.*;
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.VerificationException;
+import io.dimeformat.exceptions.IntegrityStateException;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -165,12 +165,15 @@ public class KeyRing {
      * @param encoded The DiME encoded string with items that should be imported.
      * @param verifyKey A key to verify the signature of the DiME encoded string, may be null to skip the verification.
      * @throws DimeFormatException If something is wrong with the encoded string.
-     * @throws VerificationException If the verification of the signature fails.
+     * @throws IntegrityStateException If the verification of the signature fails.
      */
-    public void importFromEncoded(String encoded, Key verifyKey) throws DimeFormatException, VerificationException {
+    public void importFromEncoded(String encoded, Key verifyKey) throws DimeFormatException, IntegrityStateException {
         Envelope envelope = Envelope.importFromEncoded(encoded);
         if (verifyKey != null) {
-            envelope.verify(verifyKey);
+            IntegrityState state = envelope.verify(verifyKey);
+            if (!state.isValid()) {
+                throw new IntegrityStateException(state, "Unable to import key ring, unable to verify integrity.");
+            }
         }
         for (Item item: envelope.getItems()) {
             if (item instanceof Key) {

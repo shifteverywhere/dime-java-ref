@@ -13,6 +13,7 @@ import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import io.dimeformat.keyring.IntegrityState;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -141,28 +142,14 @@ public class IdentityIssuingRequest extends Item {
         return iir;
     }
 
-    /**
-     * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
-     * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership.
-     * @throws VerificationException If verification fails.
-     */
     @Override
-    public void verify() throws VerificationException {
-        super.verify(getPublicKey(), null);
+    public IntegrityState verify() {
+        return super.verify(getPublicKey(), null);
     }
 
-    /**
-     * Verifies that the IIR has been signed by the secret (private) key that is associated with the public key included
-     * in the IIR. If this passes then it can be assumed that the sender is in possession of the private key used to
-     * create the IIR and will also after issuing of an identity form the proof-of-ownership. This will also verify any
-     * items that may be linked in the IIR.
-     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
-     * @throws VerificationException If verification fails.
-     */
     @Override
-    public void verify(List<Item> linkedItems) throws VerificationException {
-        super.verify(getPublicKey(), linkedItems);
+    public IntegrityState verify(List<Item> linkedItems) {
+        return super.verify(getPublicKey(), linkedItems);
     }
 
     /**
@@ -191,10 +178,10 @@ public class IdentityIssuingRequest extends Item {
      * @param requiredCapabilities A list of capabilities that will be added (if not present in the IIR) before issuing.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
-     * @throws VerificationException If verification fails.
+     * @throws IntegrityStateException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, null, null);
     }
 
@@ -217,10 +204,10 @@ public class IdentityIssuingRequest extends Item {
      * @param ambit An ambit list that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
-     * @throws VerificationException If verification fails.
+     * @throws IntegrityStateException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
         return issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, systemName, ambit, null);
     }
     /**
@@ -243,10 +230,10 @@ public class IdentityIssuingRequest extends Item {
      * @param methods A list of methods that will apply to the issued identity.
      * @return An Identity instance that may be sent back to the entity that proved the IIR.
      * @throws DimeCapabilityException If the IIR contains any capabilities that are not allowed.
-     * @throws VerificationException If verification fails.
+     * @throws IntegrityStateException If verification fails.
      * @throws DimeCryptographicException If anything goes wrong.
      */
-    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeCapabilityException, DimeCryptographicException, VerificationException {
+    public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws DimeCapabilityException, DimeCryptographicException, IntegrityStateException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
         String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
         return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambit, methods);
@@ -300,7 +287,7 @@ public class IdentityIssuingRequest extends Item {
         try {
             if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
             return issueNewIdentity(systemName, subjectId, validFor, issuerKey, null, false, null, null, ambit, methods);
-        } catch (DimeCapabilityException | VerificationException e) {
+        } catch (DimeCapabilityException | IntegrityStateException e) {
             return null; // These exceptions will not be thrown when issuing a self-issued identity.
         }
 
@@ -334,8 +321,11 @@ public class IdentityIssuingRequest extends Item {
 
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
-    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws VerificationException, DimeCapabilityException, DimeCryptographicException {
-        verify(this.getPublicKey());
+    private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, DimeCapabilityException, DimeCryptographicException {
+        IntegrityState state = verify(this.getPublicKey());
+        if (!state.isValid()) {
+            throw new IntegrityStateException(state, "Unable to verify IIR.");
+        }
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         strip();
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
@@ -358,10 +348,16 @@ public class IdentityIssuingRequest extends Item {
             if (issuerIdentity != null ) {
                 if (Dime.keyRing.get(issuerIdentity.getSubjectId().toString().toLowerCase()) == null && includeChain) {
                     // The chain will only be set if the issuer identity is not a trusted identity in the key ring
-                    issuerIdentity.verify();
+                    state = issuerIdentity.verify();
+                    if (!state.isValid()) {
+                        throw new IntegrityStateException(state, "Unable to verify issuer identity.");
+                    }
                     identity.setTrustChain(issuerIdentity);
                 } else {
-                    Item.verifyDates(issuerIdentity);
+                    state = Item.verifyDates(issuerIdentity);
+                    if (!state.isValid()) {
+                        throw new IntegrityStateException(state, "Unable to verify valid dates of issuer identity.");
+                    }
                 }
             }
             identity.sign(issuerKey);

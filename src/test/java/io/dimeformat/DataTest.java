@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.exceptions.VerificationException;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -160,9 +159,7 @@ public class DataTest {
             Data data = new Data(Commons.getIssuerIdentity().getSubjectId());
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             data.sign(Commons.getIssuerKey());
-            data.verify(Commons.getAudienceKey());
-        } catch (VerificationException e) {
-            // All is well
+            assertFalse(data.verify(Commons.getAudienceKey()).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

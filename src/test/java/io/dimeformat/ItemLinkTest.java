@@ -10,7 +10,6 @@
 package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.VerificationException;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.util.Arrays;
@@ -121,11 +120,8 @@ class ItemLinkTest {
     void verifyListTest1() {
         try {
             ItemLink link = new ItemLink(Commons.getAudienceKey());
-            ItemLink.verify(List.of(Commons.getAudienceKey()), List.of(link));
-            try {
-                ItemLink.verify(List.of(Commons.getAudienceKey().publicCopy()), List.of(link));
-                fail("Exception not thrown.");
-            } catch (VerificationException e) { /* all is well */ }
+            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), List.of(link)).isValid());
+            assertFalse(ItemLink.verify(List.of(Commons.getAudienceKey().publicCopy()), List.of(link)).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -137,12 +133,12 @@ class ItemLinkTest {
             List<Item> items = List.of(Commons.getAudienceKey(), Commons.getAudienceIdentity());
             List<Item> revItems = List.of(Commons.getAudienceIdentity(), Commons.getAudienceKey());
             List<ItemLink> links = List.of(new ItemLink(Commons.getAudienceKey()), new ItemLink(Commons.getAudienceIdentity()));
-            ItemLink.verify(items, links);
-            ItemLink.verify(revItems, links);
-            ItemLink.verify(List.of(Commons.getAudienceKey()), links);
-            ItemLink.verify(List.of(Commons.getAudienceKey()), links);
-            try { ItemLink.verify(null, links); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
-            try { ItemLink.verify(items, null); fail("Exception not thrown."); } catch (VerificationException e) { /* all is well */ }
+            assertTrue(ItemLink.verify(items, links).isValid());
+            assertTrue(ItemLink.verify(revItems, links).isValid());
+            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links).isValid());
+            assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links).isValid());
+            assertFalse(ItemLink.verify(null, links).isValid());
+            assertFalse(ItemLink.verify(items, null).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

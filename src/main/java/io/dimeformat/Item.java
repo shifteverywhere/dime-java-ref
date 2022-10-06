@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import io.dimeformat.keyring.IntegrityState;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -234,13 +235,14 @@ public abstract class Item {
         return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
-    public void verify() throws VerificationException {
-        verify((List<Item>) null);
+    public IntegrityState verify() {
+        return verify((List<Item>) null);
     }
 
-    public void verify(List<Item> linkedItems) throws VerificationException {
-        if (!isSigned()) { throw new VerificationException(VerificationException.Reason.NO_SIGNATURE, this, "Unable to verify, item has no signatures."); }
-        if (Dime.keyRing.size() == 0) { throw new VerificationException(VerificationException.Reason.NO_KEY_RING, this, "Unable to verify, no items found in key ring."); }
+    public IntegrityState verify(List<Item> linkedItems) {
+        if (!isSigned()) { return IntegrityState.ERR_NO_SIGNATURE; }
+        if (Dime.keyRing.size() == 0) {  return IntegrityState.ERR_NO_KEY_RING; }
+        IntegrityState state = IntegrityState.ERR_NOT_TRUSTED;
         for (Item item: Dime.keyRing.items()) {
             Key trustedKey;
             if (item instanceof Identity) {
@@ -248,29 +250,23 @@ public abstract class Item {
             } else if (item instanceof Key) {
                 trustedKey = (Key) item;
             } else {
-                throw new VerificationException(VerificationException.Reason.INVALID_ITEM, item, "Unable to verify, found invalid item in key ring.");
+                return IntegrityState.ERR_INVALID_KEY_RING_ITEM;
             }
-            try {
-                verify(trustedKey, linkedItems);
-                return; // Return on first verified success
-            } catch (VerificationException e) {
-                if (e.reason != VerificationException.Reason.KEY_MISMATCH || isLegacy()) {
-                    // No need to rethrow if a key could not find a matching signature (unless this is legacy).
-                    throw e;
-                }
+            state = verify(trustedKey, linkedItems);
+            if (state != IntegrityState.ERR_KEY_MISMATCH || isLegacy()) {
+                return state;
             }
-
         }
-        throw new VerificationException(VerificationException.Reason.NOT_TRUSTED, this, "Unable to verify, item not trusted.");
+        return state;
     }
 
-    public void verify(Key trustedKey) throws VerificationException {
-        verify(trustedKey, null);
+    public IntegrityState verify(Key trustedKey) {
+        return verify(trustedKey, null);
     }
 
-    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
+    public IntegrityState verify(Key trustedKey, List<Item> linkedItems) {
         if (trustedKey == null) { throw new IllegalArgumentException("Unable to verify, key must not be null."); }
-        if (!isSigned()) { throw new VerificationException(VerificationException.Reason.NO_SIGNATURE, this, "Unable to verify, item has no signatures."); }
+        if (!isSigned()) { return IntegrityState.ERR_NO_SIGNATURE; }
         Signature signature;
         if (isLegacy()) {
             signature = getSignatures().get(0);
@@ -278,24 +274,31 @@ public abstract class Item {
             signature = Signature.find(Dime.crypto.generateKeyName(trustedKey), getSignatures());
         }
         if (signature == null) {
-            throw new VerificationException(VerificationException.Reason.KEY_MISMATCH, this,  "Unable to verify, no matching signature found for key.");
+            return IntegrityState.ERR_KEY_MISMATCH;
         } else {
             try {
                 if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, trustedKey)) {
-                    throw new VerificationException(VerificationException.Reason.NOT_TRUSTED, this, "Unable to verify, item is not trusted.");
+                    return IntegrityState.ERR_NOT_TRUSTED;
                 }
             } catch (DimeFormatException | DimeCryptographicException e) {
-                throw new VerificationException(VerificationException.Reason.INTERNAL_ERROR, this, "Unable to verify, encountered an unexpected internal fault.", e);
+                return IntegrityState.ERR_INTERNAL_FAULT;
             }
         }
-        Item.verifyDates(this); // This throws VerificationException if unable to verify
-        if (linkedItems != null && !linkedItems.isEmpty()) {
-            verifyLinkedItems(linkedItems); // This throws VerificationException if unable to verify
+        IntegrityState state = Item.verifyDates(this); // This throws VerificationException if unable to verify
+        if (!state.isValid()) {
+            return state;
         }
+        if (linkedItems != null && !linkedItems.isEmpty()) {
+            state = verifyLinkedItems(linkedItems); // This throws VerificationException if unable to verify
+            if (!state.isValid()) {
+                return state;
+            }
+        }
+        return IntegrityState.COMPLETE;
     }
 
-    public void verify(Identity issuer) throws VerificationException {
-        verify(issuer, null);
+    public IntegrityState verify(Identity issuer) {
+        return verify(issuer, null);
     }
 
      /**
@@ -306,13 +309,13 @@ public abstract class Item {
      * that are not linked will also result in a DimeIntegrityException being thrown.
      * @param issuer The issuer identity to use while verifying.
      * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
-     * @throws VerificationException If item could not be verified.
+     * @return The state of the integrity verification
      */
-    public void verify(Identity issuer, List<Item> linkedItems) throws VerificationException {
+    public IntegrityState verify(Identity issuer, List<Item> linkedItems) {
         if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
         UUID issuerId = getClaim(Claim.ISS);
-        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { throw new VerificationException(VerificationException.Reason.ISSUER_MISMATCH, this, "Unable to verify, subject id of provided issuer identity do not match item issuer id, expected: " + issuerId + ", got: " + issuer.getSubjectId()); }
-        verify(issuer.getPublicKey(), linkedItems);
+        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { return IntegrityState.ERR_ISSUER_MISMATCH; }
+        return verify(issuer.getPublicKey(), linkedItems);
     }
 
     /**
@@ -438,25 +441,26 @@ public abstract class Item {
         return this._signatures;
     }
 
-    protected static void verifyDates(Item item) throws VerificationException {
+    protected static IntegrityState verifyDates(Item item) {
         if (item.hasClaims()) {
             Instant now = Utility.createTimestamp();
-            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { throw new VerificationException(VerificationException.Reason.USE_BEFORE, item, "Unable to verify, issued at date in the future."); }
+            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { return IntegrityState.ERR_USED_BEFORE_ISSUED; }
             if (item.getExpiresAt() != null) {
-                if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { throw new VerificationException(VerificationException.Reason.DATE_MISMATCH, item, "Unable to verify, expires at before issued at date."); }
-                if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { throw new VerificationException(VerificationException.Reason.USE_AFTER, item, "Unable to verify, passed expires at date."); }
+                if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { return IntegrityState.ERR_DATE_MISMATCH; }
+                if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { return IntegrityState.ERR_USED_AFTER_EXPIRED; }
             }
         }
+        return IntegrityState.VALID_DATES;
     }
 
-    protected void verifyLinkedItems(List<Item> linkedItems) throws VerificationException {
+    protected IntegrityState verifyLinkedItems(List<Item> linkedItems) {
         if (itemLinks == null) {
             itemLinks = getClaim(Claim.LNK);
         }
         if (itemLinks != null) {
-            ItemLink.verify(linkedItems, itemLinks);
+            return ItemLink.verify(linkedItems, itemLinks);
         } else {
-            throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, this, "Unable to verify, no linked items found.");
+            return IntegrityState.ERR_LINKED_ITEM_MISSING;
         }
     }
 

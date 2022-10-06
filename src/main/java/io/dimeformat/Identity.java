@@ -13,6 +13,8 @@ import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
+import io.dimeformat.keyring.IntegrityState;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -140,17 +142,26 @@ public class Identity extends Item {
     }
 
     @Override
-    public void verify(List<Item> linkedItems) throws VerificationException {
+    public IntegrityState verify(List<Item> linkedItems) {
         Identity trustChain = getTrustChain();
         if (trustChain != null) {
-            trustChain.verify();
-            Item.verifyDates(this);
-            if (linkedItems != null && !linkedItems.isEmpty()) {
-                verifyLinkedItems(linkedItems);
+            IntegrityState state = trustChain.verify();
+            if (!state.isValid()) {
+                return state;
             }
-            verify(trustChain.getPublicKey());
+            state = Item.verifyDates(this);
+            if (!state.isValid()) {
+                return state;
+            }
+            if (linkedItems != null && !linkedItems.isEmpty()) {
+                state = verifyLinkedItems(linkedItems);
+                if (!state.isValid()) {
+                    return state;
+                }
+            }
+            return verify(trustChain.getPublicKey());
         } else {
-            super.verify(linkedItems);
+            return super.verify(linkedItems);
         }
     }
 

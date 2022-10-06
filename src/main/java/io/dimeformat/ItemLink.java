@@ -11,7 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.exceptions.DimeCryptographicException;
 import io.dimeformat.exceptions.DimeFormatException;
-import io.dimeformat.exceptions.VerificationException;
+import io.dimeformat.keyring.IntegrityState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,11 +117,10 @@ public final class ItemLink {
      * Verifies a list of items towards a list of ItemLink instances.
      * @param items The items to verify against.
      * @param links The list of ItemLink instances.
-     * @throws VerificationException If verification fails
+     * @return The state of the integrity verification.
      */
-    public static void verify(List<Item> items, List<ItemLink> links) throws VerificationException {
-
-        if (items == null || links == null) { throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, null, "Unable to verify, item links or items missing for verification."); }
+    public static IntegrityState verify(List<Item> items, List<ItemLink> links) {
+        if (items == null || links == null) {  return IntegrityState.ERR_LINKED_ITEM_MISSING; }
         for (Item item: items) {
             boolean matchFound = false;
             for (ItemLink link: links) {
@@ -129,17 +128,18 @@ public final class ItemLink {
                     matchFound = true;
                     try {
                         if (!link.itemIdentifier.equals(item.getItemIdentifier()) || !link.thumbprint.equals(item.thumbprint())) {
-                            throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, item, "Unable to verify, item link not matching verified item.");
+                            return IntegrityState.ERR_LINKED_ITEM_FAULT;
                         }
                     } catch (DimeCryptographicException e) {
-                        throw new VerificationException(VerificationException.Reason.INTERNAL_ERROR, item, "Unable to verify, encountered an unexpected internal fault.", e);
+                        return IntegrityState.ERR_INTERNAL_FAULT;
                     }
                 }
             }
             if (!matchFound) {
-                throw new VerificationException(VerificationException.Reason.LINKED_ITEM_FAULT, item, "Unable to verify, matching item link not found for item.");
+                return IntegrityState.ERR_LINKED_ITEM_MISMATCH;
             }
         }
+        return IntegrityState.VALID_ITEM_LINKS;
     }
 
     /// PACKAGE-PRIVATE ///

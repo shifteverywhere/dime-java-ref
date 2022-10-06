@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
+import io.dimeformat.keyring.IntegrityState;
 
 import java.time.Instant;
 import java.util.List;
@@ -119,9 +120,9 @@ public class Data extends Item {
     }
 
     @Override
-    public void verify(Key trustedKey, List<Item> linkedItems) throws VerificationException {
+    public IntegrityState verify(Key trustedKey, List<Item> linkedItems) {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
-        super.verify(trustedKey, linkedItems);
+        return super.verify(trustedKey, linkedItems);
     }
 
     @Override
