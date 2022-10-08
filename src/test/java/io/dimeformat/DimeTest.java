@@ -220,6 +220,23 @@ public class DimeTest {
     }
 
     @Test
+    void legacyKeyExportImport1() {
+        try {
+            Key exportKey = Key.generateKey(KeyCapability.SIGN);
+            assertFalse(exportKey.isLegacy());
+            exportKey.convertToLegacy();
+            assertTrue(exportKey.isLegacy());
+            String encoded = exportKey.exportToEncoded();
+            Key importKey = Item.importFromEncoded(encoded);
+            assertNotNull(importKey);
+            assertTrue(importKey.isLegacy());
+            assertTrue(importKey.getPublic().startsWith("2TD"));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
+        }
+    }
+
+    @Test
     void legacyMessageImport1() {
         try {
             String exported = "Di:MSG.eyJ1aWQiOiIwY2VmMWQ4Zi01NGJlLTRjZTAtYTY2OS1jZDI4OTdhYzY0ZTAiLCJhdWQiOiJhNjkwMjE4NC0yYmEwLTRiYTAtYWI5MS1jYTc3ZGE3ZDA1ZDMiLCJpc3MiOiIwYWE1NjEzMy03OGIwLTRkZDktOTI4ZC01ZDdmZjlkYTU0NDUiLCJleHAiOiIyMDIxLTExLTE4VDE4OjA2OjAyLjk3NDM5NVoiLCJpYXQiOiIyMDIxLTExLTE4VDE4OjA1OjUyLjk3NDM5NVoifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.vWWk/1Ny6FzsVRNSEsqjhRrSEDvmbfLIE9CmADySp/pa3hqNau0tnhwH3YwRPPEpSl4wXpw0Uqkf56EQJI2TDQ";
@@ -267,10 +284,24 @@ public class DimeTest {
             iir.strip();
             iir.convertToLegacy();
             iir.sign(key);
+            assertTrue(iir.isLegacy());
             String legacyExported = iir.exportToEncoded();
             assertNotNull(legacyExported);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyIIRConvertToLegacyTest2() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.convertToLegacy();
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
+            assertTrue(iir.isLegacy());
+            assertTrue(iir.getPublicKey().getPublic().startsWith("2TD"));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
         }
     }
 
@@ -286,6 +317,20 @@ public class DimeTest {
             assertFalse(pub.startsWith(Dime.crypto.getDefaultSuiteName()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacySelfIssueTest1() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.convertToLegacy();
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
+            Identity identity = iir.selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME);
+            assertTrue(identity.isLegacy());
+            assertTrue(identity.getPublicKey().getPublic().startsWith("2TD"));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown.");
         }
     }
 
