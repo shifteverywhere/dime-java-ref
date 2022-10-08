@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.exceptions.IntegrityStateException;
 import org.json.JSONObject;
@@ -29,11 +30,86 @@ class IdentityIssuingRequestTest {
     @Test
     void getItemIdentifierTest1() {
         try {
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN));
             assertEquals("IIR", iir.getItemIdentifier());
             assertEquals("IIR", IdentityIssuingRequest.ITEM_IDENTIFIER);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void claimTest1() {
+        try {
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey());
+            assertNotNull(iir.getClaim(Claim.PUB));
+            assertEquals((String) Commons.getAudienceKey().getClaim(Claim.PUB), iir.getClaim(Claim.PUB));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void claimTest2() {
+        try {
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey());
+            iir.strip();
+            iir.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(iir.getClaim(Claim.AMB));
+            iir.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(iir.getClaim(Claim.AUD));
+            iir.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(iir.getClaim(Claim.CTX));
+            iir.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(iir.getClaim(Claim.EXP));
+            iir.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(iir.getClaim(Claim.IAT));
+            iir.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(iir.getClaim(Claim.ISS));
+            iir.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(iir.getClaim(Claim.KID));
+            iir.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(iir.getClaim(Claim.MTD));
+            Map<String, Object> pri = new HashMap<>();
+            pri.put("tag", Commons.PAYLOAD);
+            iir.putClaim(Claim.PRI, pri);
+            assertNotNull(iir.getClaim(Claim.PRI));
+            iir.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(iir.getClaim(Claim.SUB));
+            iir.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(iir.getClaim(Claim.SYS));
+            iir.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(iir.getClaim(Claim.UID));
+            try { iir.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { iir.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { iir.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { iir.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { iir.putClaim(Claim.PUB, Commons.getAudienceKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey());
+            try { iir.removeClaim(Claim.IAT); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { iir.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey());
+            iir.strip();
+            iir.removeClaim(Claim.IAT);
+            iir.putClaim(Claim.EXP, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
         }
     }
 

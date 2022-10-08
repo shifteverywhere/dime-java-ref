@@ -9,16 +9,99 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class EnvelopeTest {
+
+    @Test
+    void claimTest1() {
+        Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertNotNull(envelope.getClaim(Claim.ISS));
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), envelope.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest2() {
+        Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
+        assertNotNull(envelope.getClaim(Claim.CTX));
+        assertEquals(Commons.CONTEXT, envelope.getClaim(Claim.CTX));
+        envelope.removeClaim(Claim.CTX);
+        assertNull(envelope.getClaim(Claim.CTX));
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            Envelope envelope = new Envelope();
+            envelope.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(envelope.getClaim(Claim.AMB));
+            envelope.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(envelope.getClaim(Claim.AUD));
+            envelope.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(envelope.getClaim(Claim.CTX));
+            envelope.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(envelope.getClaim(Claim.EXP));
+            envelope.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(envelope.getClaim(Claim.IAT));
+            envelope.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(envelope.getClaim(Claim.ISS));
+            envelope.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(envelope.getClaim(Claim.KID));
+            envelope.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(envelope.getClaim(Claim.MTD));
+            envelope.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(envelope.getClaim(Claim.SUB));
+            envelope.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(envelope.getClaim(Claim.SYS));
+            envelope.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(envelope.getClaim(Claim.UID));
+            try { envelope.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); envelope.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.PUB, Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            envelope.addItem(Commons.getIssuerKey().publicCopy());
+            envelope.sign(Commons.getIssuerKey());
+            try { envelope.removeClaim(Claim.ISS); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest5() {
+        try {
+            Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            envelope.addItem(Commons.getIssuerKey().publicCopy());
+            envelope.sign(Commons.getIssuerKey());
+            envelope.strip();
+            envelope.removeClaim(Claim.ISS);
+            envelope.putClaim(Claim.IAT, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
 
     @Test
     void getItemTest1() {

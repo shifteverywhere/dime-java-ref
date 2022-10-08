@@ -82,7 +82,6 @@ public abstract class Item {
         return this.isSigned;
     }
 
-
     /**
      * Gets an item claim. Will throw IllegalArgumentException if claim requested is not support by the item type.
      * @param claim The claim to get the value for.
@@ -100,8 +99,8 @@ public abstract class Item {
      */
     public void putClaim(Claim claim, Object value) {
         throwIfSigned();
-        if (!validClaim(claim)) { throw new IllegalArgumentException("Unsupported claim: " + claim); }
-        getClaimMap().put(claim, value);
+        if (!allowedToSetClaimDirectly(claim)) { throw new IllegalArgumentException("Unable to set claim '" + claim + "', may be unsupported or locked."); }
+        setClaimValue(claim, value);
     }
 
     /**
@@ -420,7 +419,12 @@ public abstract class Item {
     protected List<ItemLink> itemLinks;
     protected boolean isSigned = false;
 
-    protected abstract boolean validClaim(Claim claim);
+
+    protected void setClaimValue(Claim claim, Object value) {
+        getClaimMap().put(claim, value);
+    }
+
+    protected abstract boolean allowedToSetClaimDirectly(Claim claim);
 
     protected String exportClaims() throws IOException{
         return getClaimMap().toJSON();
@@ -516,7 +520,7 @@ public abstract class Item {
 
     protected final void throwIfSigned() {
         if (isSigned()) {
-            throw new IllegalStateException("Unable to complete operation, Di:ME item already signed.");
+            throw new IllegalStateException("Unable to complete operation, DiME item already signed.");
         }
     }
 

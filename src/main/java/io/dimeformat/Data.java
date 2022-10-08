@@ -140,8 +140,8 @@ public class Data extends Item {
     protected String payload;
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.KID && claim != Claim.PRI && claim != Claim.PUB;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Data.openClaims.contains(claim);
     }
 
     @Override
@@ -165,6 +165,7 @@ public class Data extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> openClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
     private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_PAYLOAD_INDEX = 2;

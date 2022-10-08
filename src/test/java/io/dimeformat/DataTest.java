@@ -9,9 +9,14 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
+import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,7 +45,7 @@ public class DataTest {
 
     @Test
     void dataTest2() {
-        Data data = new Data(UUID.randomUUID(), -1, Commons.CONTEXT);
+        Data data = new Data(UUID.randomUUID(), Dime.NO_EXPIRATION, Commons.CONTEXT);
         data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
         assertEquals(Commons.MIMETYPE, data.getMIMEType());
         assertNull(data.getExpiresAt());
@@ -51,6 +56,89 @@ public class DataTest {
         Data data1 = new Data(UUID.randomUUID());
         Data data2 = new Data(UUID.randomUUID());
         assertNotEquals(data1.getUniqueId(), data2.getUniqueId());
+    }
+
+    @Test
+    void claimTest1() {
+        Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertNotNull(data.getClaim(Claim.ISS));
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), data.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest2() {
+        Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
+        assertNotNull(data.getClaim(Claim.MIM));
+        assertEquals(Commons.MIMETYPE, data.getClaim(Claim.MIM));
+        data.removeClaim(Claim.MIM);
+        assertNull(data.getClaim(Claim.MIM));
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(data.getClaim(Claim.AMB));
+            data.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(data.getClaim(Claim.AUD));
+            data.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(data.getClaim(Claim.CTX));
+            data.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(data.getClaim(Claim.EXP));
+            data.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(data.getClaim(Claim.IAT));
+            data.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(data.getClaim(Claim.ISS));
+            data.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(data.getClaim(Claim.KID));
+            data.putClaim(Claim.MIM, Commons.MIMETYPE);
+            assertNotNull(data.getClaim(Claim.MIM));
+            data.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(data.getClaim(Claim.MTD));
+            data.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(data.getClaim(Claim.SUB));
+            data.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(data.getClaim(Claim.SYS));
+            data.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(data.getClaim(Claim.UID));
+            try { data.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { data.putClaim(Claim.KEY,Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { data.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); data.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { data.putClaim(Claim.PUB, Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            try { data.removeClaim(Claim.ISS); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { data.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest5() {
+        try {
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            data.strip();
+            data.removeClaim(Claim.ISS);
+            data.putClaim(Claim.IAT, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
     }
 
     @Test

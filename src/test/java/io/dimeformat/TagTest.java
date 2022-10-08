@@ -9,11 +9,15 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,6 +72,86 @@ class TagTest {
             assertEquals(2, tag.getItemLinks().size());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void claimTest1() {
+        Tag tag = new Tag();
+        assertNull(tag.getClaim(Claim.ISS));
+        tag.putClaim(Claim.ISS, Commons.getAudienceIdentity().getSubjectId());
+        assertEquals(Commons.getAudienceIdentity().getSubjectId(), tag.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest2() {
+        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertNotNull(tag.getClaim(Claim.ISS));
+        tag.removeClaim(Claim.ISS);
+        assertNull(tag.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            Tag tag = new Tag();
+            tag.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(tag.getClaim(Claim.AMB));
+            tag.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(tag.getClaim(Claim.AUD));
+            tag.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(tag.getClaim(Claim.CTX));
+            tag.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(tag.getClaim(Claim.EXP));
+            tag.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(tag.getClaim(Claim.IAT));
+            tag.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(tag.getClaim(Claim.ISS));
+            tag.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(tag.getClaim(Claim.KID));
+            tag.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(tag.getClaim(Claim.MTD));
+            tag.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(tag.getClaim(Claim.SUB));
+            tag.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(tag.getClaim(Claim.SYS));
+            tag.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(tag.getClaim(Claim.UID));
+            try { tag.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { tag.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { tag.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { tag.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); tag.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { tag.putClaim(Claim.PUB,  Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
+            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
+            tag.sign(Commons.getIssuerKey());
+            try { tag.removeClaim(Claim.CTX); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { tag.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest5() {
+        try {
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
+            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
+            tag.sign(Commons.getIssuerKey());
+            tag.strip();
+            tag.removeClaim(Claim.CTX);
+            tag.putClaim(Claim.IAT, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
         }
     }
 

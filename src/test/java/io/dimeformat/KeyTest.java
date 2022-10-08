@@ -9,11 +9,15 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
+import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,7 +32,7 @@ class KeyTest {
 
     @Test
     void keyTest1() {
-        Key key = Key.generateKey(List.of(KeyCapability.SIGN));
+        Key key = Key.generateKey(KeyCapability.SIGN);
         assertEquals(1, key.getCapability().size());
         assertTrue(key.hasCapability(KeyCapability.SIGN));
         assertNotNull(key.getUniqueId());
@@ -38,7 +42,7 @@ class KeyTest {
 
     @Test
     void keyTest2() {
-        Key key = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+        Key key = Key.generateKey(KeyCapability.EXCHANGE);
         assertEquals(1, key.getCapability().size());
         assertTrue(key.hasCapability(KeyCapability.EXCHANGE));
         assertNotNull(key.getUniqueId());
@@ -47,8 +51,88 @@ class KeyTest {
     }
 
     @Test
-    void keyUsageTest1() {
-        Key signKey = Key.generateKey(List.of(KeyCapability.SIGN));
+    void claimTest1() {
+        Key key = Key.generateKey(KeyCapability.SIGN);
+        assertNull(key.getIssuerId());
+        assertNull(key.getClaim(Claim.ISS));
+        key.putClaim(Claim.ISS, Commons.getAudienceIdentity().getSubjectId());
+        assertEquals(key.getClaim(Claim.ISS), key.getIssuerId());
+        assertEquals(Commons.getAudienceIdentity().getSubjectId(), key.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest2() {
+        Key key = Key.generateKey(KeyCapability.SIGN);
+        assertNotNull(key.getClaim(Claim.IAT));
+        key.removeClaim(Claim.IAT);
+        assertNull(key.getClaim(Claim.IAT));
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(key.getClaim(Claim.AMB));
+            key.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(key.getClaim(Claim.AUD));
+            key.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(key.getClaim(Claim.CTX));
+            key.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(key.getClaim(Claim.EXP));
+            key.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(key.getClaim(Claim.IAT));
+            key.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(key.getClaim(Claim.ISS));
+            key.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(key.getClaim(Claim.KID));
+            key.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(key.getClaim(Claim.MTD));
+            key.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(key.getClaim(Claim.SUB));
+            key.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(key.getClaim(Claim.SYS));
+            key.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(key.getClaim(Claim.UID));
+            try { key.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { key.putClaim(Claim.KEY, key.getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { key.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { key.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); key.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { key.putClaim(Claim.PUB, key.getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.sign(Commons.getIssuerKey());
+            try { key.removeClaim(Claim.IAT); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { key.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest5() {
+        try {
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN), Commons.CONTEXT);
+            key.sign(Commons.getIssuerKey());
+            key.strip();
+            key.removeClaim(Claim.CTX);
+            key.putClaim(Claim.IAT, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void keyCapabilityTest1() {
+        Key signKey = Key.generateKey(KeyCapability.SIGN);
         assertEquals(Dime.crypto.getDefaultSuiteName(), signKey.getCryptoSuiteName());
         assertNotNull(signKey.getSecret());
         assertNotNull(signKey.getPublic());
@@ -62,8 +146,8 @@ class KeyTest {
     }
 
     @Test
-    void keyUsageTest2() {
-        Key exchangeKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+    void keyCapabilityTest2() {
+        Key exchangeKey = Key.generateKey(KeyCapability.EXCHANGE);
         assertEquals(Dime.crypto.getDefaultSuiteName(), exchangeKey.getCryptoSuiteName());
         assertNotNull(exchangeKey.getSecret());
         assertNotNull(exchangeKey.getPublic());
@@ -77,8 +161,8 @@ class KeyTest {
     }
 
     @Test
-    void keyUsageTest3() {
-        Key encryptionKey = Key.generateKey(List.of(KeyCapability.ENCRYPT));
+    void keyCapabilityTest3() {
+        Key encryptionKey = Key.generateKey(KeyCapability.ENCRYPT);
         assertEquals(Dime.crypto.getDefaultSuiteName(), encryptionKey.getCryptoSuiteName());
         assertNotNull(encryptionKey.getSecret());
         assertNull(encryptionKey.getPublic());
@@ -92,7 +176,7 @@ class KeyTest {
     }
 
     @Test
-    void keyUsageTest4() {
+    void keyCapabilityTest4() {
         List<KeyCapability> use = List.of(KeyCapability.SIGN, KeyCapability.EXCHANGE);
         try {
             Key.generateKey(use, -1, null, null, Dime.crypto.getDefaultSuiteName());

@@ -58,7 +58,7 @@ public class Message extends Data {
      */
     public void setKeyId(UUID kid) {
         if (kid != null) {
-            putClaim(Claim.KID, kid);
+            setClaimValue(Claim.KID, kid);
         } else {
             removeClaim(Claim.KID);
         }
@@ -86,7 +86,8 @@ public class Message extends Data {
      */
     public void setPublicKey(Key publicKey) {
         if (publicKey != null) {
-            putClaim(Claim.PUB, publicKey.getPublic());
+            throwIfSigned();
+            setClaimValue(Claim.PUB, publicKey.getPublic());
         } else {
             removeClaim(Claim.PUB);
         }
@@ -140,12 +141,12 @@ public class Message extends Data {
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
         Instant iat = Utility.createTimestamp();
         Instant exp = (validFor != -1) ? iat.plusSeconds(validFor) : null;
-        putClaim(Claim.UID, UUID.randomUUID());
-        putClaim(Claim.AUD, audienceId);
-        putClaim(Claim.ISS, issuerId);
-        putClaim(Claim.IAT, iat);
-        putClaim(Claim.EXP, exp);
-        putClaim(Claim.CTX, context);
+        setClaimValue(Claim.UID, UUID.randomUUID());
+        setClaimValue(Claim.AUD, audienceId);
+        setClaimValue(Claim.ISS, issuerId);
+        setClaimValue(Claim.IAT, iat);
+        setClaimValue(Claim.EXP, exp);
+        setClaimValue(Claim.CTX, context);
     }
 
     @Override
@@ -194,8 +195,8 @@ public class Message extends Data {
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.PRI;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Message.allowedClaims.contains(claim);
     }
 
     @Override
@@ -217,6 +218,7 @@ public class Message extends Data {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 4;
     private static final int LINK_UID_INDEX = 1;
 

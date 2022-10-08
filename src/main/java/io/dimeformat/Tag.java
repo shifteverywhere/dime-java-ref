@@ -46,9 +46,9 @@ public class Tag extends Item {
     public Tag(UUID issuerId, String context) {
         if (issuerId == null) { throw new IllegalArgumentException("Issuer identifier must not be null."); }
         if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
-        putClaim(Claim.UID, UUID.randomUUID());
-        putClaim(Claim.ISS, issuerId);
-        putClaim(Claim.CTX, context);
+        setClaimValue(Claim.UID, UUID.randomUUID());
+        setClaimValue(Claim.ISS, issuerId);
+        setClaimValue(Claim.CTX, context);
     }
 
     /**
@@ -80,8 +80,8 @@ public class Tag extends Item {
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM && claim != Claim.PRI;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Tag.allowedClaims.contains(claim);
     }
 
     @Override
@@ -103,6 +103,7 @@ public class Tag extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
 

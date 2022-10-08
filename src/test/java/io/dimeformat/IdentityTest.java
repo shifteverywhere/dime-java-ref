@@ -9,10 +9,13 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.exceptions.CapabilityException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
+
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,85 @@ class IdentityTest {
        Identity identity = new Identity();
        assertEquals("ID", identity.getItemIdentifier());
        assertEquals("ID", Identity.ITEM_IDENTIFIER);
+    }
+
+    @Test
+    void claimTest1() {
+        try {
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
+            Identity identity = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey(), caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getAudienceKey(), Commons.SYSTEM_NAME);
+            assertNotNull(identity.getClaim(Claim.PUB));
+            assertEquals((String) Commons.getAudienceKey().getClaim(Claim.PUB), identity.getClaim(Claim.PUB));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void claimTest2() {
+        try {
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
+            Identity identity = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey(), caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getAudienceKey(), Commons.SYSTEM_NAME);
+            identity.strip();
+            identity.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(identity.getClaim(Claim.AMB));
+            identity.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(identity.getClaim(Claim.AUD));
+            identity.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(identity.getClaim(Claim.CTX));
+            identity.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(identity.getClaim(Claim.EXP));
+            identity.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(identity.getClaim(Claim.IAT));
+            identity.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(identity.getClaim(Claim.ISS));
+            identity.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(identity.getClaim(Claim.KID));
+            identity.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(identity.getClaim(Claim.MTD));
+            Map<String, Object> pri = new HashMap<>();
+            pri.put("tag", Commons.PAYLOAD);
+            identity.putClaim(Claim.PRI, pri);
+            assertNotNull(identity.getClaim(Claim.PRI));
+            identity.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(identity.getClaim(Claim.SUB));
+            identity.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(identity.getClaim(Claim.SYS));
+            identity.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(identity.getClaim(Claim.UID));
+            try { identity.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { identity.putClaim(Claim.KEY, Commons.PAYLOAD); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { identity.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { identity.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { identity.putClaim(Claim.PUB, Commons.getAudienceKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
+            Identity identity = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey(), caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getAudienceKey(), Commons.SYSTEM_NAME);
+            try { identity.removeClaim(Claim.IAT); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { identity.putClaim(Claim.CTX, Commons.CONTEXT); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
+            Identity identity = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey(), caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getAudienceKey(), Commons.SYSTEM_NAME);
+            identity.strip();
+            identity.removeClaim(Claim.IAT);
+            identity.putClaim(Claim.CTX, Commons.CONTEXT);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
     }
 
     @Test

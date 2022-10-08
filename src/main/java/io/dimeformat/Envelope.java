@@ -281,9 +281,8 @@ public class Envelope extends Item {
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.AMB && claim != Claim.CAP && claim != Claim.KEY && claim != Claim.MIM
-                && claim != Claim.MTD  && claim != Claim.PRI && claim != Claim.SUB;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Envelope.allowedClaims.contains(claim);
     }
 
     @Override
@@ -318,6 +317,7 @@ public class Envelope extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private ArrayList<Item> items;
 
 }

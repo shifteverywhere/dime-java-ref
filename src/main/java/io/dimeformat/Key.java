@@ -183,10 +183,10 @@ public class Key extends Item {
                     keyBytes.length == 2 ? keyBytes[ICryptoSuite.PUBLIC_KEY_INDEX] : null,
                     suiteName);
             if (validFor != -1) {
-                key.putClaim(Claim.EXP, ((Instant) key.getClaim(Claim.IAT)).plusSeconds(validFor));
+                key.setClaimValue(Claim.EXP, ((Instant) key.getClaim(Claim.IAT)).plusSeconds(validFor));
             }
-            key.putClaim(Claim.ISS, issuerId);
-            key.putClaim(Claim.CTX, context);
+            key.setClaimValue(Claim.ISS, issuerId);
+            key.setClaimValue(Claim.CTX, context);
             return key;
         } catch (CryptographyException e) {
             throw new RuntimeException("Unexpected exception thrown when generating key: " + e);
@@ -200,12 +200,12 @@ public class Key extends Item {
      */
     public Key publicCopy() {
         Key copyKey = new Key(getCapability(), null, getPublic(), getCryptoSuiteName());
-        copyKey.putClaim(Claim.UID, getUniqueId());
-        copyKey.putClaim(Claim.IAT, getIssuedAt());
-        copyKey.putClaim(Claim.EXP, getExpiresAt());
-        copyKey.putClaim(Claim.ISS, getIssuerId());
-        copyKey.putClaim(Claim.CTX, getContext());
-        copyKey.putClaim(Claim.CAP, getCapability().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        copyKey.setClaimValue(Claim.UID, getUniqueId());
+        copyKey.setClaimValue(Claim.IAT, getIssuedAt());
+        copyKey.setClaimValue(Claim.EXP, getExpiresAt());
+        copyKey.setClaimValue(Claim.ISS, getIssuerId());
+        copyKey.setClaimValue(Claim.CTX, getContext());
+        copyKey.setClaimValue(Claim.CAP, getCapability().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         return copyKey;
     }
 
@@ -246,16 +246,16 @@ public class Key extends Item {
     Key() { }
 
     Key(UUID id, List<KeyCapability> use, byte[] key, byte[] pub, String suiteName) {
-        putClaim(Claim.UID, id);
-        putClaim(Claim.IAT, Utility.createTimestamp());
+        setClaimValue(Claim.UID, id);
+        setClaimValue(Claim.IAT, Utility.createTimestamp());
         this._suiteName = suiteName;
         this._capabilities = use;
-        putClaim(Claim.CAP, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
+        setClaimValue(Claim.CAP, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         if (key != null) {
-            putClaim(Claim.KEY, Key.encodeKey(suiteName, key));
+            setClaimValue(Claim.KEY, Key.encodeKey(suiteName, key));
         }
         if (pub != null) {
-            putClaim(Claim.PUB, Key.encodeKey(suiteName, pub));
+            setClaimValue(Claim.PUB, Key.encodeKey(suiteName, pub));
         }
     }
 
@@ -263,16 +263,16 @@ public class Key extends Item {
         this._suiteName = suiteName;
         this._capabilities = capabilities;
         if (key != null) {
-            putClaim(Claim.KEY, key);
+            setClaimValue(Claim.KEY, key);
         }
         if (pub != null) {
-            putClaim(Claim.PUB, pub);
+            setClaimValue(Claim.PUB, pub);
         }
     }
 
     Key(List<KeyCapability> capabilities, String key, Claim claim) throws CryptographyException {
         this._capabilities = capabilities;
-        putClaim(claim, key);
+        setClaimValue(claim, key);
     }
 
     static void convertKeyToLegacy(Item item, KeyCapability capability, Claim claim) {
@@ -289,14 +289,14 @@ public class Key extends Item {
         } else if (capability == KeyCapability.ENCRYPT) {
             legacyKey[3] = 0x02;
         }
-        item.putClaim(claim, Base58.encode(legacyKey));
+        item.setClaimValue(claim, Base58.encode(legacyKey));
     }
 
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.MIM && claim != Claim.PRI;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Key.allowedClaims.contains(claim);
     }
 
     @Override
@@ -307,6 +307,7 @@ public class Key extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int CRYPTO_SUITE_INDEX = 0;
     private static final int ENCODED_KEY_INDEX = 1;
     private static final int LEGACY_KEY_HEADER_SIZE = 6;

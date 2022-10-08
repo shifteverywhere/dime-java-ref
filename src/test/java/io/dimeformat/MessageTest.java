@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.enums.KeyCapability;
@@ -16,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 class MessageTest {
@@ -71,6 +74,89 @@ class MessageTest {
             assertEquals(text, new String(message2.getPayload(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
+        }
+    }
+
+    @Test
+    void claimTest1() {
+        Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertNotNull(message.getClaim(Claim.ISS));
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), message.getClaim(Claim.ISS));
+    }
+
+    @Test
+    void claimTest2() {
+        Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
+        assertNotNull(message.getClaim(Claim.MIM));
+        assertEquals(Commons.MIMETYPE, message.getClaim(Claim.MIM));
+        message.removeClaim(Claim.MIM);
+        assertNull(message.getClaim(Claim.MIM));
+    }
+
+    @Test
+    void claimTest3() {
+        try {
+            Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.putClaim(Claim.AMB, new String[] { "one", "two" });
+            assertNotNull(message.getClaim(Claim.AMB));
+            message.putClaim(Claim.AUD, UUID.randomUUID());
+            assertNotNull(message.getClaim(Claim.AUD));
+            message.putClaim(Claim.CTX, Commons.CONTEXT);
+            assertNotNull(message.getClaim(Claim.CTX));
+            message.putClaim(Claim.EXP, Instant.now());
+            assertNotNull(message.getClaim(Claim.EXP));
+            message.putClaim(Claim.IAT, Instant.now());
+            assertNotNull(message.getClaim(Claim.IAT));
+            message.putClaim(Claim.ISS, UUID.randomUUID());
+            assertNotNull(message.getClaim(Claim.ISS));
+            message.putClaim(Claim.KID, UUID.randomUUID());
+            assertNotNull(message.getClaim(Claim.KID));
+            message.putClaim(Claim.MIM, Commons.MIMETYPE);
+            assertNotNull(message.getClaim(Claim.MIM));
+            message.putClaim(Claim.MTD, new String[] { "abc", "def" });
+            assertNotNull(message.getClaim(Claim.MTD));
+            message.putClaim(Claim.SUB, UUID.randomUUID());
+            assertNotNull(message.getClaim(Claim.SUB));
+            message.putClaim(Claim.SYS, Commons.SYSTEM_NAME);
+            assertNotNull(message.getClaim(Claim.SYS));
+            message.putClaim(Claim.UID, UUID.randomUUID());
+            assertNotNull(message.getClaim(Claim.UID));
+            try { message.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { message.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { message.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); message.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { message.putClaim(Claim.PUB, Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest4() {
+        try {
+            Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            try { message.removeClaim(Claim.ISS); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { message.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void claimTest5() {
+        try {
+            Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            message.strip();
+            message.removeClaim(Claim.ISS);
+            message.putClaim(Claim.IAT, Instant.now());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown:" + e);
         }
     }
 

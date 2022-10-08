@@ -213,17 +213,17 @@ public class Identity extends Item {
 
     Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
-        putClaim(Claim.UID, UUID.randomUUID());
-        putClaim(Claim.SYS, systemName);
-        putClaim(Claim.SUB, subjectId);
-        putClaim(Claim.ISS, issuerId);
-        putClaim(Claim.IAT, issuedAt);
-        putClaim(Claim.EXP, expiresAt);
-        putClaim(Claim.PUB, subjectKey.getPublic());
-        putClaim(Claim.CAP, capabilities);
-        putClaim(Claim.PRI, principles);
-        putClaim(Claim.AMB, ambits);
-        putClaim(Claim.MTD, methods);
+        setClaimValue(Claim.UID, UUID.randomUUID());
+        setClaimValue(Claim.SYS, systemName);
+        setClaimValue(Claim.SUB, subjectId);
+        setClaimValue(Claim.ISS, issuerId);
+        setClaimValue(Claim.IAT, issuedAt);
+        setClaimValue(Claim.EXP, expiresAt);
+        setClaimValue(Claim.PUB, subjectKey.getPublic());
+        setClaimValue(Claim.CAP, capabilities);
+        setClaimValue(Claim.PRI, principles);
+        setClaimValue(Claim.AMB, ambits);
+        setClaimValue(Claim.MTD, methods);
     }
 
     void setTrustChain(Identity trustChain) {
@@ -233,8 +233,8 @@ public class Identity extends Item {
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.MIM && claim != Claim.KEY;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return Identity.allowedClaims.contains(claim);
     }
 
     @Override
@@ -263,6 +263,7 @@ public class Identity extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MTD, Claim.PRI, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
     private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_CHAIN_INDEX = 2;

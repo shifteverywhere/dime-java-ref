@@ -31,7 +31,43 @@ public class DimeTest {
         assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
         assertEquals(0, Dime.getTimeModifier());
     }
+/*
+    @Test
+    void test1() throws Exception {
 
+
+        Key ex1 = Key.generateKey(List.of(Capability.Key.EXCHANGE));
+        Message request = new Message(Commons.getIssuerIdentity().getSubjectId());
+        request.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        request.sign(Commons.getIssuerKey());
+
+
+
+        Envelope response = new Envelope();
+        response.addItem(Commons.getAudienceIdentity());
+
+        Key ex2 = Key.generateKey(List.of(Capability.Key.EXCHANGE));
+        ex2.sign(Commons.getAudienceKey());
+        response.addItem(ex2);
+
+        Message message = new Message(Commons.getAudienceIdentity().getSubjectId());
+        message.addItemLink(request);
+        message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), ex1, ex2);
+        message.sign(Commons.getAudienceKey());
+        response.addItem(message);
+
+        Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), response.getItems());
+        tag.sign(Commons.getIssuerKey());
+
+        response.addItem(tag);
+
+        String exported = response.exportToEncoded();
+
+        int i = 0;
+
+
+    }
+*/
     @Test
     void validConvenienceTest1() {
         assertEquals(-1L, Dime.NO_EXPIRATION);

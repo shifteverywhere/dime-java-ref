@@ -127,16 +127,19 @@ public class IdentityIssuingRequest extends Item {
         if (key.getSecret() == null) { throw new IllegalArgumentException("Private key must not be null"); }
         if (key.getPublic() == null) { throw new IllegalArgumentException("Public key must not be null"); }
         IdentityIssuingRequest iir = new IdentityIssuingRequest();
-        iir.putClaim(Claim.UID, UUID.randomUUID());
-        iir.putClaim(Claim.IAT, Utility.createTimestamp());
-        iir.putClaim(Claim.PUB, key.getPublic());
+        iir.setClaimValue(Claim.UID, UUID.randomUUID());
+        iir.setClaimValue(Claim.IAT, Utility.createTimestamp());
+        iir.setClaimValue(Claim.PUB, key.getPublic());
         if (capabilities == null || capabilities.length == 0) {
             capabilities = new IdentityCapability[] { IdentityCapability.GENERIC };
         }
         List<IdentityCapability> caps = List.of(capabilities);
-        iir.putClaim(Claim.CAP, caps.stream().map(IdentityCapability::toString).collect(Collectors.toList()));
+        iir.setClaimValue(Claim.CAP, caps.stream().map(IdentityCapability::toString).collect(Collectors.toList()));
         if (principles != null && !principles.isEmpty()) {
-            iir.putClaim(Claim.PRI, principles);
+            iir.setClaimValue(Claim.PRI, principles);
+        }
+        if (key.isLegacy()) {
+            iir.markAsLegacy();
         }
         iir.sign(key);
         return iir;
@@ -303,8 +306,8 @@ public class IdentityIssuingRequest extends Item {
     /// PROTECTED ///
 
     @Override
-    protected boolean validClaim(Claim claim) {
-        return claim != Claim.MIM && claim != Claim.KEY;
+    protected boolean allowedToSetClaimDirectly(Claim claim) {
+        return IdentityIssuingRequest.allowedClaims.contains(claim);
     }
 
     @Override
@@ -319,6 +322,7 @@ public class IdentityIssuingRequest extends Item {
 
     /// PRIVATE ///
 
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MTD, Claim.PRI, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, CapabilityException, CryptographyException {
@@ -360,6 +364,9 @@ public class IdentityIssuingRequest extends Item {
                     }
                 }
             }
+            if (this.isLegacy()) {
+                identity.markAsLegacy();
+            }
             identity.sign(issuerKey);
             return identity;
         }
@@ -399,7 +406,7 @@ public class IdentityIssuingRequest extends Item {
                 }
             }
         }
-        putClaim(Claim.CAP, capabilities.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
+        setClaimValue(Claim.CAP, capabilities.stream().map(cap -> cap.toString().toLowerCase()).collect(Collectors.toList()));
     }
 
 }
