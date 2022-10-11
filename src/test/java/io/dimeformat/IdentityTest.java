@@ -14,7 +14,6 @@ import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.exceptions.CapabilityException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -119,16 +118,16 @@ class IdentityTest {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
-            assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
-            assertEquals(subjectId, identity.getSubjectId());
-            assertEquals(subjectId, identity.getIssuerId());
+            assertEquals(Commons.SYSTEM_NAME, identity.getClaim(Claim.SYS));
+            assertEquals(subjectId, identity.getClaim(Claim.SUB));
+            assertEquals(subjectId, identity.getClaim(Claim.ISS));
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
             assertTrue(identity.hasCapability(IdentityCapability.SELF));
             assertEquals(key.getPublic(), identity.getPublicKey().getPublic());
-            assertNotNull(identity.getIssuedAt());
-            assertNotNull(identity.getExpiresAt());
-            assertTrue(identity.getIssuedAt().compareTo(identity.getExpiresAt()) < 0);
+            assertNotNull(identity.getClaim(Claim.IAT));
+            assertNotNull(identity.getClaim(Claim.EXP));
+            assertTrue(((Instant) identity.getClaim(Claim.IAT)).compareTo(identity.getClaim(Claim.EXP)) < 0);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -143,15 +142,15 @@ class IdentityTest {
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.IDENTIFY };
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key, caps);
             Identity identity = iir.issueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, null, null);
-            assertEquals(Commons.getTrustedIdentity().getSystemName(), identity.getSystemName());
-            assertEquals(0, subjectId.compareTo(identity.getSubjectId()));
+            assertEquals((String) Commons.getTrustedIdentity().getClaim(Claim.SYS), identity.getClaim(Claim.SYS));
+            assertEquals(0, subjectId.compareTo(identity.getClaim(Claim.SUB)));
             assertTrue(identity.hasCapability(caps[0]));
             assertTrue(identity.hasCapability(caps[1]));
             assertEquals(key.getPublic(), identity.getPublicKey().getPublic());
-            assertNotNull(identity.getIssuedAt());
-            assertNotNull(identity.getExpiresAt());
-            assertTrue(identity.getIssuedAt().compareTo(identity.getExpiresAt()) < 0);
-            assertEquals(0, Commons.getIntermediateIdentity().getSubjectId().compareTo(identity.getIssuerId()));
+            assertNotNull(identity.getClaim(Claim.IAT));
+            assertNotNull(identity.getClaim(Claim.EXP));
+            assertTrue(((Instant) identity.getClaim(Claim.IAT)).compareTo(identity.getClaim(Claim.EXP)) < 0);
+            assertEquals(0, ((UUID) Commons.getIntermediateIdentity().getClaim(Claim.SUB)).compareTo(identity.getClaim(Claim.ISS)));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -393,12 +392,12 @@ class IdentityTest {
             Commons.initializeKeyRing();
             Identity identity = Item.importFromEncoded(Commons._encodedIssuerIdentity);
             assertNotNull(identity);
-            assertEquals(Commons.SYSTEM_NAME, identity.getSystemName());
-            assertEquals(Commons.getIssuerIdentity().getUniqueId(), identity.getUniqueId());
-            assertEquals(Commons.getIssuerIdentity().getSubjectId(), identity.getSubjectId());
-            assertEquals(Commons.getIssuerIdentity().getIssuedAt(), identity.getIssuedAt());
-            assertEquals(Commons.getIssuerIdentity().getExpiresAt(), identity.getExpiresAt());
-            assertEquals(Commons.getIntermediateIdentity().getSubjectId(), identity.getIssuerId());
+            assertEquals(Commons.SYSTEM_NAME, identity.getClaim(Claim.SYS));
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.UID), identity.getClaim(Claim.UID));
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), identity.getClaim(Claim.SUB));
+            assertEquals((Instant) Commons.getIssuerIdentity().getClaim(Claim.IAT), identity.getClaim(Claim.IAT));
+            assertEquals((Instant) Commons.getIssuerIdentity().getClaim(Claim.EXP), identity.getClaim(Claim.EXP));
+            assertEquals((UUID) Commons.getIntermediateIdentity().getClaim(Claim.SUB), identity.getClaim(Claim.ISS));
             assertEquals(Commons.getIssuerIdentity().getPublicKey().getPublic(), identity.getPublicKey().getPublic());
             assertTrue(identity.hasCapability(IdentityCapability.GENERIC));
             assertTrue(identity.hasCapability(IdentityCapability.IDENTIFY));
@@ -416,13 +415,15 @@ class IdentityTest {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             
             Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME, ambit, null);
-            assertEquals(2, identity1.getAmbitList().size());
+            List<String> ambit1 = identity1.getClaim(Claim.AMB);
+            assertEquals(2, ambit1.size());
             assertTrue(identity1.hasAmbit(ambit[0]));
             assertTrue(identity1.hasAmbit(ambit[1]));
 
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
             assertNotNull(identity2);
-            assertEquals(2, identity2.getAmbitList().size());
+            List<String> ambit2 = identity2.getClaim(Claim.AMB);
+            assertEquals(2, ambit2.size());
             assertTrue(identity2.hasAmbit(ambit[0]));
             assertTrue(identity2.hasAmbit(ambit[1]));
         } catch (Exception e) { 
@@ -437,19 +438,19 @@ class IdentityTest {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
 
             Identity identity1 = IdentityIssuingRequest.generateIIR(key).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME, null, methods);
-            List<String> methodList1 = identity1.getMethods();
-            assertNotNull(methodList1);
-            assertEquals(2, identity1.getMethods().size());
-            assertTrue(methodList1.contains(methods[0]));
-            assertTrue(methodList1.contains(methods[1]));
+            List<String> methods1 = identity1.getClaim(Claim.MTD);
+            assertNotNull(methods1);
+            assertEquals(2, methods1.size());
+            assertTrue(methods1.contains(methods[0]));
+            assertTrue(methods1.contains(methods[1]));
 
             Identity identity2 = Item.importFromEncoded(identity1.exportToEncoded());
             assertNotNull(identity2);
-            List<String> methodList2 = identity2.getMethods();
-            assertNotNull(methodList2);
-            assertEquals(2, identity2.getMethods().size());
-            assertTrue(methodList2.contains(methods[0]));
-            assertTrue(methodList2.contains(methods[1]));
+            List<String> methods2 = identity2.getClaim(Claim.MTD);
+            assertNotNull(methods2);
+            assertEquals(2, methods2.size());
+            assertTrue(methods2.contains(methods[0]));
+            assertTrue(methods2.contains(methods[1]));
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 
         }

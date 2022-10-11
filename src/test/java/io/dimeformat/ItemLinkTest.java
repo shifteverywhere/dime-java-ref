@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class ItemLinkTest {
             assertNotNull(link);
             assertEquals(key.getItemIdentifier(), link.itemIdentifier);
             assertEquals(key.thumbprint(), link.thumbprint);
-            assertEquals(key.getUniqueId(), link.uniqueId);
+            assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -49,11 +50,11 @@ class ItemLinkTest {
     void itemLinkTest3() {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
-            ItemLink link = new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), key.getUniqueId());
+            ItemLink link = new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), key.getClaim(Claim.UID));
             assertNotNull(link);
             assertEquals(Key.ITEM_IDENTIFIER, link.itemIdentifier);
             assertEquals(key.thumbprint(), link.thumbprint);
-            assertEquals(key.getUniqueId(), link.uniqueId);
+            assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -64,19 +65,19 @@ class ItemLinkTest {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
             try {
-                new ItemLink(null, key.thumbprint(), key.getUniqueId());
+                new ItemLink(null, key.thumbprint(), key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink("", key.thumbprint(), key.getUniqueId());
+                new ItemLink("", key.thumbprint(), key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.ITEM_IDENTIFIER, null, key.getUniqueId());
+                new ItemLink(Key.ITEM_IDENTIFIER, null, key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.ITEM_IDENTIFIER, "", key.getUniqueId());
+                new ItemLink(Key.ITEM_IDENTIFIER, "", key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
@@ -95,7 +96,7 @@ class ItemLinkTest {
             ItemLink link = new ItemLink(key);
             String encoded = link.toEncoded();
             assertNotNull(encoded);
-            String compare = key.getItemIdentifier() + "." + key.getUniqueId().toString() + "." + key.thumbprint();
+            String compare = key.getItemIdentifier() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
             assertEquals(compare, encoded);
             assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
         } catch (Exception e) {
@@ -148,10 +149,10 @@ class ItemLinkTest {
     void toEncodedTest2() {
         try {
             Key key = Commons.getAudienceKey().publicCopy();
-            ItemLink link = new ItemLink(key.getItemIdentifier(), key.thumbprint(), key.getUniqueId());
+            ItemLink link = new ItemLink(key.getItemIdentifier(), key.thumbprint(), key.getClaim(Claim.UID));
             String encoded = link.toEncoded();
             assertNotNull(encoded);
-            String compare = key.getItemIdentifier() + "." + key.getUniqueId().toString() + "." + key.thumbprint();
+            String compare = key.getItemIdentifier() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
             assertEquals(compare, encoded);
             assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
         } catch (Exception e) {

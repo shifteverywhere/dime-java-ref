@@ -200,11 +200,11 @@ public class Key extends Item {
      */
     public Key publicCopy() {
         Key copyKey = new Key(getCapability(), null, getPublic(), getCryptoSuiteName());
-        copyKey.setClaimValue(Claim.UID, getUniqueId());
-        copyKey.setClaimValue(Claim.IAT, getIssuedAt());
-        copyKey.setClaimValue(Claim.EXP, getExpiresAt());
-        copyKey.setClaimValue(Claim.ISS, getIssuerId());
-        copyKey.setClaimValue(Claim.CTX, getContext());
+        copyKey.setClaimValue(Claim.UID, getClaim(Claim.UID));
+        copyKey.setClaimValue(Claim.IAT, getClaim(Claim.IAT));
+        copyKey.setClaimValue(Claim.EXP, getClaim(Claim.EXP));
+        copyKey.setClaimValue(Claim.ISS, getClaim(Claim.ISS));
+        copyKey.setClaimValue(Claim.CTX, getClaim(Claim.CTX));
         copyKey.setClaimValue(Claim.CAP, getCapability().stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         return copyKey;
     }

@@ -238,7 +238,7 @@ public class IdentityIssuingRequest extends Item {
      */
     public Identity issueIdentity(UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String systemName, String[] ambit, String[] methods) throws CapabilityException, CryptographyException, IntegrityStateException {
         if (issuerIdentity == null) { throw new IllegalArgumentException("Issuer identity must not be null."); }
-        String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getSystemName();
+        String sys = (systemName != null && systemName.length() > 0) ? systemName : issuerIdentity.getClaim(Claim.SYS);
         return issueNewIdentity(sys, subjectId, validFor, issuerKey, issuerIdentity, includeChain, allowedCapabilities, requiredCapabilities, ambit, methods);
     }
 
@@ -337,7 +337,7 @@ public class IdentityIssuingRequest extends Item {
         {
             Instant now = Utility.createTimestamp();
             Instant expires = now.plusSeconds(validFor);
-            UUID issuerId = issuerIdentity != null ? issuerIdentity.getSubjectId() : subjectId;
+            UUID issuerId = issuerIdentity != null ? issuerIdentity.getClaim(Claim.SUB) : subjectId;
             List<String> ambitList = ambit != null ? List.of(ambit) : null;
             List<String> methodList = methods != null ? List.of(methods) : null;
             Identity identity = new Identity(systemName,
@@ -350,7 +350,7 @@ public class IdentityIssuingRequest extends Item {
                     ambitList,
                     methodList);
             if (issuerIdentity != null ) {
-                if (Dime.keyRing.get(issuerIdentity.getSubjectId().toString().toLowerCase()) == null && includeChain) {
+                if (Dime.keyRing.get(issuerIdentity.getClaim(Claim.SUB).toString().toLowerCase()) == null && includeChain) {
                     // The chain will only be set if the issuer identity is not a trusted identity in the key ring
                     state = issuerIdentity.verify();
                     if (!state.isValid()) {

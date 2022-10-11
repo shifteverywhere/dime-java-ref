@@ -1,6 +1,6 @@
 //
 //  ItemLink.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.keyring.IntegrityState;
@@ -50,7 +51,7 @@ public final class ItemLink {
         } catch (CryptographyException e) {
             throw new IllegalArgumentException("Unable to create item link, exception caught: " + e);
         }
-        this.uniqueId = item.getUniqueId();
+        this.uniqueId = item.getClaim(Claim.UID);
     }
 
     /**
@@ -105,7 +106,7 @@ public final class ItemLink {
     public boolean verify(Item item) {
         if (item == null) { return false; }
         try {
-            return uniqueId.equals(item.getUniqueId())
+            return uniqueId.equals(item.getClaim(Claim.UID))
                     && itemIdentifier.equals(item.getItemIdentifier())
                     && thumbprint.equals(item.thumbprint());
         } catch (CryptographyException e) {
@@ -124,7 +125,7 @@ public final class ItemLink {
         for (Item item: items) {
             boolean matchFound = false;
             for (ItemLink link: links) {
-                if (link.uniqueId.equals(item.getUniqueId())) {
+                if (link.uniqueId.equals(item.getClaim(Claim.UID))) {
                     matchFound = true;
                     try {
                         if (!link.itemIdentifier.equals(item.getItemIdentifier()) || !link.thumbprint.equals(item.thumbprint())) {

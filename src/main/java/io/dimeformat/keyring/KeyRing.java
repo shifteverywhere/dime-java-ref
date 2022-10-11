@@ -10,6 +10,7 @@
 package io.dimeformat.keyring;
 
 import io.dimeformat.*;
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.exceptions.IntegrityStateException;
@@ -17,6 +18,7 @@ import io.dimeformat.exceptions.IntegrityStateException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * DiME uses a key ring to verify trust. This is done by storing trusted keys and identities in the key ring and then
@@ -62,10 +64,10 @@ public class KeyRing {
                 return key.getPublic().equals(((Key) item).getPublic());
             }
         } else if (item instanceof Identity) {
-            String name = ((Identity) item).getSubjectId().toString().toLowerCase();
+            String name = ((Identity) item).getClaim(Claim.SUB).toString().toLowerCase();
             if (_keyRing.containsKey(name)) {
                 Identity identity = (Identity) _keyRing.get(name);
-                return identity.getSubjectId().compareTo(((Identity) item).getSubjectId()) == 0 &&
+                return ((UUID) identity.getClaim(Claim.SUB)).compareTo(item.getClaim(Claim.SUB)) == 0 &&
                         identity.getPublicKey().getPublic().equals(((Identity) item).getPublicKey().getPublic());
             }
         }
@@ -94,7 +96,7 @@ public class KeyRing {
      * @param identity The identity to add.
      */
     public void put(Identity identity) {
-        put(identity.getSubjectId().toString().toLowerCase(), identity);
+        put(identity.getClaim(Claim.SUB).toString().toLowerCase(), identity);
     }
 
     /**
@@ -113,7 +115,7 @@ public class KeyRing {
      * @return Returns the removed identity, null if none were found.
      */
     public Identity remove(Identity identity) {
-        return (Identity) remove(identity.getSubjectId().toString().toLowerCase());
+        return (Identity) remove(identity.getClaim(Claim.SUB).toString().toLowerCase());
     }
 
     /**

@@ -1,6 +1,6 @@
 //
 //  Utility.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //

@@ -10,7 +10,6 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
-import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +34,7 @@ class KeyTest {
         Key key = Key.generateKey(KeyCapability.SIGN);
         assertEquals(1, key.getCapability().size());
         assertTrue(key.hasCapability(KeyCapability.SIGN));
-        assertNotNull(key.getUniqueId());
+        assertNotNull(key.getClaim(Claim.UID));
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
     }
@@ -45,7 +44,7 @@ class KeyTest {
         Key key = Key.generateKey(KeyCapability.EXCHANGE);
         assertEquals(1, key.getCapability().size());
         assertTrue(key.hasCapability(KeyCapability.EXCHANGE));
-        assertNotNull(key.getUniqueId());
+        assertNotNull(key.getClaim(Claim.UID));
         assertNotNull(key.getPublic());
         assertNotNull(key.getSecret());
     }
@@ -53,11 +52,11 @@ class KeyTest {
     @Test
     void claimTest1() {
         Key key = Key.generateKey(KeyCapability.SIGN);
-        assertNull(key.getIssuerId());
         assertNull(key.getClaim(Claim.ISS));
-        key.putClaim(Claim.ISS, Commons.getAudienceIdentity().getSubjectId());
-        assertEquals(key.getClaim(Claim.ISS), key.getIssuerId());
-        assertEquals(Commons.getAudienceIdentity().getSubjectId(), key.getClaim(Claim.ISS));
+        assertNull(key.getClaim(Claim.ISS));
+        key.putClaim(Claim.ISS, Commons.getAudienceIdentity().getClaim(Claim.SUB));
+        assertEquals((UUID) key.getClaim(Claim.ISS), key.getClaim(Claim.ISS));
+        assertEquals((UUID) Commons.getAudienceIdentity().getClaim(Claim.SUB), key.getClaim(Claim.ISS));
     }
 
     @Test
@@ -217,8 +216,8 @@ class KeyTest {
             assertNotNull(key);
             assertEquals(1, key.getCapability().size());
             assertTrue(key.hasCapability(KeyCapability.SIGN));
-            assertEquals(UUID.fromString("c8f26b1f-3406-4c29-a47e-b8482780ab64"), key.getUniqueId());
-            assertEquals(Instant.parse("2022-10-03T17:37:02.630038Z"), key.getIssuedAt());
+            assertEquals(UUID.fromString("c8f26b1f-3406-4c29-a47e-b8482780ab64"), key.getClaim(Claim.UID));
+            assertEquals(Instant.parse("2022-10-03T17:37:02.630038Z"), key.getClaim(Claim.IAT));
             assertEquals("STN.aBjkzKX2B5ZwG1nrbmNFmugZp6o3i6Fk8oVmjtfopvgTPJcPcEMottZji2ejUmMWgEDukLDyFBchTw5KBoKjFF55wCTWk", key.getSecret());
             assertEquals("STN.Lo8cQbUU9wiDY1rgDbxYDAzsm8gis7RrDFsnH3BcvbY8wpBNC", key.getPublic());
         } catch (Exception e) {
@@ -234,11 +233,11 @@ class KeyTest {
             Key pubOnly = key.publicCopy();
             assertNull(pubOnly.getSecret());
             assertEquals(key.getPublic(), pubOnly.getPublic());
-            assertEquals(key.getUniqueId(), pubOnly.getUniqueId());
-            assertEquals(key.getIssuedAt(), pubOnly.getIssuedAt());
-            assertEquals(key.getExpiresAt(), pubOnly.getExpiresAt());
-            assertEquals(key.getIssuerId(), pubOnly.getIssuerId());
-            assertEquals(key.getContext(), pubOnly.getContext());
+            assertEquals((UUID) key.getClaim(Claim.UID), pubOnly.getClaim(Claim.UID));
+            assertEquals((Instant)key.getClaim(Claim.IAT), pubOnly.getClaim(Claim.IAT));
+            assertEquals((Instant) key.getClaim(Claim.EXP), pubOnly.getClaim(Claim.EXP));
+            assertEquals((UUID) key.getClaim(Claim.ISS), pubOnly.getClaim(Claim.ISS));
+            assertEquals((String) key.getClaim(Claim.CTX), pubOnly.getClaim(Claim.CTX));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
@@ -247,7 +246,7 @@ class KeyTest {
     @Test
     void publicOnlyTest2() {
         try {
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             Key pubOnly = Commons.getIssuerKey().publicCopy();
@@ -261,7 +260,7 @@ class KeyTest {
     void contextTest1() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
         Key key = Key.generateKey(List.of(KeyCapability.SIGN), context);
-        assertEquals(context, key.getContext());
+        assertEquals(context, key.getClaim(Claim.CTX));
     }
 
     @Test
@@ -272,7 +271,7 @@ class KeyTest {
             String exported = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported);
             assertNotNull(key2);
-            assertEquals(context, key2.getContext());
+            assertEquals(context, key2.getClaim(Claim.CTX));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

@@ -14,7 +14,6 @@ import io.dimeformat.exceptions.*;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.keyring.IntegrityState;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -38,24 +37,6 @@ public class Identity extends Item {
     @Override
     public String getItemIdentifier() {
         return Identity.ITEM_IDENTIFIER;
-    }
-
-    /**
-     * Returns the name of the system or network that the entity belongs to. If issued by another entity and part of a
-     * trust chain, then all entities will share the same system name.
-     * @return The system name
-     */
-    public String getSystemName() {
-        return getClaim(Claim.SYS);
-    }
-
-    /**
-     * Returns the entity's subject identifier. This is, within the system, defined by system name, unique for one
-     * specific entity.
-     * @return The subject identifier assigned to an entity, as a UUID.
-     */
-    public UUID getSubjectId() {
-        return getClaim(Claim.SUB);
     }
 
     /**
@@ -107,25 +88,6 @@ public class Identity extends Item {
     private Map<String, Object> _principles;
 
     /**
-     * Returns an ambit list assigned to an identity. An ambit defines the scope, region or role where an identity
-     * may be used.
-     * @return An immutable ambit list (as String instances).
-     */
-    public List<String> getAmbitList() {
-        return getClaim(Claim.AMB);
-    }
-
-    /**
-     * Returns a list of methods associated with an identity. The usage of this is normally context or application
-     * specific, and may specify different methods that can be used convert, transfer or further process a Di:ME
-     * identity.
-     * @return An immutable list of methods (as String instances).
-     */
-    public List<String> getMethods() {
-        return getClaim(Claim.MTD);
-    }
-
-    /**
      * Returns the parent identity of a trust chain for an identity. This is the issuing identity.
      * @return Parent identity in a trust chain.
      */
@@ -138,7 +100,7 @@ public class Identity extends Item {
      * @return true or false
      */
     public boolean isSelfIssued() {
-        return getSubjectId().compareTo(getIssuerId()) == 0 && hasCapability(IdentityCapability.SELF);
+        return ((UUID) getClaim(Claim.SUB)).compareTo(getClaim(Claim.ISS)) == 0 && hasCapability(IdentityCapability.SELF);
     }
 
     @Override
@@ -172,19 +134,6 @@ public class Identity extends Item {
      */
     public boolean hasCapability(IdentityCapability capability) {
         return getCapabilities().contains(capability);
-    }
-
-    /**
-     * Will check if an identity is within a particular ambit.
-     * @param ambit The ambit to check for.
-     * @return true or false.
-     */
-    public boolean hasAmbit(String ambit) {
-        List<String> ambitList = getAmbitList();
-        if (ambitList != null) {
-            return ambitList.contains(ambit);
-        }
-        return false;
     }
 
     @Override

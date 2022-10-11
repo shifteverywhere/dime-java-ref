@@ -1,6 +1,6 @@
 //
 //  DataTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -35,27 +35,27 @@ public class DataTest {
         Instant now = Instant.now();
         Data data = new Data(UUID.randomUUID(), 10L, Commons.CONTEXT);
         data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
-        assertNotNull(data.getUniqueId());
-        assertEquals(Commons.CONTEXT, data.getContext());
+        assertNotNull(data.getClaim(Claim.UID));
+        assertEquals(Commons.CONTEXT, data.getClaim(Claim.CTX));
         assertEquals(Commons.PAYLOAD, new String(data.getPayload(), StandardCharsets.UTF_8));
-        assertTrue(data.getIssuedAt().compareTo(now) >= 0 && data.getIssuedAt().compareTo(now.plusSeconds(1)) <= 0);
-        assertTrue(data.getExpiresAt().compareTo(now.plusSeconds(9)) > 0 && data.getExpiresAt().compareTo(now.plusSeconds(11)) < 0);
-        assertNull(data.getMIMEType());
+        assertTrue(((Instant) data.getClaim(Claim.IAT)).compareTo(now) >= 0 && ((Instant) data.getClaim(Claim.IAT)).compareTo(now.plusSeconds(1)) <= 0);
+        assertTrue(((Instant) data.getClaim(Claim.EXP)).compareTo(now.plusSeconds(9)) > 0 && ((Instant) data.getClaim(Claim.EXP)).compareTo(now.plusSeconds(11)) < 0);
+        assertNull(data.getClaim(Claim.MIM));
     }
 
     @Test
     void dataTest2() {
         Data data = new Data(UUID.randomUUID(), Dime.NO_EXPIRATION, Commons.CONTEXT);
         data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
-        assertEquals(Commons.MIMETYPE, data.getMIMEType());
-        assertNull(data.getExpiresAt());
+        assertEquals(Commons.MIMETYPE, data.getClaim(Claim.MIM));
+        assertNull(data.getClaim(Claim.EXP));
     }
 
     @Test
     void dataTest3() {
         Data data1 = new Data(UUID.randomUUID());
         Data data2 = new Data(UUID.randomUUID());
-        assertNotEquals(data1.getUniqueId(), data2.getUniqueId());
+        assertNotEquals((UUID) data1.getClaim(Claim.UID), data2.getClaim(Claim.UID));
     }
 
     @Test
@@ -145,7 +145,7 @@ public class DataTest {
     void exportTest1() {
         try {
             Commons.initializeKeyRing();
-            Data data = new Data(Commons.getIssuerIdentity().getSubjectId(), 120, Commons.CONTEXT);
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE, Commons.CONTEXT);
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             String encoded = data.exportToEncoded();
             assertNotNull(encoded);
@@ -181,13 +181,13 @@ public class DataTest {
             String exported = "Di:DAT.eyJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTAzVDE0OjQ5OjMzLjgzMDU3M1oiLCJpYXQiOiIyMDIyLTEwLTAzVDE0OjQ3OjMzLjgzMDU3M1oiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJtaW0iOiJ0ZXh0L3BsYWluIiwidWlkIjoiZjI5MjRhNjktMDk4MC00MGVlLThiZjEtNzdlNGE1NWMxNDExIn0.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4";
             Data data = Item.importFromEncoded(exported);
             assertNotNull(data);
-            assertEquals(UUID.fromString("f2924a69-0980-40ee-8bf1-77e4a55c1411"), data.getUniqueId());
-            assertEquals(Commons.getIssuerIdentity().getSubjectId(), data.getIssuerId());
-            assertEquals(Commons.MIMETYPE, data.getMIMEType());
-            assertEquals(Commons.CONTEXT, data.getContext());
+            assertEquals(UUID.fromString("f2924a69-0980-40ee-8bf1-77e4a55c1411"), data.getClaim(Claim.UID));
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), data.getClaim(Claim.ISS));
+            assertEquals(Commons.MIMETYPE, data.getClaim(Claim.MIM));
+            assertEquals(Commons.CONTEXT, data.getClaim(Claim.CTX));
             assertEquals(Commons.PAYLOAD, new String(data.getPayload(), StandardCharsets.UTF_8));
-            assertEquals(Instant.parse("2022-10-03T14:47:33.830573Z"), data.getIssuedAt());
-            assertEquals(Instant.parse("2022-10-03T14:49:33.830573Z"), data.getExpiresAt());
+            assertEquals(Instant.parse("2022-10-03T14:47:33.830573Z"), data.getClaim(Claim.IAT));
+            assertEquals(Instant.parse("2022-10-03T14:49:33.830573Z"), data.getClaim(Claim.EXP));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -197,15 +197,15 @@ public class DataTest {
     void importTest2() {
         try {
             Commons.initializeKeyRing();
-            Data data1 = new Data(Commons.getIssuerIdentity().getSubjectId(), 120, Commons.CONTEXT);
+            Data data1 = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE, Commons.CONTEXT);
             data1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             String exported = data1.exportToEncoded();
             Data data2 = Item.importFromEncoded(exported);
             assertNotNull(data2);
-            assertEquals(Commons.getIssuerIdentity().getSubjectId(), data2.getIssuerId());
-            assertEquals(data1.getIssuedAt(), data2.getIssuedAt());
-            assertEquals(data1.getExpiresAt(), data2.getExpiresAt());
-            assertEquals(Commons.MIMETYPE, data2.getMIMEType());
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB),data2.getClaim(Claim.ISS));
+            assertEquals((Instant) data1.getClaim(Claim.IAT), data2.getClaim(Claim.IAT));
+            assertEquals((Instant) data1.getClaim(Claim.EXP), data2.getClaim(Claim.EXP));
+            assertEquals(Commons.MIMETYPE, data2.getClaim(Claim.MIM));
             assertEquals(Commons.PAYLOAD, new String(data2.getPayload(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -231,7 +231,7 @@ public class DataTest {
     void verifyTest1() {
         try {
             Commons.initializeKeyRing();
-            Data data = new Data(Commons.getIssuerIdentity().getSubjectId());
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             data.sign(Commons.getIssuerKey());
             data.verify(Commons.getIssuerKey());
@@ -244,7 +244,7 @@ public class DataTest {
     void verifyTest2() {
         try {
             Commons.initializeKeyRing();
-            Data data = new Data(Commons.getIssuerIdentity().getSubjectId());
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             data.sign(Commons.getIssuerKey());
             assertFalse(data.verify(Commons.getAudienceKey()).isValid());
@@ -256,15 +256,15 @@ public class DataTest {
     @Test
     void contextTest1() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234";
-        Data data = new Data(Commons.getIssuerIdentity().getSubjectId(), context);
-        assertEquals(context, data.getContext());
+        Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
+        assertEquals(context, data.getClaim(Claim.CTX));
     }
 
     @Test
     void contextTest2() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            new Data(Commons.getIssuerIdentity().getSubjectId(), context);
+            new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
         } catch (IllegalArgumentException e) { return; } // All is well
         fail("Should not happen.");
     }

@@ -12,7 +12,6 @@ package io.dimeformat;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import io.dimeformat.keyring.IntegrityState;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -30,49 +29,6 @@ public abstract class Item {
      * @return The item type of the Di:ME item.
      */
     public abstract String getItemIdentifier();
-
-    /**
-     * Returns a unique identifier for the instance. This will be generated at item creation.
-     * @return A unique identifier, as a UUID.
-     */
-    public UUID getUniqueId() {
-        return getClaim(Claim.UID);
-    }
-
-    /**
-     * Returns the identifier of the entity that created the Di:ME item (issuer). This may be optional depending on the
-     * Di:ME item type.
-     * @return The identifier of the issuer of the key.
-     */
-    public UUID getIssuerId() {
-        return getClaim(Claim.ISS);
-    }
-
-    /**
-     * The date and time when this Di:ME item was issued. Although, this date will most often be in the past, the
-     * item should not be processed if it is in the future.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getIssuedAt() {
-        return getClaim(Claim.IAT);
-    }
-
-    /**
-     * The date and time when the Di:ME item will expire, and should not be used and not trusted anymore after this
-     * date.
-     * @return A UTC timestamp, as an Instant.
-     */
-    public Instant getExpiresAt() {
-        return getClaim(Claim.EXP);
-    }
-
-    /**
-     * Returns the context that is attached to the Di:ME item.
-     * @return A String instance.
-     */
-    public String getContext() {
-        return getClaim(Claim.CTX);
-    }
 
     /**
      * Checks if the item has been signed or not.
@@ -143,6 +99,19 @@ public abstract class Item {
         }
         envelope.addItem(this);
         return envelope.exportToEncoded();
+    }
+
+    /**
+     * Will check if an item is within a particular ambit.
+     * @param ambit The ambit to check for.
+     * @return true or false.
+     */
+    public boolean hasAmbit(String ambit) {
+        List<String> ambitList = getClaim(Claim.AMB);
+        if (ambitList != null) {
+            return ambitList.contains(ambit);
+        }
+        return false;
     }
 
     /**
@@ -313,7 +282,7 @@ public abstract class Item {
     public IntegrityState verify(Identity issuer, List<Item> linkedItems) {
         if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
         UUID issuerId = getClaim(Claim.ISS);
-        if (issuerId != null && !issuerId.equals(issuer.getSubjectId())) { return IntegrityState.ERR_ISSUER_MISMATCH; }
+        if (issuerId != null && !issuerId.equals(issuer.getClaim(Claim.SUB))) { return IntegrityState.ERR_ISSUER_MISMATCH; }
         return verify(issuer.getPublicKey(), linkedItems);
     }
 
@@ -448,10 +417,10 @@ public abstract class Item {
     protected static IntegrityState verifyDates(Item item) {
         if (item.hasClaims()) {
             Instant now = Utility.createTimestamp();
-            if (Utility.gracefulTimestampCompare(item.getIssuedAt(), now) > 0) { return IntegrityState.ERR_USED_BEFORE_ISSUED; }
-            if (item.getExpiresAt() != null) {
-                if (Utility.gracefulTimestampCompare(item.getIssuedAt(), item.getExpiresAt()) > 0) { return IntegrityState.ERR_DATE_MISMATCH; }
-                if (Utility.gracefulTimestampCompare(item.getExpiresAt(), now) < 0) { return IntegrityState.ERR_USED_AFTER_EXPIRED; }
+            if (Utility.gracefulTimestampCompare(item.getClaim(Claim.IAT), now) > 0) { return IntegrityState.ERR_USED_BEFORE_ISSUED; }
+            if (item.getClaim(Claim.EXP) != null) {
+                if (Utility.gracefulTimestampCompare(item.getClaim(Claim.IAT), item.getClaim(Claim.EXP)) > 0) { return IntegrityState.ERR_DATE_MISMATCH; }
+                if (Utility.gracefulTimestampCompare(item.getClaim(Claim.EXP), now) < 0) { return IntegrityState.ERR_USED_AFTER_EXPIRED; }
             }
         }
         return IntegrityState.VALID_DATES;

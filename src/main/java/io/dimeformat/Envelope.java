@@ -12,9 +12,7 @@ package io.dimeformat;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.*;
 import io.dimeformat.keyring.IntegrityState;
-
 import java.io.IOException;
-import java.time.Instant;
 import java.util.*;
 
 /**
@@ -43,40 +41,6 @@ public class Envelope extends Item {
     @Override
     public String getItemIdentifier() {
         return Envelope.HEADER;
-    }
-
-    /**
-     * The current version of the implemented Di:ME specification.
-     * @deprecated Will be removed in the future, use {#{@link Dime#VERSION} instead
-     */
-    @Deprecated
-    public static final int DIME_VERSION = 0x01;
-
-    /**
-     * Returns the identifier of the issuer of the envelope.
-     * Only applicable for signed envelopes.
-     * @return A UUID instance.
-     */
-    public UUID getIssuerId() {
-        return getClaim(Claim.ISS);
-    }
-
-    /**
-     * Returns the date in UTC when this envelope was issued.
-     * Only applicable for signed envelopes.
-     * @return An Instant instance.
-     */
-    public Instant getIssuedAt() {
-        return getClaim(Claim.IAT);
-    }
-
-    /**
-     * Returns the context that is attached to the envelope.
-     * Only applicable for signed envelopes.
-     * @return A String instance.
-     */
-    public String getContext() {
-        return getClaim(Claim.CTX);
     }
 
     /**
@@ -200,7 +164,7 @@ public class Envelope extends Item {
     public Item getItem(String context) {
         if (context == null || items == null || items.size() == 0) return null;
         for (Item item : items) {
-            String ctx = item.getContext();
+            String ctx = item.getClaim(Claim.CTX);
             if (ctx != null && ctx.equalsIgnoreCase(context)) {
                 return item;
             }
@@ -216,7 +180,7 @@ public class Envelope extends Item {
     public Item getItem(UUID uniqueId) {
         if (uniqueId == null || items == null || items.size() == 0) return null;
         for (Item item : items) {
-            if (item.getUniqueId().equals(uniqueId)) {
+            if (item.getClaim(Claim.UID).equals(uniqueId)) {
                 return item;
             }
         }

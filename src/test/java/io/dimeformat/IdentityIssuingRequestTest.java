@@ -130,8 +130,8 @@ class IdentityIssuingRequestTest {
         try {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
             assertNotNull(iir);
-            assertNotNull(iir.getUniqueId());
-            assertNotNull(iir.getIssuedAt());
+            assertNotNull(iir.getClaim(Claim.UID));
+            assertNotNull(iir.getClaim(Claim.IAT));
             assertNotNull(iir.getPublicKey());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -249,8 +249,8 @@ class IdentityIssuingRequestTest {
             String exported = "Di:IIR.eyJjYXAiOlsiZ2VuZXJpYyJdLCJpYXQiOiIyMDIyLTA4LTE4VDIwOjMwOjM0LjcyMTc4MloiLCJwdWIiOiJTVE4ucmpYblRNYU02NDI1bVRNNndDV1ZldU1FNG9vclJXMVNpQVNXYWRXYnkxcmR0MldSWSIsInVpZCI6ImRmYTlhOGJlLTYwYWYtNGEwZi05ZWZiLTAyN2FjNjFmZTc1YiJ9.NTBiZjg1NDAxOGU1NjBhZS44Njg3ZThiNmUxNjZlZGIxNTQxZmM2NGJhZTJkODQyMmRiN2FlMjhjYWNkZDVlOTA2ODQ5ZDE4Yjc4NDI4Zjg4NjhhZTRmYTY2ZjcwZmY1YjFiZTI5OGVlYmM2NjgzZDE5MWQ0MDRhMGE4MzQyNzk4MWNmMTBlODk4Yjg5ODAwZQ";
             IdentityIssuingRequest iir = Item.importFromEncoded(exported);
             assertNotNull(iir);
-            assertEquals(UUID.fromString("dfa9a8be-60af-4a0f-9efb-027ac61fe75b"), iir.getUniqueId());
-            assertEquals(Instant.parse("2022-08-18T20:30:34.721782Z"), iir.getIssuedAt());
+            assertEquals(UUID.fromString("dfa9a8be-60af-4a0f-9efb-027ac61fe75b"), iir.getClaim(Claim.UID));
+            assertEquals(Instant.parse("2022-08-18T20:30:34.721782Z"), iir.getClaim(Claim.IAT));
             assertTrue(iir.wantsCapability(IdentityCapability.GENERIC));
             assertEquals("STN.rjXnTMaM6425mTM6wCWVeuME4oorRW1SiASWadWby1rdt2WRY", iir.getPublicKey().getPublic());
             iir.verify();
@@ -396,7 +396,7 @@ class IdentityIssuingRequestTest {
             Commons.initializeKeyRing();
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null);
-            assertEquals(Commons.getIntermediateIdentity().getSystemName(), identity.getSystemName());
+            assertEquals((String) Commons.getIntermediateIdentity().getClaim(Claim.SYS), identity.getClaim(Claim.SYS));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -409,8 +409,8 @@ class IdentityIssuingRequestTest {
             String system = "racecar:is:racecar:backwards";
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null, system, null);
-            assertNotEquals(Commons.getIntermediateIdentity().getSystemName(), identity.getSystemName());
-            assertEquals(system, identity.getSystemName());
+            assertNotEquals((String) Commons.getIntermediateIdentity().getClaim(Claim.SYS), identity.getClaim(Claim.SYS));
+            assertEquals(system, identity.getClaim(Claim.SYS));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

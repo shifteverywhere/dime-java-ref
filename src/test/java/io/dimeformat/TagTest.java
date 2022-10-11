@@ -1,6 +1,6 @@
 //
 //  TagTest.java
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -32,17 +32,17 @@ class TagTest {
 
     @Test
     void tagTest1() {
-        Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-        assertEquals(Commons.getIssuerIdentity().getSubjectId(), tag.getIssuerId());
-        assertNull(tag.getContext());
+        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+        assertNull(tag.getClaim(Claim.CTX));
         assertNull(tag.getItemLinks());
     }
 
     @Test
     void tagTest2() {
-        Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT);
-        assertEquals(Commons.getIssuerIdentity().getSubjectId(), tag.getIssuerId());
-        assertEquals(Commons.CONTEXT, tag.getContext());
+        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+        assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
         assertNull(tag.getItemLinks());
     }
 
@@ -57,7 +57,7 @@ class TagTest {
     void tagTest4() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
         try {
-            new Tag(Commons.getIssuerIdentity().getSubjectId(), context);
+            new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
         } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
     }
 
@@ -65,9 +65,9 @@ class TagTest {
     void tagTest5() {
         try {
             List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
-            assertEquals(Commons.getIssuerIdentity().getSubjectId(), tag.getIssuerId());
-            assertEquals(Commons.CONTEXT, tag.getContext());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT, items);
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+            assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
             assertNotNull(tag.getItemLinks());
             assertEquals(2, tag.getItemLinks().size());
         } catch (Exception e) {
@@ -79,8 +79,8 @@ class TagTest {
     void claimTest1() {
         Tag tag = new Tag();
         assertNull(tag.getClaim(Claim.ISS));
-        tag.putClaim(Claim.ISS, Commons.getAudienceIdentity().getSubjectId());
-        assertEquals(Commons.getAudienceIdentity().getSubjectId(), tag.getClaim(Claim.ISS));
+        tag.putClaim(Claim.ISS, Commons.getAudienceIdentity().getClaim(Claim.SUB));
+        assertEquals((UUID) Commons.getAudienceIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
     }
 
     @Test
@@ -132,7 +132,7 @@ class TagTest {
     void claimTest4() {
         try {
             List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT, items);
             tag.sign(Commons.getIssuerKey());
             try { tag.removeClaim(Claim.CTX); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
             try { tag.putClaim(Claim.EXP, Instant.now()); } catch (IllegalStateException e) { /* all is well */ }
@@ -145,7 +145,7 @@ class TagTest {
     void claimTest5() {
         try {
             List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId(), Commons.CONTEXT, items);
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT, items);
             tag.sign(Commons.getIssuerKey());
             tag.strip();
             tag.removeClaim(Claim.CTX);
@@ -158,7 +158,7 @@ class TagTest {
     @Test
     void addItemLinkTest1() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
@@ -171,7 +171,7 @@ class TagTest {
     @Test
     void addItemLinkTest2() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             tag.addItemLink(Commons.getIssuerIdentity());
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
@@ -184,8 +184,8 @@ class TagTest {
     @Test
     void addItemLinkTest3() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             tag.addItemLink(message);
@@ -200,7 +200,7 @@ class TagTest {
     @Test
     void addItemLinkTest4() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             tag.sign(Commons.getIssuerKey());
             tag.addItemLink(Commons.getIssuerIdentity());
@@ -215,7 +215,7 @@ class TagTest {
     @Test
     void addItemLinkTest5() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             tag.addItemLink(Commons.getTrustedIdentity());
             tag.addItemLink(Commons.getIntermediateIdentity());
             tag.addItemLink(Commons.getIssuerIdentity());
@@ -225,19 +225,19 @@ class TagTest {
             assertEquals(4, links.size());
             ItemLink link0 = links.get(0);
             assertEquals(Commons.getTrustedIdentity().getItemIdentifier(), link0.itemIdentifier);
-            assertEquals(Commons.getTrustedIdentity().getUniqueId(), link0.uniqueId);
+            assertEquals(Commons.getTrustedIdentity().getClaim(Claim.UID), link0.uniqueId);
             assertEquals(Commons.getTrustedIdentity().thumbprint(), link0.thumbprint);
             ItemLink link1 = links.get(1);
             assertEquals(Commons.getIntermediateIdentity().getItemIdentifier(), link1.itemIdentifier);
-            assertEquals(Commons.getIntermediateIdentity().getUniqueId(), link1.uniqueId);
+            assertEquals(Commons.getIntermediateIdentity().getClaim(Claim.UID), link1.uniqueId);
             assertEquals(Commons.getIntermediateIdentity().thumbprint(), link1.thumbprint);
             ItemLink link2 = links.get(2);
             assertEquals(Commons.getIssuerIdentity().getItemIdentifier(), link2.itemIdentifier);
-            assertEquals(Commons.getIssuerIdentity().getUniqueId(), link2.uniqueId);
+            assertEquals(Commons.getIssuerIdentity().getClaim(Claim.UID), link2.uniqueId);
             assertEquals(Commons.getIssuerIdentity().thumbprint(), link2.thumbprint);
             ItemLink link3 = links.get(3);
             assertEquals(Commons.getAudienceKey().getItemIdentifier(), link3.itemIdentifier);
-            assertEquals(Commons.getAudienceKey().getUniqueId(), link3.uniqueId);
+            assertEquals(Commons.getAudienceKey().getClaim(Claim.UID), link3.uniqueId);
             assertEquals(Commons.getAudienceKey().thumbprint(), link3.thumbprint);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -247,8 +247,8 @@ class TagTest {
     @Test
     void exportTest1() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
-            Message message = new Message(Commons.getAudienceIdentity().getSubjectId(), Commons.getIssuerIdentity().getSubjectId(), Dime.VALID_FOR_1_MINUTE);
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             tag.addItemLink(message);
@@ -268,7 +268,7 @@ class TagTest {
     @Test
     void exportTest2() {
         try {
-            Tag tag = new Tag(Commons.getIssuerIdentity().getSubjectId());
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             tag.exportToEncoded();
             fail("Expected exception not thrown.");

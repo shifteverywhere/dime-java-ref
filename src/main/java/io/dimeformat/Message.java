@@ -34,37 +34,6 @@ public class Message extends Data {
     }
 
     /**
-     * Returns the audience (receiver) identifier. This is optional, although required if encrypting the message
-     * payload.
-     * @return The audience identifier, as a UUID.
-     */
-    public UUID getAudienceId() {
-        return getClaim(Claim.AUD);
-    }
-
-    /**
-     * The identifier of the key that was used when encryption the message payload. This is optional, and usage is
-     * application specific.
-     * @return A key identifier, as a UUID.
-     */
-    public UUID getKeyId() {
-        return getClaim(Claim.KID);
-    }
-
-    /**
-     * Sets a key identifier, UUID. This is used to specify which particular key, most often in the position of the
-     * audience, was used for the encryption of the payload. This is optional.
-     * @param kid The identifier of the key to set.
-     */
-    public void setKeyId(UUID kid) {
-        if (kid != null) {
-            setClaimValue(Claim.KID, kid);
-        } else {
-            removeClaim(Claim.KID);
-        }
-    }
-
-    /**
      * Returns a public key that was included in the message. Normally this public key was used for a key exchange where
      * the shared key was used to encrypt the payload. This is optional.
      * @return A public key.
