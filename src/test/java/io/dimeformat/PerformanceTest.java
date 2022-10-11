@@ -15,15 +15,14 @@ import io.dimeformat.enums.KeyCapability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PerformanceTest {
+class PerformanceTest {
 
-    public static final int PERFORMANCE_ROUNDS = 10;
+    static final int PERFORMANCE_ROUNDS = 10;
 
     @Test
-    public void identityPerformanceTest() {
+    void identityPerformanceTest() {
 
         System.out.println("-- Identity performance tests --\n");
         System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");

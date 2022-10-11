@@ -11,9 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.crypto.Crypto;
 import io.dimeformat.keyring.KeyRing;
-
 import java.time.Instant;
-
 
 /**
  * Central class that handles a few important settings and constants.
@@ -63,23 +61,6 @@ public final class Dime {
      * A convenience constant holding the number of seconds for a year (based on 365 days).
      */
     public static final long VALID_FOR_1_YEAR = VALID_FOR_1_DAY * 365L;
-
-    /**
-     * Returns the currently set trusted identity. This is normally the root identity of a trust chain.
-     * @return An Identity instance.
-     */
-    //public static synchronized Identity getTrustedIdentity() {
-    //    return Dime.trustedIdentity;
-    //}
-
-    /**
-     * Sets an Identity instance to be the trusted identity used for verifying a trust chain of other Identity
-     * instances. This is normally the root identity of a trust chain.
-     * @param trustedIdentity The Identity instance to set as a trusted identity.
-     */
-    //public static synchronized void setTrustedIdentity(Identity trustedIdentity) {
-    //    Dime.trustedIdentity = trustedIdentity;
-    //}
 
     /**
      * Returns the set grace period in seconds. This value is used to allow a grace period when comparing and validating

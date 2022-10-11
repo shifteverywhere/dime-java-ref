@@ -52,7 +52,7 @@ public class Signature {
         if (encoded == null || encoded.isEmpty()) { throw new IllegalArgumentException("Encoded list of signatures must not be null or empty."); }
         ArrayList<Signature> signatures = new ArrayList<>();
         String decoded = new String(Utility.fromBase64(encoded), StandardCharsets.UTF_8);
-        String[] items = decoded.split("\\" + Dime.SECTION_DELIMITER);
+        String[] items = decoded.split(Dime.SECTION_DELIMITER);
         for (String combined: items) {
             String[] components = combined.split("\\" + Dime.COMPONENT_DELIMITER);
             if (components.length == 1) {

@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
+import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
@@ -22,7 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DimeTest {
+class DimeTest {
 
     @BeforeAll
     static void beforeAll() {
@@ -30,6 +31,11 @@ public class DimeTest {
         Dime.setTimeModifier(0);
         assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
         assertEquals(0, Dime.getTimeModifier());
+    }
+
+    @Test
+    void versionTest1() {
+        assertEquals(1, Dime.VERSION);
     }
 
     @Test
@@ -136,6 +142,24 @@ public class DimeTest {
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
+    }
+
+    @Test
+    void setOverrideTimeTest1() {
+        try {
+            Key key = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTExVDE3OjUwOjUyLjY3MjU2OVoiLCJpYXQiOiIyMDIyLTEwLTExVDE3OjQ5OjUyLjY3MjU2OVoiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJrZXkiOiJTVE4uM3pudGNLZXZjVTVZcnlkaEcxRzNVMnR4V01aajhjNWZTRnp3SDczQjlMWXJFSlBZcnFubjJ6WWlyTmNnSFltc2o2M3FFR0x1aWtIODE2M2JnRldCUWFRQmdOR3pZIiwicHViIjoiU1ROLkpvYmVyVkEybXgxeXJyQU5GRnVzRFc4Q2gyc2RmenZCTXNSMmJ3UUhTdjVBcGtVUUwiLCJ1aWQiOiJiM2JkMmRkNi0wNTEyLTQ2NWYtOTgxNi1iNjZhZGUxNjc2YWQifQ.YjkyMjMwYzBkNTY0YjU0NS45ZDI5MmQ4Y2FkMDY3YWE2MTFiMDhjMTU5YjEwOTVlYjg3NmIyYzg4NmY4YzE5Yjk2NzIzNWM1MDI0NzExMDg4YzMwNGFlZGIwOThjNDA3ZDFlOGYxNTU5N2M0ZGNjYmRhNmYyNjdjYzE2YjkwM2E2MThiMTZlYWIyYmQwODYwMw");
+            assertNotNull(key);
+            assertEquals(IntegrityState.ERR_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+            Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:51.000000Z"));
+            assertEquals(IntegrityState.ERR_USED_BEFORE_ISSUED, key.verify(Commons.getIssuerKey()));
+            Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:53.000000Z"));
+            assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
+            Dime.setOverrideTime(null);
+            assertEquals(IntegrityState.ERR_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        //Dime.setOverrideTime();
     }
 
     @Test

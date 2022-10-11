@@ -90,7 +90,7 @@ public final class ItemLink {
      */
     public static List<ItemLink> fromEncodedList(String encodedList) throws InvalidFormatException {
         if (encodedList == null || encodedList.isEmpty()) { throw new IllegalArgumentException("Encoded list of item links must not be null or empty."); }
-        String[] items = encodedList.split("\\" + Dime.SECTION_DELIMITER);
+        String[] items = encodedList.split(Dime.SECTION_DELIMITER);
         ArrayList<ItemLink> links = new ArrayList<>();
         for (String item: items) {
             links.add(ItemLink.fromEncoded(item));

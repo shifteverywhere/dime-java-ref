@@ -14,7 +14,6 @@ import io.dimeformat.exceptions.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webpki.jcs.JsonCanonicalizer;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
@@ -45,7 +44,7 @@ class ClaimsMap {
 
     <T> T get(Claim claim) {
         if (_claims == null) { return null; }
-        Object value = null;
+        Object value;
         switch (claim) {
             // UUID
             case AUD:

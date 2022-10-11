@@ -76,6 +76,19 @@ class TagTest {
     }
 
     @Test
+    void tagTest6() {
+        try {
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), items);
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+            assertNull(tag.getClaim(Claim.CTX));
+            assertEquals(2, tag.getItemLinks().size());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void claimTest1() {
         Tag tag = new Tag();
         assertNull(tag.getClaim(Claim.ISS));

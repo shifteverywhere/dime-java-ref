@@ -160,7 +160,7 @@ public class Identity extends Item {
      */
     Identity() { }
 
-    Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambits, List<String> methods) {
+    Identity(String systemName, UUID subjectId, Key subjectKey, Instant issuedAt, Instant expiresAt, UUID issuerId, List<String> capabilities, Map<String, Object> principles, List<String> ambitList, List<String> methods) {
         if (systemName == null || systemName.length() == 0) { throw new IllegalArgumentException("System name must not be null or empty."); }
         setClaimValue(Claim.UID, UUID.randomUUID());
         setClaimValue(Claim.SYS, systemName);
@@ -171,7 +171,7 @@ public class Identity extends Item {
         setClaimValue(Claim.PUB, subjectKey.getPublic());
         setClaimValue(Claim.CAP, capabilities);
         setClaimValue(Claim.PRI, principles);
-        setClaimValue(Claim.AMB, ambits);
+        setClaimValue(Claim.AMB, ambitList);
         setClaimValue(Claim.MTD, methods);
     }
 

@@ -327,7 +327,6 @@ public abstract class Item {
      * Removes all item links.
      */
     public void removeLinkItems() {
-        if (getClaimMap().get(Claim.LNK) == null) return;
         throwIfSigned();
         getClaimMap().remove(Claim.LNK);
         this.itemLinks = null;
@@ -499,7 +498,7 @@ public abstract class Item {
     private List<Signature> _signatures;
     private boolean legacy = false;
 
-    private final ClaimsMap getClaimMap() {
+    private ClaimsMap getClaimMap() {
         if (this._claims == null) {
             if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
                 byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));

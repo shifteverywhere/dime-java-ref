@@ -34,7 +34,7 @@ class StandardSuite implements ICryptoSuite {
     public byte[] generateKeyName(byte[][] key) {
         // This only supports key identifier for public keys, may be different for other crypto suites
         byte[] identifier = null;
-        byte[] bytes = key[ICryptoSuite.PUBLIC_KEY_INDEX];;
+        byte[] bytes = key[ICryptoSuite.PUBLIC_KEY_INDEX];
         if (bytes != null && bytes.length > 0) {
             try {
                 byte[] hash = generateHash(bytes);

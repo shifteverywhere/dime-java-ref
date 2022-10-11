@@ -96,7 +96,7 @@ public class Envelope extends Item {
      */
     public static Envelope importFromEncoded(String encoded) throws InvalidFormatException {
         if (!encoded.startsWith(Envelope.HEADER)) { throw new InvalidFormatException("Not a Dime envelope object, invalid header."); }
-        String[] sections = encoded.split("\\" + Dime.SECTION_DELIMITER);
+        String[] sections = encoded.split(Dime.SECTION_DELIMITER);
         // 0: ENVELOPE
         String[] array = sections[0].split("\\" + Dime.COMPONENT_DELIMITER);
         Envelope envelope = new Envelope();
@@ -132,28 +132,24 @@ public class Envelope extends Item {
      * Adds a Di:ME item (of type Item or any subclass thereof) to the envelope. For signed envelopes, this needs to be
      * done before signing the envelope.
      * @param item The Di:ME item to add.
-     * @return Returns the Envelope instance for convenience.
      */
-    public Envelope addItem(Item item) {
+    public void addItem(Item item) {
         if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
         if (item instanceof Envelope) { throw new IllegalArgumentException("Not allowed to add an envelope to another envelope."); }
         if (this.items == null) {
             this.items = new ArrayList<>();
         }
         this.items.add(item);
-        return this;
     }
 
     /**
      * Adds a list of Di:ME items (of type Item or any subclass thereof) to the envelope. For signed envelopes, this
      * needs to be done before signing the envelope.
      * @param items The Di:ME items to add.
-     * @return Returns the Envelope instance for convenience.
      */
-    public Envelope setItems(List<Item> items) {
+    public void setItems(List<Item> items) {
         if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
         this.items = new ArrayList<>(items);
-        return this;
     }
 
     /**

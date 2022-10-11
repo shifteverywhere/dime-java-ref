@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyCapability;
+import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -280,10 +281,23 @@ class KeyTest {
     @Test
     void contextTest3() {
         String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        try { Key.generateKey(List.of(KeyCapability.SIGN), context); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+    }
+
+    @Test
+    void stripTest1() {
         try {
-            Key.generateKey(List.of(KeyCapability.SIGN), context);
-        } catch (IllegalArgumentException e) { return; } // All is well
-        fail("Should not happen.");
+            Key key = Key.generateKey(KeyCapability.ENCRYPT);
+            key.sign(Commons.getIssuerKey());
+            key.sign(Commons.getAudienceKey());
+            assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getAudienceKey()));
+            key.strip(Commons.getAudienceKey());
+            assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.ERR_KEY_MISMATCH, key.verify(Commons.getAudienceKey()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
 }

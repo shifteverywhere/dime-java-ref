@@ -189,6 +189,5 @@ public class Message extends Data {
 
     private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 4;
-    private static final int LINK_UID_INDEX = 1;
 
 }

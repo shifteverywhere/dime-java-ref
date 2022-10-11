@@ -316,7 +316,6 @@ public class Key extends Item {
     private byte[] _secretBytes;
     private byte[] _publicBytes;
 
-    @Deprecated
     private static KeyCapability getCapabilityFromLegacy(byte[] key) {
         switch (key[1]) {
             case 0x10: return KeyCapability.keyCapabilityFromLegacy("encryption");

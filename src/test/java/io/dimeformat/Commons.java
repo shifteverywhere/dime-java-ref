@@ -17,7 +17,7 @@ import io.dimeformat.enums.KeyCapability;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Commons {
+class Commons {
 
     /// PUBLIC ///
 

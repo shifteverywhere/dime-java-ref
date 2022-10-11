@@ -12,10 +12,31 @@ package io.dimeformat;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import io.dimeformat.enums.KeyCapability;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CryptoTest {
+
+    @Test
+    void hasCryptoSuiteTest1() {
+        assertTrue(Dime.crypto.hasCryptoSuite("STN"));
+        assertFalse(Dime.crypto.hasCryptoSuite("NSA"));
+    }
+
+    @Test
+    void allCryptoSuitesTest1() {
+        Set<String> suiteNames = Dime.crypto.allCryptoSuites();
+        assertNotNull(suiteNames);
+        assertEquals(1, suiteNames.size());
+        assertEquals("STN", suiteNames.toArray()[0]);
+    }
+
+    @Test
+    void setDefaultSuiteNameTest1() {
+        try { Dime.crypto.setDefaultSuiteName("NSA"); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        Dime.crypto.setDefaultSuiteName("STN");
+    }
 
     @Test
     void generateKeyNameTest1() {

@@ -333,7 +333,7 @@ class MessageTest {
     @Test
     void ImportTest3() {  
         try {
-            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 120);
+            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             String encoded = message1.exportToEncoded();
@@ -349,7 +349,7 @@ class MessageTest {
     void signTest1() { 
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 10);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.sign(Commons.getIssuerKey());
         } catch (IllegalStateException e) { 
             return; // All is well
@@ -363,7 +363,7 @@ class MessageTest {
     void signTest2() { 
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 10);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
@@ -382,7 +382,7 @@ class MessageTest {
             Key key1 = Key.generateKey(List.of(KeyCapability.SIGN));
             Key key2 = Key.generateKey(List.of(KeyCapability.SIGN));
             Key key3 = Key.generateKey(List.of(KeyCapability.SIGN));
-            Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 10);
+            Message message = new Message(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(key1);
             assertTrue(message.verify(key1).isValid());
@@ -399,7 +399,7 @@ class MessageTest {
     void isSignedTest1() {
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 10);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             assertFalse(message.isSigned());
             message.sign(Commons.getIssuerKey());
@@ -411,7 +411,7 @@ class MessageTest {
 
     @Test
     void setPayloadTest1() {
-        Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+        Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
         message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
         assertEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
     }
@@ -419,7 +419,7 @@ class MessageTest {
     @Test
     void setPayloadTest2() {
         try {
-            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             assertEquals(Commons.PAYLOAD, new String(message1.getPayload(), StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
@@ -436,7 +436,7 @@ class MessageTest {
         try {
             Key localKey = Key.generateKey(KeyCapability.EXCHANGE);
             Key remoteKey = Key.generateKey(KeyCapability.EXCHANGE).publicCopy();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), localKey, remoteKey);
             assertNotEquals(Commons.PAYLOAD, new String(message.getPayload(), StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -449,7 +449,7 @@ class MessageTest {
         try {
             Key issuerKey = Key.generateKey(KeyCapability.EXCHANGE);
             Key audienceKey = Key.generateKey(KeyCapability.EXCHANGE);
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.putClaim(Claim.KID, issuerKey.getClaim(Claim.UID));
             message.setPublicKey(audienceKey);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), audienceKey.publicCopy(), issuerKey);
@@ -466,7 +466,7 @@ class MessageTest {
         try {
             Key issuerKey = Key.generateKey(KeyCapability.EXCHANGE);
             Key audienceKey = Key.generateKey(KeyCapability.EXCHANGE);
-            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), issuerKey, audienceKey.publicCopy());
             message1.sign(Commons.getIssuerKey());
             Message message2 = Item.importFromEncoded(message1.exportToEncoded());
@@ -482,7 +482,7 @@ class MessageTest {
     void setPayloadTest6() {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key, key);
         } catch (IllegalArgumentException e) {
             return; // All is well
@@ -498,10 +498,10 @@ class MessageTest {
             Commons.initializeKeyRing();
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
-            Message issuerMessage = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), 100);
+            Message issuerMessage = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             issuerMessage.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage.sign(Commons.getIssuerKey());
-            Message responseMessage = new Message(issuer.getClaim(Claim.SUB), receiver.getClaim(Claim.SUB), 100);
+            Message responseMessage = new Message(issuer.getClaim(Claim.SUB), receiver.getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             responseMessage.setPayload("It is!".getBytes(StandardCharsets.UTF_8));
             responseMessage.addItemLink(issuerMessage);
             responseMessage.sign(Commons.getAudienceKey());
@@ -518,7 +518,7 @@ class MessageTest {
     void linkItemTest2() {
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE)));
             message.sign(Commons.getIssuerKey());
@@ -532,7 +532,7 @@ class MessageTest {
     void linkItemTest3() {
         try {
             Commons.initializeKeyRing();
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.sign(Commons.getIssuerKey());
             try { message.addItemLink(Key.generateKey(List.of(KeyCapability.EXCHANGE))); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
@@ -542,10 +542,24 @@ class MessageTest {
     }
 
     @Test
+    void linkItemTest4() {
+        try {
+            Commons.initializeKeyRing();
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
+            message.setItemLinks(List.of(Commons.getAudienceIdentity(), Commons.getIssuerIdentity()));
+            assertEquals(2, message.getItemLinks().size());
+            message.removeLinkItems();
+            assertNull(message.getItemLinks());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void thumbprintTest1() {
         try {
             Commons.initializeKeyRing();
-            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
             String thumbprint1 = message1.thumbprint();
@@ -565,10 +579,10 @@ class MessageTest {
             Commons.initializeKeyRing();
             Identity issuer = Commons.getIssuerIdentity();
             Identity receiver = Commons.getAudienceIdentity();
-            Message issuerMessage1 = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), 100);
+            Message issuerMessage1 = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             issuerMessage1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage1.sign(Commons.getIssuerKey());
-            Message issuerMessage2 = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), 100);
+            Message issuerMessage2 = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             issuerMessage2.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage2.sign(Commons.getIssuerKey());
             assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
@@ -580,7 +594,7 @@ class MessageTest {
     @Test
     void thumbprintTest3() {
         try {
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), 100);
+            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message.thumbprint();
         } catch (IllegalStateException e) {
