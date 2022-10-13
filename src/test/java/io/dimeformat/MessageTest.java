@@ -264,7 +264,7 @@ class MessageTest {
             Thread.sleep(1000);
             assertFalse(message.verify(Commons.getIssuerIdentity().getPublicKey()).isValid());
             Dime.setGracePeriod(1L);
-            message.verify(Commons.getIssuerIdentity().getPublicKey());
+            assertTrue(message.verify(Commons.getIssuerIdentity().getPublicKey()).isValid());
             Dime.setGracePeriod(0L);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -281,7 +281,7 @@ class MessageTest {
             message.sign(Commons.getIssuerKey());
             Thread.sleep(2000);
             Dime.setTimeModifier(-2);
-            message.verify(Commons.getIssuerIdentity().getPublicKey());
+            assertTrue(message.verify(Commons.getIssuerIdentity().getPublicKey()).isValid());
         } catch (Exception e) {
             fail("(Note this may happen if running tests in parallel) Unexpected exception thrown: " + e);
         }

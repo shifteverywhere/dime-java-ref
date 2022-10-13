@@ -142,21 +142,20 @@ public final class Utility {
      * will be based on the  grace period. The result given back will be equal to {@link Instant#compareTo(Instant)}.
      * If no grace is set (0), then the two Instant objects will be compared directly.
      * @param baseTime The base time to compare a second Instant instance with.
-     * @param otherTime The Instant instance to compare against the given base tne.
+     * @param otherTime The Instant instance to compare against the given base time.
      * @return Negative if less, positive is greater, or 0 if the same or within the grace period.
      */
     public static int gracefulTimestampCompare(Instant baseTime, Instant otherTime) {
+        if (baseTime == null || otherTime == null) { return 0; }
         long gracePeriod = Dime.getGracePeriod();
         if (gracePeriod == 0) {
             return baseTime.compareTo(otherTime);
-        } else {
-            Instant lower = baseTime.minusSeconds(gracePeriod);
-            int lowerResult = lower.compareTo(otherTime);
-            Instant upper = baseTime.plusSeconds(gracePeriod);
-            int upperResult = upper.compareTo(otherTime);
-            if (lowerResult == upperResult) return lowerResult;
-            return 0;
         }
+        Instant lower = baseTime.minusSeconds(gracePeriod);
+        int lowerResult = lower.compareTo(otherTime);
+        Instant upper = baseTime.plusSeconds(gracePeriod);
+        int upperResult = upper.compareTo(otherTime);
+        return lowerResult == upperResult ? lowerResult : 0;
     }
 
     /// PRIVATE ///

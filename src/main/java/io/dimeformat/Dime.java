@@ -80,7 +80,7 @@ public final class Dime {
      */
     public static synchronized void setGracePeriod(long period) {
         if (period < 0) { throw new IllegalArgumentException("Unable to set grace period, must be a value of 0 or above."); }
-        Dime._gracePeriod = period;
+        Dime._gracePeriod = Math.abs(period);
     }
 
     /**
@@ -102,8 +102,9 @@ public final class Dime {
 
     /**
      * This method will override the internal time with a provided time. This time is used to verify any timestamps and
-     * overriding this should be used carefully and never in a production environment.
-     * @param time The time to set.
+     * overriding this should be used carefully and never in a production environment. Set to null, to use current
+     * system time (default).
+     * @param time The time to set, may be null.
      */
     public static synchronized void setOverrideTime(Instant time) {
         Dime._overrideTime = time;

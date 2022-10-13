@@ -126,7 +126,7 @@ public class Message extends Data {
 
     /**
      * Will encrypt and attach a payload using a shared encryption key between the issuer and audience of a message.
-     * @param payload The payload to encrypt and attach to the message, must not be null and of length >= 1.
+     * @param payload The payload to encrypt and attach to the message, must not be null and of length 1 or longer.
      * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
      * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
      * @throws CryptographyException If something goes wrong.

@@ -96,6 +96,7 @@ public final class Crypto {
      * @param data The string that should be verified with the signature.
      * @param signature The signature that should be verified.
      * @param key The key that should be used for the verification.
+     * @return True if verified successfully, false otherwise.
      * @throws CryptographyException If something goes wrong.
      */
     public boolean verifySignature(String data, byte[] signature, Key key) throws CryptographyException {
@@ -105,7 +106,7 @@ public final class Crypto {
         if (key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify, public key in key must not be null."); }
         if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return  impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB));
+        return impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB));
     }
 
     /**
@@ -124,6 +125,7 @@ public final class Crypto {
      * @param capabilities The capabilities of the key to generate.
      * @param suiteName The cryptographic suite that should be used when generating the key.
      * @return The generated key.
+     * @throws CryptographyException If anything goes wrong.
      */
     public byte[][] generateKey(List<KeyCapability> capabilities, String suiteName) throws CryptographyException {
         if (capabilities == null || capabilities.size() == 0) { throw new CryptographyException("Key usage must not be null or empty."); }

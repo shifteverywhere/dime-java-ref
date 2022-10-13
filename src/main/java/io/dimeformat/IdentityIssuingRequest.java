@@ -78,7 +78,7 @@ public class IdentityIssuingRequest extends Item {
     /**
      * Returns all principles provided in the IIR. These are key-value fields that further provide information about
      * the entity. Using principles are optional.
-     * @return An immutable map of assigned principles (as <String, Object>).
+     * @return An immutable map of assigned principles.
      */
     public Map<String, Object> getPrinciples() {
         if (_principles == null) {
