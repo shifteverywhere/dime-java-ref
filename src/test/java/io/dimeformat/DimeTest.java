@@ -28,9 +28,8 @@ class DimeTest {
     @BeforeAll
     static void beforeAll() {
         Commons.clearKeyRing();
-        Dime.setTimeModifier(0);
-        assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
-        assertEquals(0, Dime.getTimeModifier());
+        Dime.setGracePeriod(0L);
+        Dime.setTimeModifier(0L);
     }
 
     @Test
@@ -39,12 +38,13 @@ class DimeTest {
     }
 
     @Test
-    void validConvenienceTest1() {
+    void globalsTest1() {
         assertEquals(-1L, Dime.NO_EXPIRATION);
         assertEquals(60L, Dime.VALID_FOR_1_MINUTE);
         assertEquals(3600L, Dime.VALID_FOR_1_HOUR);
         assertEquals(86400L, Dime.VALID_FOR_1_DAY);
         assertEquals(31536000L, Dime.VALID_FOR_1_YEAR);
+        assertEquals(84, Dime.MAX_CONTEXT_LENGTH);
     }
 
     @Test
@@ -102,11 +102,11 @@ class DimeTest {
     @Test
     void gracefulTimestampCompareTest1() {
         Dime.setGracePeriod(2L);
-        Instant now = Utility.createTimestamp();
-        Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
+        Instant now = Instant.now();
+        Instant remoteTimestamp1 = now.minusSeconds(2L);
         int result = Utility.gracefulTimestampCompare(now, remoteTimestamp1);
         assertEquals(0, result);
-        Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
+        Instant remoteTimestamp2 = now.plusSeconds(2L);
         result = Utility.gracefulTimestampCompare(now, remoteTimestamp2);
         assertEquals(0, result);
         Dime.setGracePeriod(0L);
@@ -115,11 +115,11 @@ class DimeTest {
     @Test
     void gracefulTimestampCompareTest2() {
         Dime.setGracePeriod(1L);
-        Instant now = Utility.createTimestamp();
-        Instant remoteTimestamp1 = Instant.now().minusSeconds(2);
+        Instant now = Instant.now();
+        Instant remoteTimestamp1 = now.minusSeconds(2L);
         int result = Utility.gracefulTimestampCompare(Utility.createTimestamp(), remoteTimestamp1);
         assertEquals(1, result);
-        Instant remoteTimestamp2 = Instant.now().plusSeconds(2);
+        Instant remoteTimestamp2 = now.plusSeconds(2L);
         result = Utility.gracefulTimestampCompare(now, remoteTimestamp2);
         assertEquals(-1, result);
         Dime.setGracePeriod(0L);
@@ -145,6 +145,13 @@ class DimeTest {
     }
 
     @Test
+    void gracefulTimestampCompareTest4() {
+        Dime.setGracePeriod(1L);
+        assertEquals(0, Utility.gracefulTimestampCompare(null, Instant.now()));
+        assertEquals(0, Utility.gracefulTimestampCompare(Instant.now(), null));
+    }
+
+    @Test
     void setOverrideTimeTest1() {
         try {
             Key key = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTExVDE3OjUwOjUyLjY3MjU2OVoiLCJpYXQiOiIyMDIyLTEwLTExVDE3OjQ5OjUyLjY3MjU2OVoiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJrZXkiOiJTVE4uM3pudGNLZXZjVTVZcnlkaEcxRzNVMnR4V01aajhjNWZTRnp3SDczQjlMWXJFSlBZcnFubjJ6WWlyTmNnSFltc2o2M3FFR0x1aWtIODE2M2JnRldCUWFRQmdOR3pZIiwicHViIjoiU1ROLkpvYmVyVkEybXgxeXJyQU5GRnVzRFc4Q2gyc2RmenZCTXNSMmJ3UUhTdjVBcGtVUUwiLCJ1aWQiOiJiM2JkMmRkNi0wNTEyLTQ2NWYtOTgxNi1iNjZhZGUxNjc2YWQifQ.YjkyMjMwYzBkNTY0YjU0NS45ZDI5MmQ4Y2FkMDY3YWE2MTFiMDhjMTU5YjEwOTVlYjg3NmIyYzg4NmY4YzE5Yjk2NzIzNWM1MDI0NzExMDg4YzMwNGFlZGIwOThjNDA3ZDFlOGYxNTU5N2M0ZGNjYmRhNmYyNjdjYzE2YjkwM2E2MThiMTZlYWIyYmQwODYwMw");
@@ -159,7 +166,27 @@ class DimeTest {
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
-        //Dime.setOverrideTime();
+    }
+
+    @Test
+    public void jsonCanonicailzerTest1() {
+        Key key = Key.generateKey(List.of(KeyCapability.SIGN), Dime.VALID_FOR_1_MINUTE, Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
+        String encoded = key.exportToEncoded();
+        List<String> claims = List.of(Claim.CAP.toString(),
+            Claim.CTX.toString(),
+            Claim.EXP.toString(),
+            Claim.IAT.toString(),
+            Claim.ISS.toString(),
+            Claim.KEY.toString(),
+            Claim.PUB.toString(),
+            Claim.UID.toString());
+        String jsonString = new String(Utility.fromBase64(encoded.split("\\.")[1]), StandardCharsets.UTF_8);
+        int previousIndex = 0;
+        for (String claim: claims) {
+            var foundIndex = jsonString.indexOf(claim);
+            assertTrue(previousIndex < foundIndex);
+            previousIndex = foundIndex;
+        }
     }
 
     @Test
