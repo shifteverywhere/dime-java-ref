@@ -26,12 +26,12 @@ public class Key extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Di:ME Key items. */
-    public static final String ITEM_IDENTIFIER = "KEY";
+    /** The item header for DiME Key items. */
+    public static final String HEADER = "KEY";
 
     @Override
-    public String getItemIdentifier() {
-        return Key.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return Key.HEADER;
     }
 
     /**

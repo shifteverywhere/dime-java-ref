@@ -24,12 +24,12 @@ public class Data extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Di:ME Data items. */
-    public static final String ITEM_IDENTIFIER = "DAT";
+    /** The item header for DiME Data items. */
+    public static final String HEADER = "DAT";
 
     @Override
-    public String getItemIdentifier() {
-        return Data.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return Data.HEADER;
     }
 
     /**

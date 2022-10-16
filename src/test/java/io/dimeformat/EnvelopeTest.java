@@ -24,6 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class EnvelopeTest {
 
     @Test
+    void getHeaderTest1() {
+        Envelope envelope = new Envelope();
+        assertEquals("Di", envelope.getHeader());
+        assertEquals("Di", Envelope.HEADER);
+    }
+
+    @Test
     void claimTest1() {
         Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB));
         assertNotNull(envelope.getClaim(Claim.ISS));

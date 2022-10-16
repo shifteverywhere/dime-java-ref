@@ -22,12 +22,12 @@ public class Tag extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Dime Tag items. */
-    public static final String ITEM_IDENTIFIER = "TAG";
+    /** The item header for DiME Tag items.  */
+    public static final String HEADER = "TAG";
 
     @Override
-    public String getItemIdentifier() {
-        return Tag.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return Tag.HEADER;
     }
 
     /**

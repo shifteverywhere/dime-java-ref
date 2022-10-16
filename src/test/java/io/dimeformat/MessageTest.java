@@ -25,10 +25,10 @@ import java.util.UUID;
 class MessageTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
         Message message = new Message();
-        assertEquals("MSG", message.getItemIdentifier());
-        assertEquals("MSG", Message.ITEM_IDENTIFIER);
+        assertEquals("MSG", message.getHeader());
+        assertEquals("MSG", Message.HEADER);
     }
 
     @Test
@@ -170,7 +170,7 @@ class MessageTest {
             String encoded = message.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Message.ITEM_IDENTIFIER)));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Message.HEADER)));
             assertEquals(4, encoded.split("\\.").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 

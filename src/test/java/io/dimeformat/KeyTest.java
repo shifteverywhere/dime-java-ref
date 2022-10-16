@@ -24,10 +24,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class KeyTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
         Key key = new Key();
-        assertEquals("KEY", key.getItemIdentifier());
-        assertEquals("KEY", Key.ITEM_IDENTIFIER);
+        assertEquals("KEY", key.getHeader());
+        assertEquals("KEY", Key.HEADER);
     }
 
     @Test
@@ -205,7 +205,7 @@ class KeyTest {
         Key key = Key.generateKey(List.of(KeyCapability.SIGN));
         String exported = key.exportToEncoded();
         assertNotNull(exported);
-        assertTrue(exported.startsWith(Commons.fullHeaderFor(Key.ITEM_IDENTIFIER)));
+        assertTrue(exported.startsWith(Commons.fullHeaderFor(Key.HEADER)));
         assertEquals(2, exported.split("\\.").length);
     }
 

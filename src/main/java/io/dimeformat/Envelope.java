@@ -39,7 +39,7 @@ public class Envelope extends Item {
     public static final String HEADER = "Di";
 
     @Override
-    public String getItemIdentifier() {
+    public String getHeader() {
         return Envelope.HEADER;
     }
 

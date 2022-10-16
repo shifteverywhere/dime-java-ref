@@ -24,10 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DataTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
         Data data = new Data(UUID.randomUUID());
-        assertEquals("DAT", data.getItemIdentifier());
-        assertEquals("DAT", Data.ITEM_IDENTIFIER);
+        assertEquals("DAT", data.getHeader());
+        assertEquals("DAT", Data.HEADER);
     }
 
     @Test
@@ -150,7 +150,7 @@ class DataTest {
             String encoded = data.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Data.ITEM_IDENTIFIER)));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Data.HEADER)));
             assertEquals(3, encoded.split("\\.").length);
             data.sign(Commons.getIssuerKey());
             encoded = data.exportToEncoded();

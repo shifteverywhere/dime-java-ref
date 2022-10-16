@@ -26,7 +26,7 @@ class ItemLinkTest {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             ItemLink link = new ItemLink(key);
             assertNotNull(link);
-            assertEquals(key.getItemIdentifier(), link.itemIdentifier);
+            assertEquals(key.getHeader(), link.itemIdentifier);
             assertEquals(key.thumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
@@ -50,9 +50,9 @@ class ItemLinkTest {
     void itemLinkTest3() {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
-            ItemLink link = new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), key.getClaim(Claim.UID));
+            ItemLink link = new ItemLink(Key.HEADER, key.thumbprint(), key.getClaim(Claim.UID));
             assertNotNull(link);
-            assertEquals(Key.ITEM_IDENTIFIER, link.itemIdentifier);
+            assertEquals(Key.HEADER, link.itemIdentifier);
             assertEquals(key.thumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
@@ -73,15 +73,15 @@ class ItemLinkTest {
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.ITEM_IDENTIFIER, null, key.getClaim(Claim.UID));
+                new ItemLink(Key.HEADER, null, key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.ITEM_IDENTIFIER, "", key.getClaim(Claim.UID));
+                new ItemLink(Key.HEADER, "", key.getClaim(Claim.UID));
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.ITEM_IDENTIFIER, key.thumbprint(), null);
+                new ItemLink(Key.HEADER, key.thumbprint(), null);
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
         } catch (Exception e) {
@@ -96,7 +96,7 @@ class ItemLinkTest {
             ItemLink link = new ItemLink(key);
             String encoded = link.toEncoded();
             assertNotNull(encoded);
-            String compare = key.getItemIdentifier() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
+            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
             assertEquals(compare, encoded);
             assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
         } catch (Exception e) {
@@ -149,10 +149,10 @@ class ItemLinkTest {
     void toEncodedTest2() {
         try {
             Key key = Commons.getAudienceKey().publicCopy();
-            ItemLink link = new ItemLink(key.getItemIdentifier(), key.thumbprint(), key.getClaim(Claim.UID));
+            ItemLink link = new ItemLink(key.getHeader(), key.thumbprint(), key.getClaim(Claim.UID));
             String encoded = link.toEncoded();
             assertNotNull(encoded);
-            String compare = key.getItemIdentifier() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
+            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
             assertEquals(compare, encoded);
             assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
         } catch (Exception e) {
@@ -166,7 +166,7 @@ class ItemLinkTest {
             List<ItemLink> links = Arrays.asList(new ItemLink(Commons.getAudienceIdentity()), new ItemLink(Commons.getAudienceKey().publicCopy()));
             String encoded = ItemLink.toEncoded(links);
             assertNotNull(encoded);
-            assertTrue(encoded.startsWith(Identity.ITEM_IDENTIFIER));
+            assertTrue(encoded.startsWith(Identity.HEADER));
             String[] components = encoded.split("\\" + Dime.SECTION_DELIMITER);
             assertEquals(2, components.length);
         } catch (Exception e) {
@@ -180,7 +180,7 @@ class ItemLinkTest {
             List<ItemLink> links = List.of(new ItemLink(Commons.getAudienceIdentity()));
             String encoded = ItemLink.toEncoded(links);
             assertNotNull(encoded);
-            assertTrue(encoded.startsWith(Identity.ITEM_IDENTIFIER));
+            assertTrue(encoded.startsWith(Identity.HEADER));
             String[] components = encoded.split("\\" + Dime.SECTION_DELIMITER);
             assertEquals(1, components.length);
         } catch (Exception e) {

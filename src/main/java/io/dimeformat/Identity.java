@@ -31,12 +31,12 @@ public class Identity extends Item {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Di:ME Identity items. */
-    public static final String ITEM_IDENTIFIER = "ID";
+    /** The item header for DiME Identity items. */
+    public static final String HEADER = "ID";
 
     @Override
-    public String getItemIdentifier() {
-        return Identity.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return Identity.HEADER;
     }
 
     /**

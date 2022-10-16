@@ -28,11 +28,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class IdentityIssuingRequestTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
         try {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN));
-            assertEquals("IIR", iir.getItemIdentifier());
-            assertEquals("IIR", IdentityIssuingRequest.ITEM_IDENTIFIER);
+            assertEquals("IIR", iir.getHeader());
+            assertEquals("IIR", IdentityIssuingRequest.HEADER);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -236,7 +236,7 @@ class IdentityIssuingRequestTest {
             String exported = iir.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
-            assertTrue(exported.startsWith(Commons.fullHeaderFor(IdentityIssuingRequest.ITEM_IDENTIFIER)));
+            assertTrue(exported.startsWith(Commons.fullHeaderFor(IdentityIssuingRequest.HEADER)));
             assertEquals(3, exported.split("\\" + ".").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

@@ -23,12 +23,12 @@ public abstract class Item {
     /// PUBLIC ///
 
     /**
-     * Returns the type identifier of the Di:ME item. This can be used to identify the type of Di:ME object held in this
-     * generic class. It is also used in the exported Di:ME format to indicate the beginning of a Di:ME item inside an
+     * Returns the item header of the DiME item. This can be used to identify the type of DiME item held in this
+     * generic class. It is also used in the exported DiME format to indicate the beginning of a DiME item inside an
      * envelope. Typically, this is represented by a short series of letters.
-     * @return The item type of the Di:ME item.
+     * @return The item header of the DiME item.
      */
-    public abstract String getItemIdentifier();
+    public abstract String getHeader();
 
     /**
      * Checks if the item has been signed or not.
@@ -451,7 +451,7 @@ public abstract class Item {
     }
 
     protected void customEncoding(StringBuilder builder) throws InvalidFormatException {
-        builder.append(this.getItemIdentifier());
+        builder.append(this.getHeader());
         builder.append(Dime.COMPONENT_DELIMITER);
         if (itemLinks != null && !itemLinks.isEmpty()) {
             getClaimMap().put(Claim.LNK, ItemLink.toEncoded(itemLinks));
@@ -467,7 +467,7 @@ public abstract class Item {
     protected final void decode(String encoded) throws InvalidFormatException {
         String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
         if (array.length < getMinNbrOfComponents()) { throw new InvalidFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
-        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getItemIdentifier()) != 0) { throw new InvalidFormatException("Unexpected Dime item identifier, expected: " + getItemIdentifier() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
+        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getHeader()) != 0) { throw new InvalidFormatException("Unexpected Dime item identifier, expected: " + getHeader() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
         this.components = new ArrayList<>(Arrays.asList(array));
         customDecoding(this.components);
         if (isSigned()) {
@@ -512,12 +512,12 @@ public abstract class Item {
 
     private static Class<?> classFromTag(String tag) {
         switch (tag) {
-            case Data.ITEM_IDENTIFIER: return Data.class;
-            case Identity.ITEM_IDENTIFIER: return Identity.class;
-            case IdentityIssuingRequest.ITEM_IDENTIFIER: return IdentityIssuingRequest.class;
-            case Key.ITEM_IDENTIFIER: return Key.class;
-            case Message.ITEM_IDENTIFIER: return Message.class;
-            case Tag.ITEM_IDENTIFIER: return Tag.class;
+            case Data.HEADER: return Data.class;
+            case Identity.HEADER: return Identity.class;
+            case IdentityIssuingRequest.HEADER: return IdentityIssuingRequest.class;
+            case Key.HEADER: return Key.class;
+            case Message.HEADER: return Message.class;
+            case Tag.HEADER: return Tag.class;
             default: return null;
         }
     }

@@ -45,7 +45,7 @@ public final class ItemLink {
      */
     public ItemLink(Item item) {
         if (item == null) { throw new IllegalArgumentException("Provided item must not be null."); }
-        this.itemIdentifier = item.getItemIdentifier();
+        this.itemIdentifier = item.getHeader();
         try {
             this.thumbprint = item.thumbprint();
         } catch (CryptographyException e) {
@@ -107,7 +107,7 @@ public final class ItemLink {
         if (item == null) { return false; }
         try {
             return uniqueId.equals(item.getClaim(Claim.UID))
-                    && itemIdentifier.equals(item.getItemIdentifier())
+                    && itemIdentifier.equals(item.getHeader())
                     && thumbprint.equals(item.thumbprint());
         } catch (CryptographyException e) {
             return false;
@@ -128,7 +128,7 @@ public final class ItemLink {
                 if (link.uniqueId.equals(item.getClaim(Claim.UID))) {
                     matchFound = true;
                     try {
-                        if (!link.itemIdentifier.equals(item.getItemIdentifier()) || !link.thumbprint.equals(item.thumbprint())) {
+                        if (!link.itemIdentifier.equals(item.getHeader()) || !link.thumbprint.equals(item.thumbprint())) {
                             return IntegrityState.ERR_LINKED_ITEM_FAULT;
                         }
                     } catch (CryptographyException e) {

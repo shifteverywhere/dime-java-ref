@@ -25,12 +25,12 @@ public class Message extends Data {
 
     /// PUBLIC ///
 
-    /** The item type identifier for Di:ME Message items. */
-    public static final String ITEM_IDENTIFIER = "MSG";
+    /** The item header for DiME Message items. */
+    public static final String HEADER = "MSG";
 
     @Override
-    public String getItemIdentifier() {
-        return Message.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return Message.HEADER;
     }
 
     /**

@@ -24,10 +24,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class TagTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
         Tag tag = new Tag();
-        assertEquals("TAG", tag.getItemIdentifier());
-        assertEquals("TAG", Tag.ITEM_IDENTIFIER);
+        assertEquals("TAG", tag.getHeader());
+        assertEquals("TAG", Tag.HEADER);
     }
 
     @Test
@@ -175,7 +175,7 @@ class TagTest {
             tag.addItemLink(Key.generateKey(KeyCapability.SIGN));
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
-            assertEquals(Key.ITEM_IDENTIFIER, tag.getItemLinks().get(0).itemIdentifier);
+            assertEquals(Key.HEADER, tag.getItemLinks().get(0).itemIdentifier);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -188,7 +188,7 @@ class TagTest {
             tag.addItemLink(Commons.getIssuerIdentity());
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
-            assertEquals(Identity.ITEM_IDENTIFIER, tag.getItemLinks().get(0).itemIdentifier);
+            assertEquals(Identity.HEADER, tag.getItemLinks().get(0).itemIdentifier);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -204,7 +204,7 @@ class TagTest {
             tag.addItemLink(message);
             assertNotNull(tag.getItemLinks());
             assertEquals(1, tag.getItemLinks().size());
-            assertEquals(Message.ITEM_IDENTIFIER, tag.getItemLinks().get(0).itemIdentifier);
+            assertEquals(Message.HEADER, tag.getItemLinks().get(0).itemIdentifier);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -237,19 +237,19 @@ class TagTest {
             assertNotNull(links);
             assertEquals(4, links.size());
             ItemLink link0 = links.get(0);
-            assertEquals(Commons.getTrustedIdentity().getItemIdentifier(), link0.itemIdentifier);
+            assertEquals(Commons.getTrustedIdentity().getHeader(), link0.itemIdentifier);
             assertEquals(Commons.getTrustedIdentity().getClaim(Claim.UID), link0.uniqueId);
             assertEquals(Commons.getTrustedIdentity().thumbprint(), link0.thumbprint);
             ItemLink link1 = links.get(1);
-            assertEquals(Commons.getIntermediateIdentity().getItemIdentifier(), link1.itemIdentifier);
+            assertEquals(Commons.getIntermediateIdentity().getHeader(), link1.itemIdentifier);
             assertEquals(Commons.getIntermediateIdentity().getClaim(Claim.UID), link1.uniqueId);
             assertEquals(Commons.getIntermediateIdentity().thumbprint(), link1.thumbprint);
             ItemLink link2 = links.get(2);
-            assertEquals(Commons.getIssuerIdentity().getItemIdentifier(), link2.itemIdentifier);
+            assertEquals(Commons.getIssuerIdentity().getHeader(), link2.itemIdentifier);
             assertEquals(Commons.getIssuerIdentity().getClaim(Claim.UID), link2.uniqueId);
             assertEquals(Commons.getIssuerIdentity().thumbprint(), link2.thumbprint);
             ItemLink link3 = links.get(3);
-            assertEquals(Commons.getAudienceKey().getItemIdentifier(), link3.itemIdentifier);
+            assertEquals(Commons.getAudienceKey().getHeader(), link3.itemIdentifier);
             assertEquals(Commons.getAudienceKey().getClaim(Claim.UID), link3.uniqueId);
             assertEquals(Commons.getAudienceKey().thumbprint(), link3.thumbprint);
         } catch (Exception e) {
@@ -271,7 +271,7 @@ class TagTest {
             String encoded = tag.exportToEncoded();
             assertNotNull(encoded);
             assertTrue(encoded.length() > 0);
-            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Tag.ITEM_IDENTIFIER)));
+            assertTrue(encoded.startsWith(Commons.fullHeaderFor(Tag.HEADER)));
             assertEquals(3, encoded.split("\\.").length);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -301,15 +301,15 @@ class TagTest {
             assertNotNull(tag.getItemLinks());
             assertEquals(3, tag.getItemLinks().size());
             ItemLink lnk1 = tag.getItemLinks().get(0);
-            assertEquals(Message.ITEM_IDENTIFIER, lnk1.itemIdentifier);
+            assertEquals(Message.HEADER, lnk1.itemIdentifier);
             assertEquals("e85197b6e97b88b542e682a2d97832008d2e73f88f45fa662b6da968034e0b89", lnk1.thumbprint);
             assertEquals(UUID.fromString("e6cede01-99b4-44c5-8641-c7cdf9df52b6"), lnk1.uniqueId);
             ItemLink lnk2 = tag.getItemLinks().get(1);
-            assertEquals(Key.ITEM_IDENTIFIER, lnk2.itemIdentifier);
+            assertEquals(Key.HEADER, lnk2.itemIdentifier);
             assertEquals("ef1a76b2f5f5224fa166690415a2871ad8d1a96495d035c119759a4e6a6ef26b", lnk2.thumbprint);
             assertEquals(UUID.fromString("08a740f1-9bc8-4301-b34d-426f0aef2ffc"), lnk2.uniqueId);
             ItemLink lnk3 = tag.getItemLinks().get(2);
-            assertEquals(Identity.ITEM_IDENTIFIER, lnk3.itemIdentifier);
+            assertEquals(Identity.HEADER, lnk3.itemIdentifier);
             assertEquals("f551466aa402faed70bfaab9fbbc3e36241db349acbcf71c6ba28fb4f6c0934c", lnk3.thumbprint);
             assertEquals(UUID.fromString("2a7d42a3-6b45-4a4a-bb3d-ec94ec379f1f"), lnk3.uniqueId);
         } catch (Exception e) {

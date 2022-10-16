@@ -25,10 +25,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class IdentityTest {
 
     @Test
-    void getItemIdentifierTest1() {
+    void getHeaderTest1() {
        Identity identity = new Identity();
-       assertEquals("ID", identity.getItemIdentifier());
-       assertEquals("ID", Identity.ITEM_IDENTIFIER);
+       assertEquals("ID", identity.getHeader());
+       assertEquals("ID", Identity.HEADER);
     }
 
     @Test
@@ -379,7 +379,7 @@ class IdentityTest {
             String exported = identity.exportToEncoded();
             assertNotNull(exported);
             assertTrue(exported.length() > 0);
-            assertTrue(exported.startsWith(Commons.fullHeaderFor(Identity.ITEM_IDENTIFIER)));
+            assertTrue(exported.startsWith(Commons.fullHeaderFor(Identity.HEADER)));
             assertEquals(4, exported.split("\\.").length);
         } catch (Exception e) { 
             fail("Unexpected exception thrown: " + e); 

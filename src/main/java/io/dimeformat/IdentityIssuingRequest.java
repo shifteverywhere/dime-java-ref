@@ -28,19 +28,12 @@ public class IdentityIssuingRequest extends Item {
 
     /// PUBLIC ///
 
-    /**
-     * A constant holding the number of seconds for a year (based on 365 days).
-     * @deprecated Will be removed in the future, use {#{@link Dime#VALID_FOR_1_YEAR}} instead.
-     * */
-    @Deprecated
-    public static final long VALID_FOR_1_YEAR = 365L * 24 * 60 * 60;
-
-    /** The item type identifier for Di:ME Identity Issuing Request items. */
-    public static final String ITEM_IDENTIFIER = "IIR";
+    /** The item header for DiME Identity Issuing Request items. */
+    public static final String HEADER = "IIR";
 
     @Override
-    public String getItemIdentifier() {
-        return IdentityIssuingRequest.ITEM_IDENTIFIER;
+    public String getHeader() {
+        return IdentityIssuingRequest.HEADER;
     }
 
     /**
