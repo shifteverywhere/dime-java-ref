@@ -118,8 +118,9 @@ class StandardSuite implements ICryptoSuite {
         byte[] nonce = Utility.subArray(data, 0, StandardSuite.NBR_NONCE_BYTES);
         byte[] bytes = Utility.subArray(data, StandardSuite.NBR_NONCE_BYTES);
         byte[] plain = new byte[bytes.length - StandardSuite.NBR_MAC_BYTES];
-        if (this.sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key) != 0) {
-            throw new CryptographyException("Cryptographic operation failed.");
+        int result = this.sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key);
+        if (result != 0) {
+            throw new CryptographyException("Cryptographic operation failed (" + result + ").");
         }
         return plain;
     }
