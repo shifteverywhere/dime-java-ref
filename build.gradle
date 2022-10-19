@@ -1,6 +1,6 @@
 //
 //  build.gradle
-//  Di:ME - Data Identity Message Envelope
+//  DiME - Data Identity Message Envelope
 //  A powerful universal data format that is built for secure, and integrity protected communication between trusted
 //  entities in a network.
 //
@@ -10,12 +10,16 @@
 plugins {
     id 'java-library'
     id "org.sonarqube" version "3.4.0.2513"
+    id 'maven-publish'
+    id 'signing'
 }
 
 group 'io.dimeformat'
-version '1.2.0'
+version '1.2.1'
+description 'DiME (Data Integrity Message Envelope). A powerful universal data format that is built for secure, and integrity protected communication between trusted entities in a network using an application-based publik-key infrastructure (APKI).'
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -26,6 +30,10 @@ dependencies {
     api 'org.slf4j:slf4j-simple:2.0.3'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+}
+
+subprojects {
+    tasks.withType(Javadoc).all { enabled = false }
 }
 
 test {
@@ -39,3 +47,65 @@ tasks.named('jar') {
     }
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+publishing {
+    publications {
+
+        mavenJava(MavenPublication) {
+
+            groupId = 'io.dimeformat'
+            artifactId = 'dime-java-ref'
+            version = '1.2.1'
+
+            from components.java
+
+            pom {
+                name = 'DiME'
+                description = 'DiME (Data Integrity Message Envelope). A powerful universal data format that is built for secure, and integrity protected communication between trusted entities in a network using an application-based publik-key infrastructure (APKI).'
+                url = 'https://docs.dimeformat.io'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'shifteverywhere'
+                        name = 'Niclas Kjellin'
+                        email = 'niclas@shifteverywhere.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/shifteverywhere/dime-java-ref.git'
+                    developerConnection = 'scm:git:ssh://github.com/shifteverywhere/dime-java-ref.git'
+                    url = 'http://github.com/shifteverywhere/dime-java-ref'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'OSSRH'
+            url = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            credentials {
+                username = project.properties["ossrUsername"]
+                password = project.properties["ossrPassport"]
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}

@@ -1,5 +1,10 @@
 # CHANGES
 
+## Version 1.2.1 - 2022-10-19
+- Minor clean up and fixes
+- Adds alien (cross platform) unit tests
+- First publish to Maven Central (updated build.gradle)
+
 ## Version 1.2.0 - 2022-10-11
 - Full implementation of DiME data format specification (v1)
 - Grace period added to Dime as a global setting (this means breaking changes from 1.1.0 in verify methods)
