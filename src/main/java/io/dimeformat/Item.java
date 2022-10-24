@@ -202,11 +202,25 @@ public abstract class Item {
         return Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName);
     }
 
-
+    /**
+     * Verifies the integrity and over all validity and trust of the item. The verification will be made using the public
+     * key in the provided identity. The verification will also check if the item has been issued by the provided
+     * identity, if the "iss" claim has been set.
+     * @param issuingIdentity The issuing identity to use when verifying.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verify(Identity issuingIdentity) {
         return verify(issuingIdentity, null);
     }
 
+    /**
+     * Verifies the integrity and over all validity and trust of the item. The verification will be made using the public
+     * key in the provided identity. The verification will also check if the item has been issued by the provided
+     * identity, if the "iss" claim has been set.
+     * @param issuingIdentity The issuing identity to use when verifying.
+     * @param linkedItems
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verify(Identity issuingIdentity, List<Item> linkedItems) {
 
         UUID issuerId = getClaim(Claim.ISS);
@@ -220,14 +234,32 @@ public abstract class Item {
         return verify(issuingIdentity.getPublicKey(), linkedItems);
     }
 
+    /**
+     * Verifies the integrity and over all validity and trust of the item. Keys used for verification will be fetched from
+     * the local key ring.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verify() {
         return verify((Key) null, null);
     }
 
+    /**
+     * Verifies the integrity and over all validity and trust of the item. If a key is provided, then verification will
+     * use that key. If verifyKey is omitted, then the local key ring will be used to verify signatures of the item.
+     * @param verifyKey Key used to verify the item, may be null.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verify(Key verifyKey) {
         return verify(verifyKey, null);
     }
 
+    /**
+     * Verifies the integrity and over all validity and trust of the item. If a key is provided, then verification will
+     * use that key. If verifyKey is omitted, then the local key ring will be used to verify signatures of the item.
+     * @param verifyKey Key used to verify the item, may be null.
+     * @param linkedItems A list of item where item links should be verified, may be null.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
         IntegrityState state = verifySignature(verifyKey);
         if (!state.isValid()) {
@@ -243,6 +275,12 @@ public abstract class Item {
         return !state.isValid() ? state : IntegrityState.COMPLETE;
     }
 
+    /**
+     * Verifies any dates in the item. This will verify the validity period of the item, if it should be used or if it
+     * has expired. Failure here does not necessary mean that the item cannot be trusted, the dates of item is no longer
+     * valid, refer to the returned state.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verifyDates() {
         if (!hasClaims()) {
             return IntegrityState.VALID_DATES;
@@ -256,6 +294,12 @@ public abstract class Item {
         return IntegrityState.VALID_DATES;
     }
 
+    /**
+     * Verifies signatures of the item. The method will try to match an associated signature of the item to the provided
+     * key. If no key is provided, then the local key ring will be used to verify the item.
+     * @param verifyKey The key to use for verification, may be null.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verifySignature(Key verifyKey) {
         if (!isSigned()) {
             return IntegrityState.FAILED_NO_SIGNATURE;
@@ -275,6 +319,12 @@ public abstract class Item {
         }
     }
 
+    /**
+     * Verifies any linked items to the item. This method will only verify that the list of provided items matches the
+     * links in the item. The signature of the item will not be verified.
+     * @param linkedItems A list of item where item links should be verified.
+     * @return The integrity state of the verification.
+     */
     public IntegrityState verifyLinkedItems(List<Item> linkedItems) {
         if (itemLinks == null) {
             itemLinks = getClaim(Claim.LNK);
@@ -286,93 +336,6 @@ public abstract class Item {
         }
     }
 
-
-
-
-/*
-    public IntegrityState verify() {
-        return verify((List<Item>) null);
-    }
-
-    public IntegrityState verify(List<Item> linkedItems) {
-        if (!isSigned()) { return IntegrityState.ERR_NO_SIGNATURE; }
-        if (Dime.keyRing.size() == 0) {  return IntegrityState.ERR_NO_KEY_RING; }
-        IntegrityState state = IntegrityState.ERR_NOT_TRUSTED;
-        for (Item item: Dime.keyRing.items()) {
-            Key trustedKey;
-            if (item instanceof Identity) {
-                trustedKey = ((Identity) item).getPublicKey();
-            } else if (item instanceof Key) {
-                trustedKey = (Key) item;
-            } else {
-                return IntegrityState.ERR_INVALID_KEY_RING_ITEM;
-            }
-            state = verify(trustedKey, linkedItems);
-            if (state != IntegrityState.ERR_KEY_MISMATCH || isLegacy()) {
-                return state;
-            }
-        }
-        return state;
-    }
-
-    public IntegrityState verify(Key verifyKey) {
-        return verify(verifyKey, null);
-    }
-
-    public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
-        if (verifyKey == null) { throw new IllegalArgumentException("Unable to verify, key must not be null."); }
-        if (!isSigned()) { return IntegrityState.ERR_NO_SIGNATURE; }
-        Signature signature;
-        if (isLegacy()) {
-            signature = getSignatures().get(0);
-        } else {
-            signature = Signature.find(Dime.crypto.generateKeyName(verifyKey), getSignatures());
-        }
-        if (signature == null) {
-            return IntegrityState.ERR_KEY_MISMATCH;
-        } else {
-            try {
-                if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, verifyKey)) {
-                    return IntegrityState.ERR_NOT_TRUSTED;
-                }
-            } catch (InvalidFormatException | CryptographyException e) {
-                return IntegrityState.ERR_INTERNAL_FAULT;
-            }
-        }
-        IntegrityState state = Item.verifyDates(this); // This throws VerificationException if unable to verify
-        if (!state.isValid()) {
-            return state;
-        }
-        if (linkedItems != null && !linkedItems.isEmpty()) {
-            state = verifyLinkedItems(linkedItems); // This throws VerificationException if unable to verify
-            if (!state.isValid()) {
-                return state;
-            }
-        }
-        return IntegrityState.COMPLETE;
-    }
-
-    public IntegrityState verify(Identity issuer) {
-        return verify(issuer, null);
-    }
-*/
-     /**
-     * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
-     * claim issuer (iss) matches the subject id (sub) of the provided identity. Any items provided in linkedItems will
-     * be verified with item links in the Dime item, if they cannot be verified correctly, then DimeIntegrityException
-     * will be thrown. Only items provided will be verified, any additional item links will be ignored. Providing items
-     * that are not linked will also result in a DimeIntegrityException being thrown.
-     * @param issuer The issuer identity to use while verifying.
-     * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
-     * @return The state of the integrity verification
-     */
-/*    public IntegrityState verify(Identity issuer, List<Item> linkedItems) {
-        if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
-        UUID issuerId = getClaim(Claim.ISS);
-        if (issuerId != null && !issuerId.equals(issuer.getClaim(Claim.SUB))) { return IntegrityState.ERR_ISSUER_MISMATCH; }
-        return verify(issuer.getPublicKey(), linkedItems);
-    }
-*/
     /**
      * Will cryptographically link an item link from provided item to this item.
      * @param item The item to link to the tag.
@@ -498,30 +461,7 @@ public abstract class Item {
         }
         return this._signatures;
     }
-/*
-    protected static IntegrityState verifyDates(Item item) {
-        if (item.hasClaims()) {
-            Instant now = Utility.createTimestamp();
-            if (Utility.gracefulTimestampCompare(item.getClaim(Claim.IAT), now) > 0) { return IntegrityState.ERR_USED_BEFORE_ISSUED; }
-            if (item.getClaim(Claim.EXP) != null) {
-                if (Utility.gracefulTimestampCompare(item.getClaim(Claim.IAT), item.getClaim(Claim.EXP)) > 0) { return IntegrityState.ERR_DATE_MISMATCH; }
-                if (Utility.gracefulTimestampCompare(item.getClaim(Claim.EXP), now) < 0) { return IntegrityState.ERR_USED_AFTER_EXPIRED; }
-            }
-        }
-        return IntegrityState.VALID_DATES;
-    }
 
-    protected IntegrityState verifyLinkedItems(List<Item> linkedItems) {
-        if (itemLinks == null) {
-            itemLinks = getClaim(Claim.LNK);
-        }
-        if (itemLinks != null) {
-            return ItemLink.verify(linkedItems, itemLinks);
-        } else {
-            return IntegrityState.ERR_LINKED_ITEM_MISSING;
-        }
-    }
-*/
     /// --- ENCODING/DECODING --- ///
 
     protected String encoded(boolean withSignature) throws InvalidFormatException {
