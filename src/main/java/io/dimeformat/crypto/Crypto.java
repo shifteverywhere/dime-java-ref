@@ -16,7 +16,6 @@ import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.enums.KeyCapability;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Set;
 
@@ -32,9 +31,9 @@ public final class Crypto {
      * Default constructor.
      */
     public Crypto() {
-        ICryptoSuite impl = new StandardSuite();
-        registerCryptoSuite(impl);
-        _defaultSuiteName = impl.getName();
+        registerCryptoSuite(new StandardSuite(StandardSuite.STANDARD_SUITE));
+        registerCryptoSuite(new StandardSuite(StandardSuite.BASE58_SUITE));
+        _defaultSuiteName = StandardSuite.STANDARD_SUITE;
     }
 
     /**
@@ -66,13 +65,11 @@ public final class Crypto {
      */
     public String generateKeyName(Key key) {
         if (key == null) { throw new IllegalArgumentException("Unable to generate key identifier, key must not be null."); }
-        try {
-            ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-            byte[] id = impl.generateKeyName(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
-            if (id != null) {
-                return Utility.toHex(id);
-            }
-        } catch (CryptographyException e) { /* ignored */ }
+        ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
+        byte[] id = impl.generateKeyName(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
+        if (id != null) {
+            return Utility.toHex(id);
+        }
         return null;
     }
 
@@ -185,10 +182,10 @@ public final class Crypto {
     /**
      * Generates a secure hash of a byte array. This will use the cryptographic suite that is set as the default.
      * @param data The data that should be hashed.
-     * @return The generated secure hash.
+     * @return The generated secure hash, encoded as a string
      * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateHash(byte[] data) throws CryptographyException {
+    public String generateHash(byte[] data) throws CryptographyException {
         return generateHash(data, getDefaultSuiteName());
     }
 
@@ -196,12 +193,36 @@ public final class Crypto {
      * Generates a secure hash of a byte array.
      * @param data The data that should be hashed.
      * @param suiteName The cryptographic suite that should be used to generate the hash.
-     * @return The generated secure hash.
+     * @return The generated secure hash, encoded as a string
      * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateHash(byte[] data, String suiteName) throws CryptographyException {
+    public String generateHash(byte[] data, String suiteName) throws CryptographyException {
         ICryptoSuite crypto = getCryptoSuite(suiteName);
         return crypto.generateHash(data);
+    }
+
+    /**
+     * Encodes a key from a byte array to a string. The encoding format is determined by the cryptographic suite
+     * specified.
+     * @param key The key to encode.
+     * @param suiteName The cryptographic suite to use.
+     * @return The encoded key.
+     */
+    public String encodeKey(byte[] key, String suiteName) {
+        ICryptoSuite crypto = getCryptoSuite(suiteName);
+        return crypto.encodeKey(key);
+    }
+
+    /**
+     * Decodes an encoded key to a byte array. The encoded format must match the cryptographic suite specified to be
+     * successful.
+     * @param encodedKey The encoded key.
+     * @param suiteName The cryptographic suite to use.
+     * @return The decoded key.
+     */
+    public byte[] decodeKey(String encodedKey, String suiteName) {
+        ICryptoSuite crypto = getCryptoSuite(suiteName);
+        return crypto.decodeKey(encodedKey);
     }
 
     /**
@@ -211,13 +232,12 @@ public final class Crypto {
      */
     public void registerCryptoSuite(ICryptoSuite impl) {
         if (impl == null) { throw new IllegalArgumentException("Instance of ICrypto implementation must not be null."); }
-        String name = impl.getName();
         if (_suiteMap == null) {
             _suiteMap = new HashMap<>();
-        } else if (_suiteMap.containsKey(name)) {
-            throw new IllegalArgumentException("Cryptographic suite already exists with name: " + name);
+        } else if (_suiteMap.containsKey(impl.getName())) {
+            throw new IllegalArgumentException("Cryptographic suite already exists with name: " + impl.getName());
         }
-        _suiteMap.put(name, impl);
+        _suiteMap.put(impl.getName(), impl);
     }
 
     /**
@@ -244,13 +264,13 @@ public final class Crypto {
     private HashMap<String, ICryptoSuite> _suiteMap;
     private String _defaultSuiteName;
 
-    private ICryptoSuite getCryptoSuite(String name) throws CryptographyException {
+    private ICryptoSuite getCryptoSuite(String name) {
         if (_suiteMap == null || _suiteMap.isEmpty()) {
-            throw new CryptographyException("Unable to perform cryptographic operation, no suites registered.");
+            throw new IllegalStateException("Unable to perform cryptographic operation, no suites registered.");
         }
         ICryptoSuite impl = _suiteMap.get(name);
         if (impl == null) {
-            throw new CryptographyException("Unable to find cryptographic suite with name: " + name);
+            throw new IllegalArgumentException("Unable to find cryptographic suite with name: " + name);
         }
         return impl;
     }

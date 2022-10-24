@@ -28,19 +28,6 @@ class KeyTest {
         Key key = new Key();
         assertEquals("KEY", key.getHeader());
         assertEquals("KEY", Key.HEADER);
-
-        try {
-            Key k = Key.generateKey(KeyCapability.EXCHANGE);
-
-            k.addItemLink(Commons.getIntermediateKey());
-            k.addItemLink(Commons.getAudienceKey());
-
-            String s = k.exportToEncoded();
-            int i = 0;
-        } catch (Exception e) {
-
-        }
-
     }
 
     @Test

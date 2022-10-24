@@ -252,10 +252,10 @@ public class Key extends Item {
         this._capabilities = use;
         setClaimValue(Claim.CAP, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         if (key != null) {
-            setClaimValue(Claim.KEY, Key.encodeKey(suiteName, key));
+            setClaimValue(Claim.KEY, Key.packageKey(suiteName, Dime.crypto.encodeKey(key, suiteName)));
         }
         if (pub != null) {
-            setClaimValue(Claim.PUB, Key.encodeKey(suiteName, pub));
+            setClaimValue(Claim.PUB, Key.packageKey(suiteName, Dime.crypto.encodeKey(pub, suiteName)));
         }
     }
 
@@ -279,9 +279,9 @@ public class Key extends Item {
         String key = item.getClaim(claim);
         if (key == null) { return; }
         byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
-        String encodedKey = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
-        //byte[] rawKey = Utility.fromBase64(encodedKey);
-        byte[] rawKey = Base58.decode(encodedKey); // REMOVE
+        String[] components = key.split("\\" + Dime.COMPONENT_DELIMITER);
+        if (components.length == 1) { return; } // This is already a legacy key
+        byte[] rawKey = Dime.crypto.decodeKey(components[1], components[0]);
         byte[] legacyKey = Utility.combine(header, rawKey);
         legacyKey[1] = capability == KeyCapability.ENCRYPT ? 0x10 : capability == KeyCapability.EXCHANGE ? (byte)0x40 : (byte)0x80;
         legacyKey[2] = capability == KeyCapability.EXCHANGE ? (byte)0x02 : (byte)0x01;
@@ -327,9 +327,8 @@ public class Key extends Item {
         }
     }
 
-    private static String encodeKey(String suiteName, byte[] rawKey) {
-        //return suiteName + Dime.COMPONENT_DELIMITER + Utility.toBase64(rawKey);
-        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey); // REMOVE
+    private static String packageKey(String suiteName, String encodedKey) {
+        return suiteName + Dime.COMPONENT_DELIMITER +encodedKey;
     }
 
     private void decodeKey(String encoded, Claim claim) throws CryptographyException {
@@ -341,7 +340,7 @@ public class Key extends Item {
             suiteName = components[Key.CRYPTO_SUITE_INDEX].toUpperCase();
         } else {
             // This will be treated as legacy
-            suiteName = Dime.crypto.getDefaultSuiteName();
+            suiteName = "STN";
             legacyKey = true;
             markAsLegacy();
         }
@@ -352,16 +351,10 @@ public class Key extends Item {
         }
         byte[] rawKey;
         if (!legacyKey) {
-            //try {
-            //    rawKey = Utility.fromBase64(components[Key.ENCODED_KEY_INDEX]);
-            //} catch (IllegalArgumentException e) {
-                // Older version of DiME encoded keys using Base58, this catches exceptions in decoding and then
-                // tries to decode using Base58 instead.
-                rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
-            //}
+            rawKey = Dime.crypto.decodeKey(components[Key.ENCODED_KEY_INDEX], suiteName);
         } else {
             // This is a legacy key
-            byte[] decoded = Base58.decode(encoded);
+            byte[] decoded = Dime.crypto.decodeKey(encoded, suiteName);
             rawKey = Utility.subArray(decoded, Key.LEGACY_KEY_HEADER_SIZE);
             KeyCapability cap = Key.getCapabilityFromLegacy(decoded);
             if (cap == null) { throw new IllegalStateException("Invalid key capability encountered."); }

@@ -9,6 +9,8 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,7 +22,7 @@ class CryptoTest {
 
     @Test
     void hasCryptoSuiteTest1() {
-        assertTrue(Dime.crypto.hasCryptoSuite("STN"));
+        assertTrue(Dime.crypto.hasCryptoSuite("DSC"));
         assertFalse(Dime.crypto.hasCryptoSuite("NSA"));
     }
 
@@ -28,8 +30,9 @@ class CryptoTest {
     void allCryptoSuitesTest1() {
         Set<String> suiteNames = Dime.crypto.allCryptoSuites();
         assertNotNull(suiteNames);
-        assertEquals(1, suiteNames.size());
-        assertEquals("STN", suiteNames.toArray()[0]);
+        assertEquals(2, suiteNames.size());
+        assertTrue(suiteNames.contains("DSC"));
+        assertTrue(suiteNames.contains("STN"));
     }
 
     @Test
@@ -182,28 +185,53 @@ class CryptoTest {
         try {
             String ref = "b9f050dd8bfbf027ea9fc729e9e764fda64c2bca20030a5d25264c35c486d892";
             byte[] data = Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8);
-            byte[] hash = Dime.crypto.generateHash(data);
+            String hash = Dime.crypto.generateHash(data);
             assertNotNull(hash);
-            String hex = Utility.toHex(hash);
-            assertEquals(ref, hex);
+            assertEquals(ref, hash);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
     }
 
     @Test
-    void cryptoPlatformExchangeTest1() {
+    void suiteTest1() {
         try {
-            Key clientKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiIzOWYxMzkzMC0yYTJhLTQzOWEtYjBkNC1lMzJkMzc4ZDgyYzciLCJwdWIiOiIyREJWdG5NWlVjb0dZdHd3dmtjYnZBSzZ0Um1zOUZwNGJ4dHBlcWdha041akRVYkxvOXdueWRCUG8iLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0LjQ0NDA0MVoiLCJrZXkiOiIyREJWdDhWOEF4UWR4UFZVRkJKOWdScFA1WDQzNnhMbVBrWW9RNzE1cTFRd2ZFVml1NFM3RExza20ifQ");
-            Key serverKey = Item.importFromEncoded("Di:KEY.eyJ1aWQiOiJjY2U1ZDU1Yi01NDI4LTRhMDUtOTZmYi1jZmU4ZTE4YmM3NWIiLCJwdWIiOiIyREJWdG5NYTZrcjNWbWNOcXNMSmRQMW90ZGtUMXlIMTZlMjV0QlJiY3pNaDFlc3J3a2hqYTdaWlEiLCJpYXQiOiIyMDIyLTA2LTAzVDEwOjUzOjM0Ljg0NjEyMVoiLCJrZXkiOiIyREJWdDhWOTV5N2lvb1A0bmRDajd6d3dqNW1MVExydVhaaGg0RTJuMUE0SHoxQkIycHB5WXY1blIifQ");
-            assertNotNull(clientKey);
-            assertNotNull(serverKey);
-            byte[] shared1 = Dime.crypto.generateSharedSecret(clientKey, serverKey.publicCopy(), List.of(KeyCapability.ENCRYPT));
-            byte[] shared2 = Dime.crypto.generateSharedSecret(clientKey.publicCopy(), serverKey, List.of(KeyCapability.ENCRYPT));
-            String hash1 = Utility.toHex(shared1);
-            String hash2 = Utility.toHex(shared2);
-            assertEquals("8c0c2c98d5839bc59a61fa0bea987aea6f058c08c214ab65d1a87e2a7913cea9", hash1);
-            assertEquals(hash1, hash2);
+            Key dscKey = Key.generateKey(KeyCapability.SIGN);
+            assertNotNull(dscKey);
+            assertEquals("DSC", dscKey.getCryptoSuiteName());
+            Utility.fromBase64(dscKey.getSecret().substring(4));
+            Utility.fromBase64(dscKey.getPublic().substring(4));
+            String exported = dscKey.exportToEncoded();
+            assertNotNull(exported);
+            String claims = exported.split("\\.")[1];
+            JSONObject json = new JSONObject(new String(Utility.fromBase64(claims)));
+            assertNotNull(json);
+            assertTrue(json.has("key"));
+            assertTrue(json.has("pub"));
+            assertTrue(json.getString("key").startsWith("DSC."));
+            assertTrue(json.getString("pub").startsWith("DSC."));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void suiteTest2() {
+        try {
+            Key stnKey = Key.generateKey(List.of(KeyCapability.SIGN), Dime.NO_EXPIRATION, null, null, "STN");
+            assertNotNull(stnKey);
+            assertEquals("STN", stnKey.getCryptoSuiteName());
+            Base58.decode(stnKey.getSecret().substring(4));
+            Base58.decode(stnKey.getPublic().substring(4));
+            String exported = stnKey.exportToEncoded();
+            assertNotNull(exported);
+            String claims = exported.split("\\.")[1];
+            JSONObject json = new JSONObject(new String(Utility.fromBase64(claims)));
+            assertNotNull(json);
+            assertTrue(json.has("key"));
+            assertTrue(json.has("pub"));
+            assertTrue(json.getString("key").startsWith("STN."));
+            assertTrue(json.getString("pub").startsWith("STN."));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

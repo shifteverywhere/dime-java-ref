@@ -153,7 +153,7 @@ class PerformanceTest {
         System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");
         long totalStart = System.nanoTime();
 
-        String base58key = Base58.encode(secretBytes);
+        String base58key = Base58.encode(publicBytes);
         System.out.print("* Running base 58 decoding tests... [" + base58key + "]");
         System.out.flush();
         long start = System.nanoTime();
@@ -175,8 +175,8 @@ class PerformanceTest {
         start = System.nanoTime();
         try {
             for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
-                byte[] decodedKey = Utility.fromBase64(base64key);
-                decodedKey = null;
+                    byte[] decodedKey = Utility.fromBase64(base64key);
+                    decodedKey = null;
             }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

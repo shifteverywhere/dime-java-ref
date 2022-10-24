@@ -10,25 +10,29 @@
 package io.dimeformat.crypto;
 
 import com.goterl.lazysodium.SodiumJava;
+import io.dimeformat.Base58;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.Utility;
 import io.dimeformat.exceptions.CryptographyException;
+import jdk.jshell.execution.Util;
 
 import java.util.List;
 
 /**
- * Implements the Dime standard cryptographic suite (STN).
+ * Implements the DiME Standard Cryptographic suite (DSC).
  */
 class StandardSuite implements ICryptoSuite {
 
-    static final String NAME = "STN";
+    static final String STANDARD_SUITE = "DSC";
+    static final String BASE58_SUITE = "STN"; // This is legacy base58 encoding
 
     public String getName() {
-        return StandardSuite.NAME;
+        return _suiteName;
     }
 
-    public StandardSuite() {
-        this.sodium = new SodiumJava();
+    public StandardSuite(String name) {
+        this._sodium = new SodiumJava();
+        this._suiteName = name;
     }
 
     public byte[] generateKeyName(byte[][] key) {
@@ -37,7 +41,7 @@ class StandardSuite implements ICryptoSuite {
         byte[] bytes = key[ICryptoSuite.PUBLIC_KEY_INDEX];
         if (bytes != null && bytes.length > 0) {
             try {
-                byte[] hash = generateHash(bytes);
+                byte[] hash = hash(bytes);
                 identifier = Utility.subArray(hash, 0, 8); // First 8 bytes are used as an identifier
             } catch (CryptographyException e) { /* ignored */ }
         }
@@ -46,14 +50,14 @@ class StandardSuite implements ICryptoSuite {
 
     public byte[] generateSignature(byte[] data, byte[] key) throws CryptographyException {
         byte[] signature = new byte[StandardSuite.NBR_SIGNATURE_BYTES];
-        if (this.sodium.crypto_sign_detached(signature, null, data, data.length, key) != 0) {
+        if (this._sodium.crypto_sign_detached(signature, null, data, data.length, key) != 0) {
             throw new CryptographyException("Cryptographic operation failed.");
         }
         return signature;
     }
 
     public boolean verifySignature(byte[] data, byte[] signature, byte[] key) {
-        return (this.sodium.crypto_sign_verify_detached(signature, data, data.length, key) == 0);
+        return (this._sodium.crypto_sign_verify_detached(signature, data, data.length, key) == 0);
     }
 
     public byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException {
@@ -61,7 +65,7 @@ class StandardSuite implements ICryptoSuite {
         KeyCapability firstUse = capabilities.get(0);
         if (firstUse == KeyCapability.ENCRYPT) {
             byte[] secretKey = new byte[StandardSuite.NBR_S_KEY_BYTES];
-            this.sodium.crypto_secretbox_keygen(secretKey);
+            this._sodium.crypto_secretbox_keygen(secretKey);
             return new byte[][] { secretKey };
         } else {
             byte[] publicKey = new byte[StandardSuite.NBR_A_KEY_BYTES];
@@ -69,11 +73,11 @@ class StandardSuite implements ICryptoSuite {
             switch (capabilities.get(0)) {
                 case SIGN:
                     secretKey = new byte[StandardSuite.NBR_A_KEY_BYTES * 2];
-                    this.sodium.crypto_sign_keypair(publicKey, secretKey);
+                    this._sodium.crypto_sign_keypair(publicKey, secretKey);
                     break;
                 case EXCHANGE:
                     secretKey = new byte[StandardSuite.NBR_A_KEY_BYTES];
-                    this.sodium.crypto_kx_keypair(publicKey, secretKey);
+                    this._sodium.crypto_kx_keypair(publicKey, secretKey);
                     break;
                 default:
                     throw new CryptographyException("Unable to generate keypair for key type " + capabilities + ".");
@@ -88,11 +92,11 @@ class StandardSuite implements ICryptoSuite {
         byte[] shared = new byte[StandardSuite.NBR_X_KEY_BYTES];
         if (clientKey[0] != null && clientKey.length == 2) { // has both private and public key
             byte[] secret = Utility.combine(clientKey[0], clientKey[1]);
-            if (this.sodium.crypto_kx_client_session_keys(shared, null, clientKey[1], secret, serverKey[1]) != 0) {
+            if (this._sodium.crypto_kx_client_session_keys(shared, null, clientKey[1], secret, serverKey[1]) != 0) {
                 throw new CryptographyException("Unable to generate, cryptographic operation failed.");
             }
         } else if (serverKey[0] != null && serverKey.length == 2) { // has both private and public key
-            if (this.sodium.crypto_kx_server_session_keys(null, shared, serverKey[1], serverKey[0], clientKey[1]) != 0) {
+            if (this._sodium.crypto_kx_server_session_keys(null, shared, serverKey[1], serverKey[0], clientKey[1]) != 0) {
                 throw new CryptographyException("Unable to generate, cryptographic operation failed.");
             }
         } else {
@@ -105,7 +109,7 @@ class StandardSuite implements ICryptoSuite {
         byte[] nonce = Utility.randomBytes(StandardSuite.NBR_NONCE_BYTES);
         if (nonce.length > 0) {
             byte[] cipherText = new byte[StandardSuite.NBR_MAC_BYTES + data.length];
-            if (this.sodium.crypto_secretbox_easy(cipherText, data, data.length, nonce, key) != 0) {
+            if (this._sodium.crypto_secretbox_easy(cipherText, data, data.length, nonce, key) != 0) {
                 throw new CryptographyException("Cryptographic operation failed.");
             }
             return Utility.combine(nonce, cipherText);
@@ -118,19 +122,29 @@ class StandardSuite implements ICryptoSuite {
         byte[] nonce = Utility.subArray(data, 0, StandardSuite.NBR_NONCE_BYTES);
         byte[] bytes = Utility.subArray(data, StandardSuite.NBR_NONCE_BYTES);
         byte[] plain = new byte[bytes.length - StandardSuite.NBR_MAC_BYTES];
-        int result = this.sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key);
+        int result = this._sodium.crypto_secretbox_open_easy(plain, bytes, bytes.length, nonce, key);
         if (result != 0) {
             throw new CryptographyException("Cryptographic operation failed (" + result + ").");
         }
         return plain;
     }
 
-    public byte[] generateHash(byte[] data) throws CryptographyException {
-        byte[] hash = new byte[StandardSuite.NBR_HASH_BYTES];
-        if (this.sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
-            throw new CryptographyException("Cryptographic operation failed.");
+    public String generateHash(byte[] data) throws CryptographyException {
+        return Utility.toHex(hash(data));
+    }
+
+    public String encodeKey(byte[] key) {
+        if (_suiteName.equals(StandardSuite.BASE58_SUITE)) {
+            return Base58.encode(key);
         }
-        return hash;
+        return Utility.toBase64(key);
+    }
+
+    public byte[] decodeKey(String encodedKey) {
+        if (_suiteName.equals(StandardSuite.BASE58_SUITE)) {
+            return Base58.decode(encodedKey);
+        }
+        return Utility.fromBase64(encodedKey);
     }
 
     /// PRIVATE ///
@@ -143,6 +157,15 @@ class StandardSuite implements ICryptoSuite {
     private static final int NBR_MAC_BYTES = 16;
     private static final int NBR_HASH_BYTES = 32;
 
-    private final SodiumJava sodium;
+    private final SodiumJava _sodium;
+    private final String _suiteName;
+
+    private byte[] hash(byte[] data) throws CryptographyException {
+        byte[] hash = new byte[StandardSuite.NBR_HASH_BYTES];
+        if (this._sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
+            throw new CryptographyException("Cryptographic operation failed.");
+        }
+        return hash;
+    }
 
 }

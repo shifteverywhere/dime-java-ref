@@ -199,7 +199,7 @@ public abstract class Item {
      * @throws CryptographyException If something goes wrong.
      */
     public static String thumbprint(String encoded, String suiteName) throws CryptographyException {
-        return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
+        return Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName);
     }
 
 

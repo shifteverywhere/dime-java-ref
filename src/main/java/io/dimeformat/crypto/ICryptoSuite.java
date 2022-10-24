@@ -102,9 +102,23 @@ public interface ICryptoSuite {
     /**
      * Generates a secure hash digest of the provided data.
      * @param data The data that should be hashed.
-     * @return The hash digest of the provided data.
+     * @return The hash digest of the provided data, encoded as a string.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateHash(byte[] data) throws CryptographyException;
+    String generateHash(byte[] data) throws CryptographyException;
+
+    /**
+     * Encodes a key from a byte array to a string.
+     * @param key The key to encode.
+     * @return The encoded key.
+     */
+    String encodeKey(byte[] key);
+
+    /**
+     * Decodes an encoded key to a byte array.
+     * @param encodedKey The encoded key.
+     * @return The decoded key.
+     */
+    byte[] decodeKey(String encodedKey);
 
 }
