@@ -112,9 +112,9 @@ public class Data extends Item {
     }
 
     @Override
-    public IntegrityState verify(Key trustedKey, List<Item> linkedItems) {
+    public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
         if (this.payload == null || this.payload.length() == 0) { throw new IllegalStateException("Unable to verify message, no payload added."); }
-        return super.verify(trustedKey, linkedItems);
+        return super.verify(verifyKey, linkedItems);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class Data extends Item {
 
     @Override
     protected boolean allowedToSetClaimDirectly(Claim claim) {
-        return Data.openClaims.contains(claim);
+        return Data.allowedClaims.contains(claim);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class Data extends Item {
 
     /// PRIVATE ///
 
-    private static final List<Claim> openClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
     private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_PAYLOAD_INDEX = 2;

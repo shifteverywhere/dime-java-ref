@@ -151,12 +151,11 @@ public abstract class Item {
      * @return True if the item was stripped of a signature, false otherwise.
      */
     public boolean strip(Key key) {
-        if (!isLegacy() && isSigned()) {
-           String identifier = Dime.crypto.generateKeyName(key);
-            Signature signature = Signature.find(identifier, getSignatures());
-            if (signature != null) {
-                return getSignatures().remove(signature);
-            }
+        if (isLegacy() || !isSigned()) { return false; }
+       String identifier = Dime.crypto.generateKeyName(key);
+        Signature signature = Signature.find(identifier, getSignatures());
+        if (signature != null) {
+            return getSignatures().remove(signature);
         }
         return false;
     }
@@ -203,6 +202,94 @@ public abstract class Item {
         return Utility.toHex(Dime.crypto.generateHash(encoded.getBytes(StandardCharsets.UTF_8), suiteName));
     }
 
+
+    public IntegrityState verify(Identity issuingIdentity) {
+        return verify(issuingIdentity, null);
+    }
+
+    public IntegrityState verify(Identity issuingIdentity, List<Item> linkedItems) {
+
+        UUID issuerId = getClaim(Claim.ISS);
+        if (issuerId != null && !issuerId.equals(issuingIdentity.getClaim(Claim.SUB))) {
+            return IntegrityState.FAILED_ISSUER_MISMATCH;
+        }
+        IntegrityState state = issuingIdentity.verifyDates();
+        if (!state.isValid()) {
+            return state;
+        }
+        return verify(issuingIdentity.getPublicKey(), linkedItems);
+    }
+
+    public IntegrityState verify() {
+        return verify((Key) null, null);
+    }
+
+    public IntegrityState verify(Key verifyKey) {
+        return verify(verifyKey, null);
+    }
+
+    public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
+        IntegrityState state = verifySignature(verifyKey);
+        if (!state.isValid()) {
+            return state;
+        }
+        if (linkedItems != null) {
+            state = verifyLinkedItems(linkedItems);
+            if (!state.isValid()) {
+                return state;
+            }
+        }
+        state = verifyDates();
+        return !state.isValid() ? state : IntegrityState.COMPLETE;
+    }
+
+    public IntegrityState verifyDates() {
+        if (!hasClaims()) {
+            return IntegrityState.VALID_DATES;
+        }
+        Instant now = Utility.createTimestamp();
+        if (Utility.gracefulTimestampCompare(getClaim(Claim.IAT), now) > 0) { return IntegrityState.FAILED_USED_BEFORE_ISSUED; }
+            if (getClaim(Claim.EXP) != null) {
+                if (Utility.gracefulTimestampCompare(getClaim(Claim.IAT), getClaim(Claim.EXP)) > 0) { return IntegrityState.FAILED_DATE_MISMATCH; }
+                if (Utility.gracefulTimestampCompare(getClaim(Claim.EXP), now) < 0) { return IntegrityState.FAILED_USED_AFTER_EXPIRED; }
+            }
+        return IntegrityState.VALID_DATES;
+    }
+
+    public IntegrityState verifySignature(Key verifyKey) {
+        if (!isSigned()) {
+            return IntegrityState.FAILED_NO_SIGNATURE;
+        }
+        if (verifyKey == null) {
+            return Dime.keyRing.verify(this);
+        }
+        Signature signature = isLegacy() ? getSignatures().get(0) : Signature.find(Dime.crypto.generateKeyName(verifyKey), getSignatures());
+        if (signature == null) {
+            return IntegrityState.FAILED_KEY_MISMATCH;
+        }
+        try {
+            return !Dime.crypto.verifySignature(encoded(false), signature.bytes, verifyKey)
+                    ? IntegrityState.FAILED_NOT_TRUSTED : IntegrityState.VALID_SIGNATURE;
+        } catch (InvalidFormatException | CryptographyException e) {
+            return IntegrityState.FAILED_INTERNAL_FAULT;
+        }
+    }
+
+    public IntegrityState verifyLinkedItems(List<Item> linkedItems) {
+        if (itemLinks == null) {
+            itemLinks = getClaim(Claim.LNK);
+        }
+        if (itemLinks != null) {
+            return ItemLink.verify(linkedItems, itemLinks);
+        } else {
+            return IntegrityState.FAILED_LINKED_ITEM_MISSING;
+        }
+    }
+
+
+
+
+/*
     public IntegrityState verify() {
         return verify((List<Item>) null);
     }
@@ -228,24 +315,24 @@ public abstract class Item {
         return state;
     }
 
-    public IntegrityState verify(Key trustedKey) {
-        return verify(trustedKey, null);
+    public IntegrityState verify(Key verifyKey) {
+        return verify(verifyKey, null);
     }
 
-    public IntegrityState verify(Key trustedKey, List<Item> linkedItems) {
-        if (trustedKey == null) { throw new IllegalArgumentException("Unable to verify, key must not be null."); }
+    public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
+        if (verifyKey == null) { throw new IllegalArgumentException("Unable to verify, key must not be null."); }
         if (!isSigned()) { return IntegrityState.ERR_NO_SIGNATURE; }
         Signature signature;
         if (isLegacy()) {
             signature = getSignatures().get(0);
         } else {
-            signature = Signature.find(Dime.crypto.generateKeyName(trustedKey), getSignatures());
+            signature = Signature.find(Dime.crypto.generateKeyName(verifyKey), getSignatures());
         }
         if (signature == null) {
             return IntegrityState.ERR_KEY_MISMATCH;
         } else {
             try {
-                if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, trustedKey)) {
+                if (!Dime.crypto.verifySignature(encoded(false), signature.bytes, verifyKey)) {
                     return IntegrityState.ERR_NOT_TRUSTED;
                 }
             } catch (InvalidFormatException | CryptographyException e) {
@@ -268,7 +355,7 @@ public abstract class Item {
     public IntegrityState verify(Identity issuer) {
         return verify(issuer, null);
     }
-
+*/
      /**
      * Verifies the signature of the item using the key from the provided issuer identity. Will also verify that the
      * claim issuer (iss) matches the subject id (sub) of the provided identity. Any items provided in linkedItems will
@@ -279,13 +366,13 @@ public abstract class Item {
      * @param linkedItems A list of Dime items that should be verified towards any item links in the Dime item.
      * @return The state of the integrity verification
      */
-    public IntegrityState verify(Identity issuer, List<Item> linkedItems) {
+/*    public IntegrityState verify(Identity issuer, List<Item> linkedItems) {
         if (issuer == null) { throw new IllegalArgumentException("Unable to verify, issuer must not be null."); }
         UUID issuerId = getClaim(Claim.ISS);
         if (issuerId != null && !issuerId.equals(issuer.getClaim(Claim.SUB))) { return IntegrityState.ERR_ISSUER_MISMATCH; }
         return verify(issuer.getPublicKey(), linkedItems);
     }
-
+*/
     /**
      * Will cryptographically link an item link from provided item to this item.
      * @param item The item to link to the tag.
@@ -387,7 +474,6 @@ public abstract class Item {
     protected List<ItemLink> itemLinks;
     protected boolean isSigned = false;
 
-
     protected void setClaimValue(Claim claim, Object value) {
         getClaimMap().put(claim, value);
     }
@@ -412,7 +498,7 @@ public abstract class Item {
         }
         return this._signatures;
     }
-
+/*
     protected static IntegrityState verifyDates(Item item) {
         if (item.hasClaims()) {
             Instant now = Utility.createTimestamp();
@@ -435,7 +521,7 @@ public abstract class Item {
             return IntegrityState.ERR_LINKED_ITEM_MISSING;
         }
     }
-
+*/
     /// --- ENCODING/DECODING --- ///
 
     protected String encoded(boolean withSignature) throws InvalidFormatException {
@@ -499,13 +585,12 @@ public abstract class Item {
     private boolean legacy = false;
 
     private ClaimsMap getClaimMap() {
-        if (this._claims == null) {
-            if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
-                byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
-                this._claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
-            } else {
-                this._claims = new ClaimsMap();
-            }
+        if (this._claims != null) { return this._claims; }
+        if (this.components != null && this.components.size() > Item.COMPONENTS_CLAIMS_INDEX) {
+            byte[] jsonClaims = Utility.fromBase64(this.components.get(Item.COMPONENTS_CLAIMS_INDEX));
+            this._claims = new ClaimsMap(new String(jsonClaims, StandardCharsets.UTF_8));
+        } else {
+            this._claims = new ClaimsMap();
         }
         return this._claims;
     }

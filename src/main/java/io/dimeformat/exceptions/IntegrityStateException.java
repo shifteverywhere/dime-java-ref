@@ -17,10 +17,13 @@ import io.dimeformat.keyring.IntegrityState;
  */
 public class IntegrityStateException extends Exception {
 
+    /**
+     * The integrity state fault that caused the exception.
+     */
     public final IntegrityState state;
 
     /**
-     * Create a new exception with an integrity state and exception message.
+     * Create a new exception with the causing integrity state and exception message.
      * @param state The Integrity state that caused the exception.
      * @param message A short description of what happened.
      */

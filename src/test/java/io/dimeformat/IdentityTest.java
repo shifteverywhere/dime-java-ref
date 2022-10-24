@@ -186,6 +186,22 @@ class IdentityTest {
     }
 
     @Test
+    void issueTest5()
+    {
+        try {
+            Commons.clearKeyRing();
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.ISSUE };
+            try {
+                IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN), caps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getTrustedKey(), null, true, caps, null);
+            } catch (IllegalArgumentException e) {
+               /* all is well */
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void isSelfSignedTest1() {
         try {
             Commons.clearKeyRing();
@@ -210,7 +226,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest1() {
+    void verifyTest1() {
         try {
             Commons.clearKeyRing();
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
@@ -223,7 +239,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest2() {
+    void verifyTest2() {
         try {
             Commons.initializeKeyRing();
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
@@ -235,7 +251,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest3() {
+    void verifyTest3() {
         try {
             Commons.clearKeyRing();
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
@@ -248,7 +264,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest4() {
+    void verifyTest4() {
         try {
             Commons.initializeKeyRing();
             Commons.getIntermediateIdentity().verify();
@@ -258,7 +274,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest5() {
+    void verifyTest5() {
         try {
             Commons.initializeKeyRing();
             Commons.getAudienceIdentity().verify();
@@ -268,7 +284,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest6() {
+    void verifyTest6() {
         try {
             Commons.clearKeyRing();
             Commons.getAudienceIdentity().verify(Commons.getIntermediateIdentity());
@@ -278,13 +294,13 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest7() {
+    void verifyTest7() {
         Commons.clearKeyRing();
         assertFalse(Commons.getAudienceIdentity().verify(Commons.getIssuerIdentity()).isValid());
     }
 
     @Test
-    void isTrustedTest8() {
+    void verifyTest8() {
         try {
             Commons.initializeKeyRing();
             IdentityCapability[] nodeCaps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
@@ -296,7 +312,7 @@ class IdentityTest {
             Identity node3 = IdentityIssuingRequest.generateIIR(key3, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key2, node2, true, nodeCaps, nodeCaps);
             IdentityCapability[] leafCaps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key3, node3, true, leafCaps, leafCaps);
-            leaf.verify(); // Verify the whole trust chain and key ring
+            assertTrue(leaf.verify().isValid()); // Verify the whole trust chain and key ring
             assertFalse(leaf.verify(node1).isValid());
             assertFalse(leaf.verify(node2).isValid());
             assertTrue(leaf.verify(node3).isValid()); // verify as issuer
@@ -307,7 +323,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest9() {
+    void verifyTest9() {
         try {
             Commons.initializeKeyRing();
             IdentityCapability[] nodeCaps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
@@ -326,13 +342,13 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest10() {
+    void verifyTest10() {
         try {
             Commons.initializeKeyRing();
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), 1L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(1001);
-            assertFalse(identity.verify().isValid());
+            assertFalse(identity.verify().isValid(), "(This test may fail if run if the whole test suite is run in parallel)");
             Dime.setGracePeriod(1L);
             assertTrue(identity.verify().isValid());
             Dime.setGracePeriod(0L);
@@ -342,7 +358,7 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest11() {
+    void verifyTest11() {
         try {
             Commons.initializeKeyRing();
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
@@ -356,14 +372,14 @@ class IdentityTest {
     }
 
     @Test
-    void isTrustedTest12() {
+    void verifyTest12() {
         try {
             Dime.setTimeModifier(-2);
             Commons.initializeKeyRing();
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), 1L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(2000);
-            assertFalse(identity.verify().isValid());
+            assertFalse(identity.verify().isValid(), "(This test may fail if run if the whole test suite is run in parallel)");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

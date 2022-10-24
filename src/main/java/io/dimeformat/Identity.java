@@ -15,6 +15,7 @@ import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.keyring.IntegrityState;
 import java.nio.charset.StandardCharsets;
+import java.security.IdentityScope;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -41,8 +42,8 @@ public class Identity extends Item {
 
     /**
      * Returns the public key attached to the identity of an entity. The Key instance returned will only contain a
-     * public key or type IDENTITY.
-     * @return A Key instance with a public key of type IDENTITY.
+     * public key with the capability 'SIGN'.
+     * @return A Key instance with a public key with the capability 'SIGN'.
      */
     public Key getPublicKey() {
         if (_publicKey == null) {
@@ -104,27 +105,13 @@ public class Identity extends Item {
     }
 
     @Override
-    public IntegrityState verify(List<Item> linkedItems) {
+    public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
         Identity trustChain = getTrustChain();
-        if (trustChain != null) {
-            IntegrityState state = trustChain.verify();
-            if (!state.isValid()) {
-                return state;
-            }
-            state = Item.verifyDates(this);
-            if (!state.isValid()) {
-                return state;
-            }
-            if (linkedItems != null && !linkedItems.isEmpty()) {
-                state = verifyLinkedItems(linkedItems);
-                if (!state.isValid()) {
-                    return state;
-                }
-            }
-            return verify(trustChain.getPublicKey());
-        } else {
-            return super.verify(linkedItems);
+        if (trustChain == null || verifyKey != null) {
+            return super.verify(verifyKey, linkedItems);
         }
+        IntegrityState state = trustChain.verify();
+        return !state.isValid() ? state : super.verify(trustChain.getPublicKey(), linkedItems);
     }
 
     /**

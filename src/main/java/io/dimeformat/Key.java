@@ -182,7 +182,7 @@ public class Key extends Item {
                     keyBytes[ICryptoSuite.SECRET_KEY_INDEX],
                     keyBytes.length == 2 ? keyBytes[ICryptoSuite.PUBLIC_KEY_INDEX] : null,
                     suiteName);
-            if (validFor != -1) {
+            if (validFor != Dime.NO_EXPIRATION) {
                 key.setClaimValue(Claim.EXP, ((Instant) key.getClaim(Claim.IAT)).plusSeconds(validFor));
             }
             key.setClaimValue(Claim.ISS, issuerId);
@@ -279,8 +279,9 @@ public class Key extends Item {
         String key = item.getClaim(claim);
         if (key == null) { return; }
         byte[] header = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 };
-        String b58 = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
-        byte[] rawKey = Base58.decode(b58);
+        String encodedKey = key.substring(key.indexOf(Dime.COMPONENT_DELIMITER) + 1);
+        //byte[] rawKey = Utility.fromBase64(encodedKey);
+        byte[] rawKey = Base58.decode(encodedKey); // REMOVE
         byte[] legacyKey = Utility.combine(header, rawKey);
         legacyKey[1] = capability == KeyCapability.ENCRYPT ? 0x10 : capability == KeyCapability.EXCHANGE ? (byte)0x40 : (byte)0x80;
         legacyKey[2] = capability == KeyCapability.EXCHANGE ? (byte)0x02 : (byte)0x01;
@@ -327,7 +328,8 @@ public class Key extends Item {
     }
 
     private static String encodeKey(String suiteName, byte[] rawKey) {
-        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey);
+        //return suiteName + Dime.COMPONENT_DELIMITER + Utility.toBase64(rawKey);
+        return suiteName + Dime.COMPONENT_DELIMITER + Base58.encode(rawKey); // REMOVE
     }
 
     private void decodeKey(String encoded, Claim claim) throws CryptographyException {
@@ -350,8 +352,15 @@ public class Key extends Item {
         }
         byte[] rawKey;
         if (!legacyKey) {
-            rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
+            //try {
+            //    rawKey = Utility.fromBase64(components[Key.ENCODED_KEY_INDEX]);
+            //} catch (IllegalArgumentException e) {
+                // Older version of DiME encoded keys using Base58, this catches exceptions in decoding and then
+                // tries to decode using Base58 instead.
+                rawKey = Base58.decode(components[Key.ENCODED_KEY_INDEX]);
+            //}
         } else {
+            // This is a legacy key
             byte[] decoded = Base58.decode(encoded);
             rawKey = Utility.subArray(decoded, Key.LEGACY_KEY_HEADER_SIZE);
             KeyCapability cap = Key.getCapabilityFromLegacy(decoded);

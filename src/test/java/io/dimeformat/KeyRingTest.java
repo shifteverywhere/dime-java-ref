@@ -16,7 +16,6 @@ import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,7 +28,15 @@ class KeyRingTest {
 
     @Test
     void noKeyRingTest1() {
-        assertEquals(IntegrityState.ERR_NO_KEY_RING, Commons.getAudienceIdentity().verify());
+        Commons.clearKeyRing();
+        assertTrue(Dime.keyRing.isEmpty());
+        Commons.initializeKeyRing();
+        assertFalse(Dime.keyRing.isEmpty());
+    }
+
+    @Test
+    void noKeyRingTest2() {
+        assertEquals(IntegrityState.FAILED_NO_KEY_RING, Commons.getAudienceIdentity().verify());
         assertTrue(Dime.keyRing.isEmpty());
     }
 
@@ -37,7 +44,7 @@ class KeyRingTest {
     void verifyTest1() {
         try {
             Commons.initializeKeyRing();
-            Commons.getAudienceIdentity().verify();
+            assertEquals(IntegrityState.COMPLETE, Commons.getAudienceIdentity().verify());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -51,7 +58,7 @@ class KeyRingTest {
             Key key = Key.generateKey(KeyCapability.SIGN);
             IdentityCapability[] caps = new IdentityCapability[]{IdentityCapability.GENERIC, IdentityCapability.ISSUE};
             Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(subjectId, Dime.VALID_FOR_1_YEAR, key, Commons.SYSTEM_NAME);
-            assertEquals(IntegrityState.ERR_KEY_MISMATCH, identity.verify());
+            assertEquals(IntegrityState.FAILED_KEY_MISMATCH, identity.verify());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -67,7 +74,7 @@ class KeyRingTest {
             IdentityCapability[] issuerCaps = new IdentityCapability[]{IdentityCapability.GENERIC, IdentityCapability.ISSUE};
             Identity issuerIdentity = IdentityIssuingRequest.generateIIR(issuerKey, issuerCaps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, Commons.SYSTEM_NAME);
             IdentityCapability[] caps = new IdentityCapability[]{IdentityCapability.GENERIC, IdentityCapability.IDENTIFY};
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), caps);
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN), caps);
             Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, issuerIdentity, false, caps, null, null, null);
             assertFalse(identity.verify().isValid());
             identity.sign(trustedKey); // signs the identity with another trusted key
@@ -87,7 +94,7 @@ class KeyRingTest {
             data.sign(trustedKey);
             assertTrue(data.verify().isValid());
             Dime.keyRing.remove(trustedKey);
-            data.verify(trustedKey);
+            assertEquals(IntegrityState.COMPLETE, data.verify(trustedKey));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -104,7 +111,7 @@ class KeyRingTest {
             data.sign(trustedKey);
             assertTrue(data.verify().isValid());
             Dime.keyRing.remove(trustedKey);
-            assertEquals(IntegrityState.ERR_KEY_MISMATCH , data.verify());
+            assertEquals(IntegrityState.FAILED_KEY_MISMATCH, data.verify());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -199,10 +206,8 @@ class KeyRingTest {
             String encoded = "Di:ID.eyJjYXAiOlsiZ2VuZXJpYyIsImlzc3VlIiwic2VsZiJdLCJleHAiOiIyMDMyLTA5LTMwVDE0OjQxOjUzLjEyMTUwMFoiLCJpYXQiOiIyMDIyLTEwLTAzVDE0OjQxOjUzLjEyMTUwMFoiLCJpc3MiOiJiNDNjNDgyOC0wOTYxLTRiZDYtYjdhYy1lNzZiOTg4YmFmZjAiLCJwdWIiOiJTVE4uZFgycVJtWWZ2eFRNdVZIeml2a1hjUU0zQWROMm44aEhoRkJ2ZnNENDhXVGVzcjRZVSIsInN1YiI6ImI0M2M0ODI4LTA5NjEtNGJkNi1iN2FjLWU3NmI5ODhiYWZmMCIsInN5cyI6ImlvLmRpbWVmb3JtYXQucmVmIiwidWlkIjoiMTU3NGZkZDEtMDRkOC00MjRjLTgyYjItZjkxMDFkNTliYjI3In0.MjY3MDU3ZmQ5N2UyMDNmNi41MjI1NDExMjhhOGNhZTViYWI5MTQ1ZDdjYTFlNWIxMzYyZTU3Mzg5ZjE5NjQyMjhiNjZmZWYwZDdjYmUwYzM0YTM1YzA3YWRmMzIwMWFmNDU1ZmMwNjBiM2E5NmY5MzlkNTQ3ZGIwZGFmZTMzNWJmN2MyZjc1YmFhNjVjNjAwYg:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIyLTEwLTA2VDEzOjIxOjQ5LjU4OTQyMFoiLCJrZXkiOiJTVE4uRkhCb2tlRkVoSm1ndkVhcXBoV05UbWdjblQ4N3ZhU0RDRGY3aHRxdDlZR0hFYzRVNmRlWHFTdEZjUDczNnpRWktpZjZ0VFJWVVN0b0gxREFBWk4xdjF6REpIOTU0IiwicHViIjoiU1ROLlVWM3Z6b0JnUUdieXppS1YyZnVhSEtIczlkYnI5UVVqOGt2UDExeE5SRjRtRWRIVnIiLCJ1aWQiOiIzNTEyNjg4Yi0wYWQ2LTQ1MjItYjVkYi05Mzk4MTliODc2NDYifQ";
             try {
                 Dime.keyRing.importFromEncoded(encoded, Commons.getTrustedKey());
-            } catch (Exception e) {
-                if (!(e instanceof IntegrityStateException) || ((IntegrityStateException) e).state != IntegrityState.ERR_NO_SIGNATURE) {
-                    throw e;
-                }
+            } catch (IntegrityStateException e) {
+                assertEquals(IntegrityState.FAILED_NO_SIGNATURE, e.state);
             }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);

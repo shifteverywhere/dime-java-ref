@@ -118,7 +118,6 @@ public class Envelope extends Item {
         if (!envelope.isSigned()) {
             envelope.encoded = encoded;
         } else {
-            envelope.isSigned = true;
             envelope.components.add(sections[sections.length -1]);
             envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.SECTION_DELIMITER));
             if (envelope.getSignatures().get(0).isLegacy()) {
@@ -201,11 +200,11 @@ public class Envelope extends Item {
     }
 
     @Override
-    public IntegrityState verify(Key trustedKey, List<Item> linkedItems)  {
+    public IntegrityState verify(Key verifyKey, List<Item> linkedItems)  {
         if (isLegacy()) {
             if (this.isAnonymous()) { throw new IllegalStateException("Unable to verify, envelope is anonymous."); }
         }
-        return super.verify(trustedKey, linkedItems);
+        return super.verify(verifyKey, linkedItems);
     }
 
     /**

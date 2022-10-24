@@ -31,64 +31,6 @@ class TagTest {
     }
 
     @Test
-    void tagTest1() {
-        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
-        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
-        assertNull(tag.getClaim(Claim.CTX));
-        assertNull(tag.getItemLinks());
-    }
-
-    @Test
-    void tagTest2() {
-        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
-        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
-        assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
-        assertNull(tag.getItemLinks());
-    }
-
-    @Test
-    void tagTest3() {
-        try {
-            new Tag(null);
-        } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
-    }
-
-    @Test
-    void tagTest4() {
-        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
-        try {
-            new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
-        } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
-    }
-
-    @Test
-    void tagTest5() {
-        try {
-            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
-            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT, items);
-            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
-            assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
-            assertNotNull(tag.getItemLinks());
-            assertEquals(2, tag.getItemLinks().size());
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-    }
-
-    @Test
-    void tagTest6() {
-        try {
-            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
-            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), items);
-            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
-            assertNull(tag.getClaim(Claim.CTX));
-            assertEquals(2, tag.getItemLinks().size());
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-    }
-
-    @Test
     void claimTest1() {
         Tag tag = new Tag();
         assertNull(tag.getClaim(Claim.ISS));
@@ -165,6 +107,64 @@ class TagTest {
             tag.putClaim(Claim.IAT, Instant.now());
         } catch (Exception e) {
             fail("Unexpected exception thrown:" + e);
+        }
+    }
+
+    @Test
+    void tagTest1() {
+        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+        assertNull(tag.getClaim(Claim.CTX));
+        assertNull(tag.getItemLinks());
+    }
+
+    @Test
+    void tagTest2() {
+        Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
+        assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+        assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
+        assertNull(tag.getItemLinks());
+    }
+
+    @Test
+    void tagTest3() {
+        try {
+            new Tag(null);
+        } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
+    }
+
+    @Test
+    void tagTest4() {
+        String context = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        try {
+            new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
+        } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
+    }
+
+    @Test
+    void tagTest5() {
+        try {
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT, items);
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+            assertEquals(Commons.CONTEXT, tag.getClaim(Claim.CTX));
+            assertNotNull(tag.getItemLinks());
+            assertEquals(2, tag.getItemLinks().size());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void tagTest6() {
+        try {
+            List<Item> items = List.of(Key.generateKey(KeyCapability.SIGN), Key.generateKey(KeyCapability.EXCHANGE));
+            Tag tag = new Tag(Commons.getIssuerIdentity().getClaim(Claim.SUB), items);
+            assertEquals((UUID) Commons.getIssuerIdentity().getClaim(Claim.SUB), tag.getClaim(Claim.ISS));
+            assertNull(tag.getClaim(Claim.CTX));
+            assertEquals(2, tag.getItemLinks().size());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
     }
 

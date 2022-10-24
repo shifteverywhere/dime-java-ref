@@ -152,7 +152,7 @@ class AlienTest {
             Data data = Item.importFromEncoded(localData);
             assertNotNull(data);
             assertEquals(IntegrityState.COMPLETE, tag.verify(key, List.of(data)));
-            assertEquals(IntegrityState.ERR_LINKED_ITEM_MISMATCH, tag.verify(key, List.of(key)));
+            assertEquals(IntegrityState.FAILED_LINKED_ITEM_MISMATCH, tag.verify(key, List.of(key)));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

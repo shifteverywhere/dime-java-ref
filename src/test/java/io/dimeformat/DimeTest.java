@@ -48,14 +48,6 @@ class DimeTest {
     }
 
     @Test
-    void trustedIdentityTest1() {
-        Commons.clearKeyRing();
-        assertTrue(Dime.keyRing.isEmpty());
-        Commons.initializeKeyRing();
-        assertFalse(Dime.keyRing.isEmpty());
-    }
-
-    @Test
     void setTimeModifierTest1() {
         Dime.setTimeModifier(0L);
         assertEquals(0L, Dime.getTimeModifier());
@@ -156,13 +148,13 @@ class DimeTest {
         try {
             Key key = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTExVDE3OjUwOjUyLjY3MjU2OVoiLCJpYXQiOiIyMDIyLTEwLTExVDE3OjQ5OjUyLjY3MjU2OVoiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJrZXkiOiJTVE4uM3pudGNLZXZjVTVZcnlkaEcxRzNVMnR4V01aajhjNWZTRnp3SDczQjlMWXJFSlBZcnFubjJ6WWlyTmNnSFltc2o2M3FFR0x1aWtIODE2M2JnRldCUWFRQmdOR3pZIiwicHViIjoiU1ROLkpvYmVyVkEybXgxeXJyQU5GRnVzRFc4Q2gyc2RmenZCTXNSMmJ3UUhTdjVBcGtVUUwiLCJ1aWQiOiJiM2JkMmRkNi0wNTEyLTQ2NWYtOTgxNi1iNjZhZGUxNjc2YWQifQ.YjkyMjMwYzBkNTY0YjU0NS45ZDI5MmQ4Y2FkMDY3YWE2MTFiMDhjMTU5YjEwOTVlYjg3NmIyYzg4NmY4YzE5Yjk2NzIzNWM1MDI0NzExMDg4YzMwNGFlZGIwOThjNDA3ZDFlOGYxNTU5N2M0ZGNjYmRhNmYyNjdjYzE2YjkwM2E2MThiMTZlYWIyYmQwODYwMw");
             assertNotNull(key);
-            assertEquals(IntegrityState.ERR_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
             Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:51.000000Z"));
-            assertEquals(IntegrityState.ERR_USED_BEFORE_ISSUED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_BEFORE_ISSUED, key.verify(Commons.getIssuerKey()));
             Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:53.000000Z"));
             assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
             Dime.setOverrideTime(null);
-            assertEquals(IntegrityState.ERR_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -189,26 +181,6 @@ class DimeTest {
         }
     }
 
-    @Test
-    void keyRingTest1() {
-        try {
-            Commons.initializeKeyRing();
-            Key trustedKey = Key.generateKey(List.of(KeyCapability.SIGN));
-            Dime.keyRing.put(trustedKey);
-            Key issuerKey = Key.generateKey(List.of(KeyCapability.SIGN));
-            IdentityCapability[] issuerCaps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
-            Identity issuerIdentity = IdentityIssuingRequest.generateIIR(issuerKey, issuerCaps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, Commons.SYSTEM_NAME);
-            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.IDENTIFY };
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), caps);
-            Identity identity = iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, issuerKey, issuerIdentity, false, caps, null, null, null);
-            assertFalse(identity.verify().isValid());
-            identity.sign(trustedKey); // signs the identity with another trusted key
-            assertTrue(identity.verify().isValid());
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-    }
-
     // LEGACY TESTS //
 
     private static final String _legacyTrustedIdentity = "Di:ID.eyJ1aWQiOiI0MDViZDZhOC0wM2JmLTRjNDctOWNiYS0xNmNhODM5OGI1YzgiLCJzdWIiOiIxZmNkNWY4OC00YTc1LTQ3OTktYmQ0OC0yNWI2ZWEwNjQwNTMiLCJjYXAiOlsiZ2VuZXJpYyIsImlzc3VlIiwic2VsZiJdLCJpc3MiOiIxZmNkNWY4OC00YTc1LTQ3OTktYmQ0OC0yNWI2ZWEwNjQwNTMiLCJzeXMiOiJkaW1lLWphdmEtcmVmIiwiZXhwIjoiMjAzMS0xMS0xOFQxMjoxMTowMi43NjEwMDdaIiwicHViIjoiMlREWGRvTnZaUldoVUZYemVQam5nanlpbVlMUXNFWVl3ekV6ZDJlNjJqeHdGNHJkdTQzdml4bURKIiwiaWF0IjoiMjAyMS0xMS0yMFQxMjoxMTowMi43NjEwMDdaIn0.KE3hbTLB7+BzzEeGSFyauy2PMgXBIYpGqRFZ2n+xQQsAOxC45xYgeFvILtqLeVYKA8T5lcQvZdyuiHBPVMpxBw";
@@ -224,7 +196,7 @@ class DimeTest {
             assertEquals(Instant.parse("2021-11-18T12:03:53.381661Z"), iir.getClaim(Claim.IAT));
             assertTrue(iir.wantsCapability(IdentityCapability.GENERIC));
             assertEquals("2TDXdoNvSUNyLDSUiMhpLCdEbDaz5zumD35tX1DAuA8CE41xoDGgSd3UE", iir.getPublicKey().getPublic());
-            iir.verify();
+            assertEquals(IntegrityState.COMPLETE, iir.verify(iir.getPublicKey()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -248,7 +220,7 @@ class DimeTest {
             assertTrue(identity.hasCapability(IdentityCapability.GENERIC));
             assertTrue(identity.hasCapability(IdentityCapability.IDENTIFY));
             assertNotNull(identity.getTrustChain());
-            identity.verify();
+            assertEquals(IntegrityState.COMPLETE, identity.verify());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -281,6 +253,7 @@ class DimeTest {
             Key importKey = Item.importFromEncoded(encoded);
             assertNotNull(importKey);
             assertTrue(importKey.isLegacy());
+            String s = importKey.getPublic();
             assertTrue(importKey.getPublic().startsWith("2TD"));
         } catch (Exception e) {
             fail("Unexpected exception thrown.");

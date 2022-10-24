@@ -121,7 +121,7 @@ public final class ItemLink {
      * @return The state of the integrity verification.
      */
     public static IntegrityState verify(List<Item> items, List<ItemLink> links) {
-        if (items == null || links == null) {  return IntegrityState.ERR_LINKED_ITEM_MISSING; }
+        if (items == null || links == null) {  return IntegrityState.FAILED_LINKED_ITEM_MISSING; }
         for (Item item: items) {
             boolean matchFound = false;
             for (ItemLink link: links) {
@@ -129,15 +129,15 @@ public final class ItemLink {
                     matchFound = true;
                     try {
                         if (!link.itemIdentifier.equals(item.getHeader()) || !link.thumbprint.equals(item.thumbprint())) {
-                            return IntegrityState.ERR_LINKED_ITEM_FAULT;
+                            return IntegrityState.FAILED_LINKED_ITEM_FAULT;
                         }
                     } catch (CryptographyException e) {
-                        return IntegrityState.ERR_INTERNAL_FAULT;
+                        return IntegrityState.FAILED_INTERNAL_FAULT;
                     }
                 }
             }
             if (!matchFound) {
-                return IntegrityState.ERR_LINKED_ITEM_MISMATCH;
+                return IntegrityState.FAILED_LINKED_ITEM_MISMATCH;
             }
         }
         return IntegrityState.VALID_ITEM_LINKS;

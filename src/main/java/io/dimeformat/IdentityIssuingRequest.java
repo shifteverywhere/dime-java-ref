@@ -138,16 +138,6 @@ public class IdentityIssuingRequest extends Item {
         return iir;
     }
 
-    @Override
-    public IntegrityState verify() {
-        return super.verify(getPublicKey(), null);
-    }
-
-    @Override
-    public IntegrityState verify(List<Item> linkedItems) {
-        return super.verify(getPublicKey(), linkedItems);
-    }
-
     /**
      * Checks if the IIR includes a request for a particular capability.
      * @param capability The capability to check for.
@@ -321,7 +311,7 @@ public class IdentityIssuingRequest extends Item {
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, CapabilityException, CryptographyException {
         IntegrityState state = verify(this.getPublicKey());
         if (!state.isValid()) {
-            throw new IntegrityStateException(state, "Unable to verify IIR.");
+            throw new IntegrityStateException(state, "Unable to verify Identity issuing request.");
         }
         boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
         strip();
@@ -342,8 +332,8 @@ public class IdentityIssuingRequest extends Item {
                     getPrinciples(),
                     ambitList,
                     methodList);
-            if (issuerIdentity != null ) {
-                if (Dime.keyRing.get(issuerIdentity.getClaim(Claim.SUB).toString().toLowerCase()) == null && includeChain) {
+            if (issuerIdentity != null) {
+                if (includeChain && !Dime.keyRing.containsItem(issuerIdentity)) {
                     // The chain will only be set if the issuer identity is not a trusted identity in the key ring
                     state = issuerIdentity.verify();
                     if (!state.isValid()) {
@@ -351,7 +341,7 @@ public class IdentityIssuingRequest extends Item {
                     }
                     identity.setTrustChain(issuerIdentity);
                 } else {
-                    state = Item.verifyDates(issuerIdentity);
+                    state = issuerIdentity.verifyDates();
                     if (!state.isValid()) {
                         throw new IntegrityStateException(state, "Unable to verify valid dates of issuer identity.");
                     }

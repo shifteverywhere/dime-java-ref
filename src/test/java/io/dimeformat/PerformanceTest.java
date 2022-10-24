@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
@@ -133,6 +134,72 @@ class PerformanceTest {
         end = System.nanoTime();
         result = PerformanceTest.convertToSeconds(end - start);
         System.out.println(" DONE \n\t - Total: " + result + "s\n");
+
+        long totalEnd = System.nanoTime();
+        double totalResult = PerformanceTest.convertToSeconds(totalEnd - totalStart);
+        System.out.println("\nTOTAL: " + totalResult + "s");
+
+    }
+
+    @Test
+    void decodingPerformanceTest1() {
+
+        Key key = Key.generateKey(KeyCapability.SIGN);
+
+        byte[] secretBytes = key.getKeyBytes(Claim.KEY);
+        byte[] publicBytes = key.getKeyBytes(Claim.PUB);
+
+        System.out.println("-- Key decoding performance tests --\n");
+        System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");
+        long totalStart = System.nanoTime();
+
+        String base58key = Base58.encode(secretBytes);
+        System.out.print("* Running base 58 decoding tests... [" + base58key + "]");
+        System.out.flush();
+        long start = System.nanoTime();
+        try {
+            for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
+                byte[] decodedKey = Base58.decode(base58key);
+                decodedKey = null;
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        long end = System.nanoTime();
+        double result = PerformanceTest.convertToSeconds(end - start);
+        System.out.println(" DONE \n\t - Total: " + result+ "s\n");
+
+        String base64key = Utility.toBase64(secretBytes);
+        System.out.print("* Running base 64 decoding tests... [" + base64key + "]");
+        System.out.flush();
+        start = System.nanoTime();
+        try {
+            for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
+                byte[] decodedKey = Utility.fromBase64(base64key);
+                decodedKey = null;
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        end = System.nanoTime();
+        result = PerformanceTest.convertToSeconds(end - start);
+        System.out.println(" DONE \n\t - Total: " + result+ "s\n");
+
+        String hexkey = Utility.toHex(secretBytes);
+        System.out.print("* Running hexadecimal decoding tests... [" + hexkey + "]");
+        System.out.flush();
+        start = System.nanoTime();
+        try {
+            for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
+                byte[] decodedKey = Utility.fromHex(hexkey);
+                decodedKey = null;
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        end = System.nanoTime();
+        result = PerformanceTest.convertToSeconds(end - start);
+        System.out.println(" DONE \n\t - Total: " + result+ "s\n");
 
         long totalEnd = System.nanoTime();
         double totalResult = PerformanceTest.convertToSeconds(totalEnd - totalStart);

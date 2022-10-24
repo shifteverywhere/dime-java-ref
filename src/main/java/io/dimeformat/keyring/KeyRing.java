@@ -57,18 +57,19 @@ public class KeyRing {
      * @return True if item is part of the key ring, false otherwise.
      */
     public boolean containsItem(Item item) {
+        if (_keyRing == null) return false;
         if (item instanceof Key) {
             String name = Dime.crypto.generateKeyName(((Key) item));
             if (_keyRing.containsKey(name)) {
-                Key key = (Key) _keyRing.get(name);
-                return key.getPublic().equals(((Key) item).getPublic());
+                Key ringKey = (Key) _keyRing.get(name);
+                return ringKey.getPublic().equals(((Key) item).getPublic());
             }
         } else if (item instanceof Identity) {
-            String name = ((Identity) item).getClaim(Claim.SUB).toString().toLowerCase();
+            String name = (item.getClaim(Claim.SUB).toString().toLowerCase());
             if (_keyRing.containsKey(name)) {
-                Identity identity = (Identity) _keyRing.get(name);
-                return ((UUID) identity.getClaim(Claim.SUB)).compareTo(item.getClaim(Claim.SUB)) == 0 &&
-                        identity.getPublicKey().getPublic().equals(((Identity) item).getPublicKey().getPublic());
+                Identity ringIdentity = (Identity) _keyRing.get(name);
+                return ((UUID) ringIdentity.getClaim(Claim.SUB)).compareTo(item.getClaim(Claim.SUB)) == 0 &&
+                        ringIdentity.getPublicKey().getPublic().equals(((Identity) item).getPublicKey().getPublic());
             }
         }
         return false;
@@ -83,48 +84,42 @@ public class KeyRing {
         return _keyRing != null ? _keyRing.get(name) : null;
     }
 
+
     /**
-     * Adds a key to the key ring.
-     * @param key The key to add.
+     * Adds a Key or Identity instance to the key ring.
+     * @param item The item to add.
+     * @return The name associated with the item added.
      */
-    public void put(Key key) {
-        put(Dime.crypto.generateKeyName(key), key);
+    public String put(Item item) {
+        if (item == null) { throw new IllegalArgumentException("Unable to add item to key ring, item to add must not be null."); }
+        String name = KeyRing.itemName(item);
+        if (name == null || name.length() == 0) { throw new IllegalArgumentException("Unable to add item to key ring, invalid item."); }
+        if (_keyRing == null) {
+            _keyRing = new HashMap<>();
+        }
+        _keyRing.put(name, item);
+        return name;
     }
 
     /**
-     * Adds an identity to the key ring.
-     * @param identity The identity to add.
+     * Removes a Key or Identity instance from the key ring.
+     * @param item The item to remove.
+     * @return True if item was removed, false is it could not be found.
      */
-    public void put(Identity identity) {
-        put(identity.getClaim(Claim.SUB).toString().toLowerCase(), identity);
+    public boolean remove(Item item) {
+        return remove(KeyRing.itemName(item));
     }
 
     /**
-     * Removes a key from the key ring.
-     * @param key The key to remove.
-     * @return Returns the removed key, null if none were found.
-     */
-    public Key remove(Key key) {
-        String name = Dime.crypto.generateKeyName(key);
-        return (Key) remove(name);
-    }
-
-    /**
-     * Removes an identity from the key ring.
-     * @param identity The identity to remove.
-     * @return Returns the removed identity, null if none were found.
-     */
-    public Identity remove(Identity identity) {
-        return (Identity) remove(identity.getClaim(Claim.SUB).toString().toLowerCase());
-    }
-
-    /**
-     * Removes an item from the key ring.
+     * Removes an item from the key ring from its associated name.
      * @param name Name of the item to remove.
-     * @return Returns the removed item, null if none were found.
+     * @return True if item was removed, false is it could not be found.
      */
-    public Item remove(String name) {
-        return _keyRing != null ? _keyRing.remove(name) : null;
+    public boolean remove(String name) {
+        if (_keyRing != null && name != null && name.length() > 0) {
+            return _keyRing.remove(name) != null;
+        }
+        return false;
     }
 
     /**
@@ -197,35 +192,60 @@ public class KeyRing {
      * @throws CryptographyException If something goes wrong while signing the generated envelope.
      */
     public String exportToEncoded(Key signingKey) throws CryptographyException {
-        if (_keyRing != null && !_keyRing.isEmpty()) {
-            Envelope envelope = new Envelope();
-            for (String name: nameSet()) {
-                envelope.addItem(get(name));
-            }
-            if (signingKey != null) {
-                envelope.sign(signingKey);
-            }
-            return envelope.exportToEncoded();
+        if (isEmpty()) { return null; }
+        Envelope envelope = new Envelope();
+        for (String name: nameSet()) {
+            envelope.addItem(get(name));
         }
-        return null;
+        if (signingKey != null) {
+            envelope.sign(signingKey);
+        }
+        return envelope.exportToEncoded();
+    }
+
+    public IntegrityState verify(Item item) {
+        if (size() == 0) {
+            return IntegrityState.FAILED_NO_KEY_RING;
+        }
+        IntegrityState state = IntegrityState.FAILED_NOT_TRUSTED;
+        for (Item trustedItem: items()) {
+            state = trustedItem.verifyDates();
+            if (!state.isValid()) {
+                return state;
+            }
+            Key trustedKey = getKey(trustedItem);
+            if (trustedKey == null) {
+                return IntegrityState.FAILED_INTERNAL_FAULT;
+            }
+            state = item.verifySignature(trustedKey);
+            if (state != IntegrityState.FAILED_KEY_MISMATCH) {
+                return state;
+            }
+        }
+        return state;
     }
 
     /// PRIVATE ///
 
     private HashMap<String, Item> _keyRing;
 
-    private void put(String name, Item item) {
-        if (name == null || name.length() == 0) { throw new IllegalArgumentException("Unable to add to key ring, name must not be null or empty."); }
-        if (item == null) { throw new IllegalArgumentException("Unable to add to key ring, item to add must not be null."); }
-        if (item instanceof Key || item instanceof Identity) {
-            if (_keyRing == null) {
-                _keyRing = new HashMap<String, Item>();
-            }
-            _keyRing.put(name, item);
-            return;
+    private static String itemName(Item item) {
+        String name = null;
+        if (item instanceof Key) {
+            name = Dime.crypto.generateKeyName((Key) item);
+        } else if (item instanceof Identity) {
+            name = item.getClaim(Claim.SUB).toString().toLowerCase();
         }
-        throw new IllegalArgumentException("Unable to add to key ring, item to add must either be an instance of Key or Identity.");
+        return name;
     }
 
+    private static Key getKey(Item item) {
+        if (item instanceof Key) {
+            return (Key) item;
+        } else if (item instanceof Identity) {
+            return ((Identity) item).getPublicKey();
+        }
+        return null;
+    }
 
 }

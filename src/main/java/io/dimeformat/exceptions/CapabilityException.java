@@ -10,10 +10,10 @@
 package io.dimeformat.exceptions;
 
 /**
- * Exception that is thrown if there is any problems with capabilities for an identity.
- * This may happen when trying to issue a new identity and the identity issuing request (IIR)
- * contains more capabilities than allowed. It may also happen when an identity that is
- * missing the ISSUE capability is trying to issue a new identity from an IIR.
+ * Exception that is thrown if there is any problems with capabilities for a DiME item. This may, for example, happen
+ * when trying to issue a new identity and the identity issuing request (IIR) contains more capabilities than allowed.
+ * It may also happen when an identity that is missing the 'ISSUE' capability is trying to issue a new identity from an
+ * IIR.
  */
 public class CapabilityException extends Exception {
 

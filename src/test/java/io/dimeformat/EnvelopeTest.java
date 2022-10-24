@@ -113,18 +113,21 @@ class EnvelopeTest {
     @Test
     void getItemTest1() {
         try {
-            Message message = new Message(UUID.randomUUID(), UUID.randomUUID(), Dime.NO_EXPIRATION, "message-context");
-            Key key = Key.generateKey(List.of(KeyCapability.SIGN), "key-context");
+            Message message = new Message(UUID.randomUUID(), UUID.randomUUID(), Dime.NO_EXPIRATION, Commons.CONTEXT);
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            message.sign(Commons.getIssuerKey());
+            Key key = Key.generateKey(List.of(KeyCapability.SIGN), Commons.SIGN_KEY_CONTEXT);
             Envelope envelope = new Envelope();
             envelope.addItem(message);
             envelope.addItem(key);
+  //          String encoded = envelope.exportToEncoded();
             // Context
-            Item item1 = envelope.getItem("key-context");
+            Item item1 = envelope.getItem(Commons.SIGN_KEY_CONTEXT);
             assertTrue(item1 instanceof Key);
-            assertEquals("key-context", item1.getClaim(Claim.CTX));
-            Item item2 = envelope.getItem("message-context");
+            assertEquals(Commons.SIGN_KEY_CONTEXT, item1.getClaim(Claim.CTX));
+            Item item2 = envelope.getItem(Commons.CONTEXT);
             assertTrue(item2 instanceof Message);
-            assertEquals("message-context", item2.getClaim(Claim.CTX));
+            assertEquals(Commons.CONTEXT, item2.getClaim(Claim.CTX));
             // Unique ID
             Item item3 = envelope.getItem((UUID) key.getClaim(Claim.UID));
             assertTrue(item3 instanceof Key);
@@ -140,21 +143,21 @@ class EnvelopeTest {
     @Test
     void getItemTest2() {
         try {
-            String exported = "Di:MSG.eyJpc3MiOiJkMThhM2ExYi05Y2I2LTQ4MGEtYTJlZC05NGU2NzMwZTVlMzQiLCJ1aWQiOiIwYTQ2YWVkNy0yYzkyLTQwNDQtYmMyMC0yMTc0Y2IwNjA0MmQiLCJhdWQiOiI3YTAyMzkzZS1kMTVkLTQ3NDYtOTU0Mi1hZDljYmUwNzUxYzgiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjQ0NjkxNloiLCJjdHgiOiJtZXNzYWdlLWNvbnRleHQifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.EBiQVW1sKZgKXEg0qDNoxXGUZXhvO8NfxMWn9YL8zhkVU7jp3q2a8p+5dzlRW1AJXwVdk7iH1jhJMux0DGbpBg:KEY.eyJ1aWQiOiIxMWYxNzllZi0yOWIwLTRlZjAtYjA0Yi0xZjU3MTk5ZTJjZjQiLCJwdWIiOiJTVE4rMk5taUIxdlVQSFNDMnplbzZZZzlEQlNTNFdYU3dFSDNLclUxelRCamg4dlV0S3h4WUQiLCJpYXQiOiIyMDIyLTA1LTMwVDE3OjI1OjMxLjcyNzcwNFoiLCJ1c2UiOlsic2lnbiJdLCJjdHgiOiJrZXktY29udGV4dCIsImtleSI6IlNUTithRFp0c2FIaW9nb1R1OW1YdTZqWmJjTG94alE4aFpQaDJ4Rm5SUXhidlRLb1R3YkFLdGFldWRBRFA0dk1US25uRHNtYUcyc3RxeGZaM2hGNXdtWDMzV2V6UFRINFkifQ";
+            String exported = "Di:MSG.eyJhdWQiOiI1ZWQyZTE3YS0wMjhjLTRjMjgtOWI5ZC0zMTFhYjY4YTAxYzQiLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJpYXQiOiIyMDIyLTEwLTI0VDA4OjI4OjQzLjcxNzc4M1oiLCJpc3MiOiJjNDI1OTIzYS0xMjYyLTQ3ZmYtYWMwZC1kNTc0YWU0OTA2MTQiLCJ1aWQiOiJiZmYyNWFjNC02OWU0LTRkYmYtYjhlZC0xZDJiMjdlYmQ0ZjUifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.YjkyMjMwYzBkNTY0YjU0NS5mMzUzMTZmMGU3NzI4NzFiYzQ3Y2M2YjMxYWRkZDcwZWJhMTQ2NGIyOWI4Yzg4ODAxNjM2ZjAzM2Q1MWQ1YWNlNzQ4NWJjODRmY2NiYjBlNjM3YWVkNTJmOGMzYjkxOTA5NWU2MTQzZTEyZGVkOGZjOTYyZWVjZDAzZDRiYTkwYQ:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJpZC1rZXkiLCJpYXQiOiIyMDIyLTEwLTI0VDA4OjI4OjQ4LjYyOTA4N1oiLCJrZXkiOiJTVE4uSzZzcU5kV3Bhd05GVmdGQ2ZjU1hHRWtjNTUxamJkYllQYXZyUk1LUUUyNVhFUEhMaThqcEYxeG5yRVR5TkJXZ0RzUnZoeHJjeTg1eVRmSG52Snl5OHZ4amV5RE05IiwicHViIjoiU1ROLm1McUVicWVEWlpQVWZ6QUpyZERyaVRKa3pyTTVBS2lveGtnTkJQazdpeGVIRGJ6cGMiLCJ1aWQiOiI0ZmU4ZjVjNi01OWQyLTQ3NjMtYjMxZC04MjU5YjUzMWFjMDgifQ";
             Envelope envelope = Envelope.importFromEncoded(exported);
             // Context
-            Item item1 = envelope.getItem("key-context");
+            Item item1 = envelope.getItem(Commons.SIGN_KEY_CONTEXT);
             assertTrue(item1 instanceof Key);
-            assertEquals("key-context", item1.getClaim(Claim.CTX));
-            Item item2 = envelope.getItem("message-context");
+            assertEquals(Commons.SIGN_KEY_CONTEXT, item1.getClaim(Claim.CTX));
+            Item item2 = envelope.getItem(Commons.CONTEXT);
             assertTrue(item2 instanceof Message);
-            assertEquals("message-context", item2.getClaim(Claim.CTX));
+            assertEquals(Commons.CONTEXT, item2.getClaim(Claim.CTX));
             // Unique ID
-            UUID uid1 = UUID.fromString("11f179ef-29b0-4ef0-b04b-1f57199e2cf4");
+            UUID uid1 = UUID.fromString("4fe8f5c6-59d2-4763-b31d-8259b531ac08");
             Item item3 = envelope.getItem(uid1);
             assertTrue(item3 instanceof Key);
             assertEquals(uid1, item3.getClaim(Claim.UID));
-            UUID uid2 = UUID.fromString("0a46aed7-2c92-4044-bc20-2174cb06042d");
+            UUID uid2 = UUID.fromString("bff25ac4-69e4-4dbf-b8ed-1d2b27ebd4f5");
             Item item4 = envelope.getItem(uid2);
             assertTrue(item4 instanceof Message);
             assertEquals(uid2, item4.getClaim(Claim.UID));
@@ -166,7 +169,7 @@ class EnvelopeTest {
     @Test
     void getItemTest3() {
         Envelope envelope = new Envelope();
-        envelope.addItem(Key.generateKey(List.of(KeyCapability.SIGN)));
+        envelope.addItem(Key.generateKey(KeyCapability.SIGN));
         assertNull(envelope.getItem((String)null));
         assertNull(envelope.getItem(""));
         assertNull(envelope.getItem("invalid-context"));
@@ -444,7 +447,7 @@ class EnvelopeTest {
     void dataExportTest1() {
         try {
             Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB), Commons.CONTEXT);
-            Data data = new Data(Commons.getAudienceIdentity().getClaim(Claim.SUB),100);
+            Data data = new Data(Commons.getAudienceIdentity().getClaim(Claim.SUB),Dime.VALID_FOR_1_MINUTE);
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             data.sign(Commons.getIssuerKey());
             envelope.addItem(data);

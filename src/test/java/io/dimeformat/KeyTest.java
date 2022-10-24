@@ -28,35 +28,26 @@ class KeyTest {
         Key key = new Key();
         assertEquals("KEY", key.getHeader());
         assertEquals("KEY", Key.HEADER);
-    }
 
-    @Test
-    void keyTest1() {
-        Key key = Key.generateKey(KeyCapability.SIGN);
-        assertEquals(1, key.getCapability().size());
-        assertTrue(key.hasCapability(KeyCapability.SIGN));
-        assertNotNull(key.getClaim(Claim.UID));
-        assertNotNull(key.getPublic());
-        assertNotNull(key.getSecret());
-    }
+        try {
+            Key k = Key.generateKey(KeyCapability.EXCHANGE);
 
-    @Test
-    void keyTest2() {
-        Key key = Key.generateKey(KeyCapability.EXCHANGE);
-        assertEquals(1, key.getCapability().size());
-        assertTrue(key.hasCapability(KeyCapability.EXCHANGE));
-        assertNotNull(key.getClaim(Claim.UID));
-        assertNotNull(key.getPublic());
-        assertNotNull(key.getSecret());
+            k.addItemLink(Commons.getIntermediateKey());
+            k.addItemLink(Commons.getAudienceKey());
+
+            String s = k.exportToEncoded();
+            int i = 0;
+        } catch (Exception e) {
+
+        }
+
     }
 
     @Test
     void claimTest1() {
         Key key = Key.generateKey(KeyCapability.SIGN);
         assertNull(key.getClaim(Claim.ISS));
-        assertNull(key.getClaim(Claim.ISS));
         key.putClaim(Claim.ISS, Commons.getAudienceIdentity().getClaim(Claim.SUB));
-        assertEquals((UUID) key.getClaim(Claim.ISS), key.getClaim(Claim.ISS));
         assertEquals((UUID) Commons.getAudienceIdentity().getClaim(Claim.SUB), key.getClaim(Claim.ISS));
     }
 
@@ -131,15 +122,35 @@ class KeyTest {
     }
 
     @Test
+    void keyTest1() {
+        Key key = Key.generateKey(KeyCapability.SIGN);
+        assertEquals(1, key.getCapability().size());
+        assertTrue(key.hasCapability(KeyCapability.SIGN));
+        assertNotNull(key.getClaim(Claim.UID));
+        assertNotNull(key.getPublic());
+        assertNotNull(key.getSecret());
+    }
+
+    @Test
+    void keyTest2() {
+        Key key = Key.generateKey(KeyCapability.EXCHANGE);
+        assertEquals(1, key.getCapability().size());
+        assertTrue(key.hasCapability(KeyCapability.EXCHANGE));
+        assertNotNull(key.getClaim(Claim.UID));
+        assertNotNull(key.getPublic());
+        assertNotNull(key.getSecret());
+    }
+
+    @Test
     void keyCapabilityTest1() {
         Key signKey = Key.generateKey(KeyCapability.SIGN);
         assertEquals(Dime.crypto.getDefaultSuiteName(), signKey.getCryptoSuiteName());
         assertNotNull(signKey.getSecret());
         assertNotNull(signKey.getPublic());
-        List<KeyCapability> usage = signKey.getCapability();
-        assertNotNull(usage);
-        assertTrue(usage.contains(KeyCapability.SIGN));
-        assertEquals(1, usage.size());
+        List<KeyCapability> caps = signKey.getCapability();
+        assertNotNull(caps);
+        assertTrue(caps.contains(KeyCapability.SIGN));
+        assertEquals(1, caps.size());
         assertTrue(signKey.hasCapability(KeyCapability.SIGN));
         assertFalse(signKey.hasCapability(KeyCapability.EXCHANGE));
         assertFalse(signKey.hasCapability(KeyCapability.ENCRYPT));
@@ -151,10 +162,10 @@ class KeyTest {
         assertEquals(Dime.crypto.getDefaultSuiteName(), exchangeKey.getCryptoSuiteName());
         assertNotNull(exchangeKey.getSecret());
         assertNotNull(exchangeKey.getPublic());
-        List<KeyCapability> usage = exchangeKey.getCapability();
-        assertNotNull(usage);
-        assertTrue(usage.contains(KeyCapability.EXCHANGE));
-        assertEquals(1, usage.size());
+        List<KeyCapability> caps = exchangeKey.getCapability();
+        assertNotNull(caps);
+        assertTrue(caps.contains(KeyCapability.EXCHANGE));
+        assertEquals(1, caps.size());
         assertFalse(exchangeKey.hasCapability(KeyCapability.SIGN));
         assertTrue(exchangeKey.hasCapability(KeyCapability.EXCHANGE));
         assertFalse(exchangeKey.hasCapability(KeyCapability.ENCRYPT));
@@ -166,10 +177,10 @@ class KeyTest {
         assertEquals(Dime.crypto.getDefaultSuiteName(), encryptionKey.getCryptoSuiteName());
         assertNotNull(encryptionKey.getSecret());
         assertNull(encryptionKey.getPublic());
-        List<KeyCapability> usage = encryptionKey.getCapability();
-        assertNotNull(usage);
-        assertTrue(usage.contains(KeyCapability.ENCRYPT));
-        assertEquals(1, usage.size());
+        List<KeyCapability> caps = encryptionKey.getCapability();
+        assertNotNull(caps);
+        assertTrue(caps.contains(KeyCapability.ENCRYPT));
+        assertEquals(1, caps.size());
         assertFalse(encryptionKey.hasCapability(KeyCapability.SIGN));
         assertFalse(encryptionKey.hasCapability(KeyCapability.EXCHANGE));
         assertTrue(encryptionKey.hasCapability(KeyCapability.ENCRYPT));
@@ -177,9 +188,9 @@ class KeyTest {
 
     @Test
     void keyCapabilityTest4() {
-        List<KeyCapability> use = List.of(KeyCapability.SIGN, KeyCapability.EXCHANGE);
+        List<KeyCapability> caps = List.of(KeyCapability.SIGN, KeyCapability.EXCHANGE);
         try {
-            Key.generateKey(use, -1, null, null, Dime.crypto.getDefaultSuiteName());
+            Key.generateKey(caps, Dime.NO_EXPIRATION, null, null, Dime.crypto.getDefaultSuiteName());
             fail("Expected exception never thrown.");
         } catch (IllegalArgumentException ignored) { /* All is well good */ }
         catch (Exception e) {
@@ -188,9 +199,9 @@ class KeyTest {
     }
 
     @Test
-    void keyUsageTest5() {
+    void keyCapabilityTest5() {
         try {
-            Key key1 = Key.generateKey(List.of(KeyCapability.SIGN));
+            Key key1 = Key.generateKey(KeyCapability.SIGN);
             String exported1 = key1.exportToEncoded();
             Key key2 = Item.importFromEncoded(exported1);
             assertNotNull(key2);
@@ -292,9 +303,10 @@ class KeyTest {
             key.sign(Commons.getAudienceKey());
             assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
             assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getAudienceKey()));
-            key.strip(Commons.getAudienceKey());
+            assertTrue(key.strip(Commons.getAudienceKey()));
             assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
-            assertEquals(IntegrityState.ERR_KEY_MISMATCH, key.verify(Commons.getAudienceKey()));
+            assertEquals(IntegrityState.FAILED_KEY_MISMATCH, key.verify(Commons.getAudienceKey()));
+            assertFalse(key.strip(Commons.getAudienceKey()));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
