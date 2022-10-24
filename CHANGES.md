@@ -1,12 +1,22 @@
 # CHANGES
 
+## Version 1.2.2 - 2022-10-25
+- Conforms to DiME data format version 1.001
+- Refactored verify methods to match C# interface
+- Cryptographic suite changed to 'DSC'
+  - Key encoded changes to Base64 (from Base58), massive performance gain
+  - 'STN' cryptographic suite still supported, need to set Crypto#setDefaultSuiteName(string) to use it as default
+  - Item links created using 'DSC' will not work in versions before 1.2.2
+  - Keys, Identities, IIRs (and Messages using 'pub') created using 'DSC' will not work in versions before 1.2.2
+- Instance method Item#thumbprint changes name to Item#generateThumbprint (code-breaking change)
+
 ## Version 1.2.1 - 2022-10-19
 - Minor clean up and fixes
 - Adds alien (cross platform) unit tests
 - First publish to Maven Central (updated build.gradle)
 
 ## Version 1.2.0 - 2022-10-11
-- Full implementation of DiME data format specification (v1)
+- Full implementation of DiME data format specification (1.000)
 - Grace period added to Dime as a global setting (this means breaking changes from 1.1.0 in verify methods)
 - Many methods marked as deprecated in version 1.1.1 and earlier removed
 - Introduces KeyRing to hold multiple keys and identities as trusted
