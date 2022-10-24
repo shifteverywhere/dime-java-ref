@@ -39,6 +39,9 @@ public final class ItemLink {
      */
     public final UUID uniqueId;
 
+    /**
+     * The cryptographic suite used to generate the item link.
+     */
     public final String cryptoSuiteName;
 
     /**
@@ -52,7 +55,7 @@ public final class ItemLink {
     /**
      * Creates an item link from the provided DiME item.
      * @param item The DiME item to create the item link from.
-     * @param cryptoSuiteName The name of the cryptographic suite used, may be null.
+     * @param cryptoSuiteName The name of the cryptographic suite to use, may be null.
      */
     public ItemLink(Item item, String cryptoSuiteName) {
         if (item == null) { throw new IllegalArgumentException("Provided item must not be null."); }
@@ -124,7 +127,7 @@ public final class ItemLink {
         try {
             return uniqueId.equals(item.getClaim(Claim.UID))
                     && itemIdentifier.equals(item.getHeader())
-                    && thumbprint.equals(item.generateThumbprint());
+                    && thumbprint.equals(item.generateThumbprint(cryptoSuiteName));
         } catch (CryptographyException e) {
             return false;
         }

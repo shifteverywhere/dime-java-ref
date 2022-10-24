@@ -248,14 +248,14 @@ public class Key extends Item {
     Key(UUID id, List<KeyCapability> use, byte[] key, byte[] pub, String suiteName) {
         setClaimValue(Claim.UID, id);
         setClaimValue(Claim.IAT, Utility.createTimestamp());
-        this._suiteName = suiteName;
+        this._suiteName = suiteName != null ? suiteName : Dime.crypto.getDefaultSuiteName();
         this._capabilities = use;
         setClaimValue(Claim.CAP, use.stream().map(aUse -> aUse.name().toLowerCase()).collect(toList()));
         if (key != null) {
-            setClaimValue(Claim.KEY, Key.packageKey(suiteName, Dime.crypto.encodeKey(key, suiteName)));
+            setClaimValue(Claim.KEY, Key.packageKey(suiteName, Dime.crypto.encodeKey(key, this._suiteName)));
         }
         if (pub != null) {
-            setClaimValue(Claim.PUB, Key.packageKey(suiteName, Dime.crypto.encodeKey(pub, suiteName)));
+            setClaimValue(Claim.PUB, Key.packageKey(suiteName, Dime.crypto.encodeKey(pub, this._suiteName)));
         }
     }
 
@@ -328,7 +328,7 @@ public class Key extends Item {
     }
 
     private static String packageKey(String suiteName, String encodedKey) {
-        return suiteName + Dime.COMPONENT_DELIMITER +encodedKey;
+        return suiteName + Dime.COMPONENT_DELIMITER + encodedKey;
     }
 
     private void decodeKey(String encoded, Claim claim) throws CryptographyException {

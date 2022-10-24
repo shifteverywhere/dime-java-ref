@@ -55,6 +55,7 @@ class ItemLinkTest {
             assertEquals(Key.HEADER, link.itemIdentifier);
             assertEquals(key.generateThumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
+            assertEquals("DSC", link.cryptoSuiteName);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -136,6 +137,7 @@ class ItemLinkTest {
             assertNotNull(encoded);
             String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.generateThumbprint();
             assertEquals(compare, encoded);
+            assertEquals("STN", link.cryptoSuiteName);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -160,6 +162,7 @@ class ItemLinkTest {
         assertEquals("DSC", key.getCryptoSuiteName());
         ItemLink link = new ItemLink(key, "STN");
         assertTrue(link.verify(key));
+        assertEquals("STN", link.cryptoSuiteName);
     }
 
     @Test
