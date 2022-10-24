@@ -74,7 +74,7 @@ class KeyTest {
             assertNotNull(key.getClaim(Claim.UID));
             try { key.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { key.putClaim(Claim.KEY, key.getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-            try { key.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { key.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey(), Dime.crypto.getDefaultSuiteName())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { key.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); key.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { key.putClaim(Claim.PUB, key.getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }

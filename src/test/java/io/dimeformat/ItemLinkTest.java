@@ -24,10 +24,10 @@ class ItemLinkTest {
     void itemLinkTest1() {
         try {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
-            ItemLink link = new ItemLink(key);
+            ItemLink link = new ItemLink(key, Dime.crypto.getDefaultSuiteName());
             assertNotNull(link);
             assertEquals(key.getHeader(), link.itemIdentifier);
-            assertEquals(key.thumbprint(), link.thumbprint);
+            assertEquals(key.generateThumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -50,10 +50,10 @@ class ItemLinkTest {
     void itemLinkTest3() {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
-            ItemLink link = new ItemLink(Key.HEADER, key.thumbprint(), key.getClaim(Claim.UID));
+            ItemLink link = new ItemLink(Key.HEADER, key.generateThumbprint(), key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
             assertNotNull(link);
             assertEquals(Key.HEADER, link.itemIdentifier);
-            assertEquals(key.thumbprint(), link.thumbprint);
+            assertEquals(key.generateThumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -65,23 +65,31 @@ class ItemLinkTest {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
             try {
-                new ItemLink(null, key.thumbprint(), key.getClaim(Claim.UID));
+                new ItemLink(null, key.generateThumbprint(), key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink("", key.thumbprint(), key.getClaim(Claim.UID));
+                new ItemLink("", key.generateThumbprint(), key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.HEADER, null, key.getClaim(Claim.UID));
+                new ItemLink(Key.HEADER, null, key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.HEADER, "", key.getClaim(Claim.UID));
+                new ItemLink(Key.HEADER, "", key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
             try {
-                new ItemLink(Key.HEADER, key.thumbprint(), null);
+                new ItemLink(Key.HEADER, key.generateThumbprint(), null, Dime.crypto.getDefaultSuiteName());
+                fail("Exception should have been thrown");
+            } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
+            try {
+                new ItemLink(Key.HEADER, key.generateThumbprint(), key.getClaim(Claim.UID),null);
+                fail("Exception should have been thrown");
+            } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
+            try {
+                new ItemLink(Key.HEADER, key.generateThumbprint(), key.getClaim(Claim.UID),"");
                 fail("Exception should have been thrown");
             } catch (IllegalArgumentException e) { /* All is well, carry on. */ }
         } catch (Exception e) {
@@ -96,9 +104,38 @@ class ItemLinkTest {
             ItemLink link = new ItemLink(key);
             String encoded = link.toEncoded();
             assertNotNull(encoded);
-            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
+            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.generateThumbprint() + "." + Dime.crypto.getDefaultSuiteName();
             assertEquals(compare, encoded);
-            assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
+            assertNotEquals(Commons.getAudienceKey().generateThumbprint(), link.thumbprint);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void toEncodedTest2() {
+        try {
+            Key key = Commons.getAudienceKey().publicCopy();
+            ItemLink link = new ItemLink(key.getHeader(), key.generateThumbprint(), key.getClaim(Claim.UID), Dime.crypto.getDefaultSuiteName());
+            String encoded = link.toEncoded();
+            assertNotNull(encoded);
+            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.generateThumbprint() + "." + Dime.crypto.getDefaultSuiteName();
+            assertEquals(compare, encoded);
+            assertNotEquals(Commons.getAudienceKey().generateThumbprint(), link.thumbprint);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void toEncodedTest3() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            ItemLink link = new ItemLink(key, "STN");
+            String encoded = link.toEncoded();
+            assertNotNull(encoded);
+            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.generateThumbprint();
+            assertEquals(compare, encoded);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -115,6 +152,14 @@ class ItemLinkTest {
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
+    }
+
+    @Test
+    void verifyTest2() {
+        Key key = Key.generateKey(KeyCapability.SIGN);
+        assertEquals("DSC", key.getCryptoSuiteName());
+        ItemLink link = new ItemLink(key, "STN");
+        assertTrue(link.verify(key));
     }
 
     @Test
@@ -140,21 +185,6 @@ class ItemLinkTest {
             assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links).isValid());
             assertFalse(ItemLink.verify(null, links).isValid());
             assertFalse(ItemLink.verify(items, null).isValid());
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-    }
-
-    @Test
-    void toEncodedTest2() {
-        try {
-            Key key = Commons.getAudienceKey().publicCopy();
-            ItemLink link = new ItemLink(key.getHeader(), key.thumbprint(), key.getClaim(Claim.UID));
-            String encoded = link.toEncoded();
-            assertNotNull(encoded);
-            String compare = key.getHeader() + "." + key.getClaim(Claim.UID).toString() + "." + key.thumbprint();
-            assertEquals(compare, encoded);
-            assertNotEquals(Commons.getAudienceKey().thumbprint(), link.thumbprint);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -206,6 +236,7 @@ class ItemLinkTest {
             assertEquals("KEY", link.itemIdentifier);
             assertEquals(UUID.fromString("c89b08d7-f472-4703-b5d3-3d23fd39e10d"), link.uniqueId);
             assertEquals("68cd898db0b2535c912f6aa5f565306991ba74760b2955e7fb8dc91fd45276bc", link.thumbprint);
+            assertEquals("STN", link.cryptoSuiteName);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -213,6 +244,21 @@ class ItemLinkTest {
 
     @Test
     void fromEncodedTest2() {
+        try {
+            String encoded = "KEY.c89b08d7-f472-4703-b5d3-3d23fd39e10d.68cd898db0b2535c912f6aa5f565306991ba74760b2955e7fb8dc91fd45276bc.DSC";
+            ItemLink link = ItemLink.fromEncoded(encoded);
+            assertNotNull(link);
+            assertEquals("KEY", link.itemIdentifier);
+            assertEquals(UUID.fromString("c89b08d7-f472-4703-b5d3-3d23fd39e10d"), link.uniqueId);
+            assertEquals("68cd898db0b2535c912f6aa5f565306991ba74760b2955e7fb8dc91fd45276bc", link.thumbprint);
+            assertEquals("DSC", link.cryptoSuiteName);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void fromEncodedTest3() {
         try {
             ItemLink.fromEncoded(Commons.PAYLOAD);
             fail("Exception should have been thrown");

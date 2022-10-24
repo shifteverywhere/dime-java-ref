@@ -74,7 +74,7 @@ class EnvelopeTest {
             assertNotNull(envelope.getClaim(Claim.UID));
             try { envelope.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { envelope.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-            try { envelope.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { envelope.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey(), Dime.crypto.getDefaultSuiteName())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { envelope.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); envelope.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { envelope.putClaim(Claim.PUB, Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
@@ -253,7 +253,7 @@ class EnvelopeTest {
         try {
             Envelope envelope = new Envelope();
             envelope.addItem(Commons.getIssuerKey());
-            assertNotNull(envelope.thumbprint());
+            assertNotNull(envelope.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -265,7 +265,7 @@ class EnvelopeTest {
             Envelope envelope = new Envelope(Commons.getIssuerIdentity().getClaim(Claim.SUB));
             envelope.addItem(Commons.getIssuerKey());
             envelope.sign(Commons.getIssuerKey());
-            assertNotNull(envelope.thumbprint());
+            assertNotNull(envelope.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -278,7 +278,7 @@ class EnvelopeTest {
             envelope1.addItem(Commons.getIssuerKey());
             String exported = envelope1.exportToEncoded();
             Envelope envelope2 = Envelope.importFromEncoded(exported);
-            assertEquals(envelope1.thumbprint(), envelope2.thumbprint());
+            assertEquals(envelope1.generateThumbprint(), envelope2.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -292,7 +292,7 @@ class EnvelopeTest {
             envelope1.sign(Commons.getIssuerKey());
             String exported = envelope1.exportToEncoded();
             Envelope envelope2 = Envelope.importFromEncoded(exported);
-            assertEquals(envelope1.thumbprint(), envelope2.thumbprint());
+            assertEquals(envelope1.generateThumbprint(), envelope2.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -304,7 +304,7 @@ class EnvelopeTest {
             Envelope envelope = new Envelope();
             envelope.addItem(Commons.getIssuerKey());
             String exported = envelope.exportToEncoded();
-            assertEquals(envelope.thumbprint(), Envelope.thumbprint(exported));
+            assertEquals(envelope.generateThumbprint(), Envelope.thumbprint(exported));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }
@@ -317,7 +317,7 @@ class EnvelopeTest {
             envelope.addItem(Commons.getIssuerKey());
             envelope.sign(Commons.getIssuerKey());
             String exported = envelope.exportToEncoded();
-            assertEquals(envelope.thumbprint(), Envelope.thumbprint(exported));
+            assertEquals(envelope.generateThumbprint(), Envelope.thumbprint(exported));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e); 
         }

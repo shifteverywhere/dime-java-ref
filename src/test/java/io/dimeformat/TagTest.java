@@ -74,7 +74,7 @@ class TagTest {
             assertNotNull(tag.getClaim(Claim.UID));
             try { tag.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { tag.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-            try { tag.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { tag.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey(), Dime.crypto.getDefaultSuiteName())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { tag.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); tag.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { tag.putClaim(Claim.PUB,  Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
@@ -239,19 +239,19 @@ class TagTest {
             ItemLink link0 = links.get(0);
             assertEquals(Commons.getTrustedIdentity().getHeader(), link0.itemIdentifier);
             assertEquals(Commons.getTrustedIdentity().getClaim(Claim.UID), link0.uniqueId);
-            assertEquals(Commons.getTrustedIdentity().thumbprint(), link0.thumbprint);
+            assertEquals(Commons.getTrustedIdentity().generateThumbprint(), link0.thumbprint);
             ItemLink link1 = links.get(1);
             assertEquals(Commons.getIntermediateIdentity().getHeader(), link1.itemIdentifier);
             assertEquals(Commons.getIntermediateIdentity().getClaim(Claim.UID), link1.uniqueId);
-            assertEquals(Commons.getIntermediateIdentity().thumbprint(), link1.thumbprint);
+            assertEquals(Commons.getIntermediateIdentity().generateThumbprint(), link1.thumbprint);
             ItemLink link2 = links.get(2);
             assertEquals(Commons.getIssuerIdentity().getHeader(), link2.itemIdentifier);
             assertEquals(Commons.getIssuerIdentity().getClaim(Claim.UID), link2.uniqueId);
-            assertEquals(Commons.getIssuerIdentity().thumbprint(), link2.thumbprint);
+            assertEquals(Commons.getIssuerIdentity().generateThumbprint(), link2.thumbprint);
             ItemLink link3 = links.get(3);
             assertEquals(Commons.getAudienceKey().getHeader(), link3.itemIdentifier);
             assertEquals(Commons.getAudienceKey().getClaim(Claim.UID), link3.uniqueId);
-            assertEquals(Commons.getAudienceKey().thumbprint(), link3.thumbprint);
+            assertEquals(Commons.getAudienceKey().generateThumbprint(), link3.thumbprint);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

@@ -82,7 +82,7 @@ class IdentityIssuingRequestTest {
             assertNotNull(iir.getClaim(Claim.UID));
             try { iir.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { iir.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-            try { iir.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { iir.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey(), Dime.crypto.getDefaultSuiteName())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { iir.putClaim(Claim.MIM, Commons.MIMETYPE); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { iir.putClaim(Claim.PUB, Commons.getAudienceKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
         } catch (Exception e) {
@@ -209,10 +209,10 @@ class IdentityIssuingRequestTest {
     void thumbprintTest1() {
         try {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
-            String thumbprint = iir.thumbprint();
+            String thumbprint = iir.generateThumbprint();
             //assertTrue(thumbprint != null);
             assertTrue(thumbprint.length() > 0);
-            assertEquals(thumbprint, iir.thumbprint());
+            assertEquals(thumbprint, iir.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -223,7 +223,7 @@ class IdentityIssuingRequestTest {
         try {
             IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
             IdentityIssuingRequest iir2 = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
-            assertNotEquals(iir1.thumbprint(), iir2.thumbprint(), "Thumbprints of different IIRs should not be the same");
+            assertNotEquals(iir1.generateThumbprint(), iir2.generateThumbprint(), "Thumbprints of different IIRs should not be the same");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

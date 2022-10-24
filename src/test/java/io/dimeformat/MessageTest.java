@@ -79,7 +79,7 @@ class MessageTest {
             assertNotNull(message.getClaim(Claim.UID));
             try { message.putClaim(Claim.CAP, List.of(KeyCapability.ENCRYPT)); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { message.putClaim(Claim.KEY, Commons.getIssuerKey().getSecret()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-            try { message.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { message.putClaim(Claim.LNK, new ItemLink(Commons.getIssuerKey(), Dime.crypto.getDefaultSuiteName())); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { Map<String, Object> pri = new HashMap<>(); pri.put("tag", Commons.PAYLOAD); message.putClaim(Claim.PRI, pri); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
             try { message.putClaim(Claim.PUB, Commons.getIssuerKey().getPublic()); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
         } catch (Exception e) {
@@ -562,11 +562,11 @@ class MessageTest {
             Message message1 = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message1.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             message1.sign(Commons.getIssuerKey());
-            String thumbprint1 = message1.thumbprint();
+            String thumbprint1 = message1.generateThumbprint();
             String encoded = message1.exportToEncoded();
             Message message2 = Item.importFromEncoded(encoded);
             assertNotNull(message2);
-            String thumbprint2 = message2.thumbprint();
+            String thumbprint2 = message2.generateThumbprint();
             assertEquals(thumbprint1, thumbprint2);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -585,7 +585,7 @@ class MessageTest {
             Message issuerMessage2 = new Message(receiver.getClaim(Claim.SUB), issuer.getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             issuerMessage2.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage2.sign(Commons.getIssuerKey());
-            assertNotEquals(issuerMessage1.thumbprint(), issuerMessage2.thumbprint());
+            assertNotEquals(issuerMessage1.generateThumbprint(), issuerMessage2.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -596,7 +596,7 @@ class MessageTest {
         try {
             Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
             message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
-            message.thumbprint();
+            message.generateThumbprint();
         } catch (IllegalStateException e) {
             /* All is well */
         } catch (Exception e) {
