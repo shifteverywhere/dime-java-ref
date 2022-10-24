@@ -146,15 +146,14 @@ class DimeTest {
     @Test
     void setOverrideTimeTest1() {
         try {
-            Key key = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTExVDE3OjUwOjUyLjY3MjU2OVoiLCJpYXQiOiIyMDIyLTEwLTExVDE3OjQ5OjUyLjY3MjU2OVoiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJrZXkiOiJTVE4uM3pudGNLZXZjVTVZcnlkaEcxRzNVMnR4V01aajhjNWZTRnp3SDczQjlMWXJFSlBZcnFubjJ6WWlyTmNnSFltc2o2M3FFR0x1aWtIODE2M2JnRldCUWFRQmdOR3pZIiwicHViIjoiU1ROLkpvYmVyVkEybXgxeXJyQU5GRnVzRFc4Q2gyc2RmenZCTXNSMmJ3UUhTdjVBcGtVUUwiLCJ1aWQiOiJiM2JkMmRkNi0wNTEyLTQ2NWYtOTgxNi1iNjZhZGUxNjc2YWQifQ.YjkyMjMwYzBkNTY0YjU0NS45ZDI5MmQ4Y2FkMDY3YWE2MTFiMDhjMTU5YjEwOTVlYjg3NmIyYzg4NmY4YzE5Yjk2NzIzNWM1MDI0NzExMDg4YzMwNGFlZGIwOThjNDA3ZDFlOGYxNTU5N2M0ZGNjYmRhNmYyNjdjYzE2YjkwM2E2MThiMTZlYWIyYmQwODYwMw");
+            Key key = Item.importFromEncoded("Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJleHAiOiIyMDIyLTEwLTExVDE3OjUwOjUyLjY3MjU2OVoiLCJpYXQiOiIyMDIyLTEwLTExVDE3OjQ5OjUyLjY3MjU2OVoiLCJpc3MiOiJlZjRkNWJmMC1mOWVkLTQzZTktYmE3ZC0wMGNkNDEwYzJmMmMiLCJrZXkiOiJTVE4uM3pudGNLZXZjVTVZcnlkaEcxRzNVMnR4V01aajhjNWZTRnp3SDczQjlMWXJFSlBZcnFubjJ6WWlyTmNnSFltc2o2M3FFR0x1aWtIODE2M2JnRldCUWFRQmdOR3pZIiwicHViIjoiU1ROLkpvYmVyVkEybXgxeXJyQU5GRnVzRFc4Q2gyc2RmenZCTXNSMmJ3UUhTdjVBcGtVUUwiLCJ1aWQiOiJiM2JkMmRkNi0wNTEyLTQ2NWYtOTgxNi1iNjZhZGUxNjc2YWQifQ");
             assertNotNull(key);
-            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verifyDates());
             Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:51.000000Z"));
-            assertEquals(IntegrityState.FAILED_USED_BEFORE_ISSUED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_BEFORE_ISSUED, key.verifyDates());
             Dime.setOverrideTime(Instant.parse("2022-10-11T17:49:53.000000Z"));
-            assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
             Dime.setOverrideTime(null);
-            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, key.verifyDates());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

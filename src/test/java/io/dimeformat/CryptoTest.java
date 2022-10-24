@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.enums.Claim;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
