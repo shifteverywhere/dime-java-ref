@@ -119,9 +119,9 @@ public class Message extends Data {
     }
 
     @Override
-    public String thumbprint() throws CryptographyException {
+    public String generateThumbprint() throws CryptographyException {
         if (!isSigned()) { throw new IllegalStateException("Unable to generate thumbprint, must be signed first."); }
-        return super.thumbprint();
+        return super.generateThumbprint();
     }
 
     /**

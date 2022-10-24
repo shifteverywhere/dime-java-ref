@@ -56,7 +56,6 @@ public final class Crypto {
         return _defaultSuiteName;
     }
 
-
     /**
      * Will generate a unique key name from the provided key. This will be used to extract which key was used to
      * create a signature. How a key name is generated is specific to the cryptographic suite used.

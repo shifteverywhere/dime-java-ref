@@ -229,7 +229,7 @@ public class Envelope extends Item {
      * @throws CryptographyException If something goes wrong.
      */
     @Override
-    public String thumbprint() throws CryptographyException {
+    public String generateThumbprint() throws CryptographyException {
         try {
             return Envelope.thumbprint(encoded(!isAnonymous()));
         } catch (InvalidFormatException e) {

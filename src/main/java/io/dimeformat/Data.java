@@ -118,9 +118,9 @@ public class Data extends Item {
     }
 
     @Override
-    public String thumbprint() throws CryptographyException {
+    public String generateThumbprint() throws CryptographyException {
         if (payload == null) { throw new IllegalStateException("Unable to generate thumbprint, no payload added."); }
-        return super.thumbprint();
+        return super.generateThumbprint();
     }
 
     /// PACKAGE-PRIVATE ///

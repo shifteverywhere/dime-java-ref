@@ -163,13 +163,25 @@ public abstract class Item {
     /**
      * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
      * changed. This is created by securely hashing the item and will be unique and change as soon as any content
-     * changes.
-     * @return The hash of the item as a hex string.
+     * changes. The encoded format of the returned string is determined by the default cryptographic suite.
+     * @return The hash of the item as an encoded string.
      * @throws CryptographyException If something goes wrong.
      */
-    public String thumbprint() throws CryptographyException {
+    public String generateThumbprint() throws CryptographyException {
+        return generateThumbprint(Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
+     * changed. This is created by securely hashing the item and will be unique and change as soon as any content
+     * changes. The encoded format of the returned string is determined by the cryptographic suite specified.
+     * @param suiteName The name of the cryptographic suite to use, may be null.
+     * @return The hash of the item as an encoded string.
+     * @throws CryptographyException If something goes wrong.
+     */
+    public String generateThumbprint(String suiteName) throws CryptographyException {
         try {
-            return Item.thumbprint(encoded(true));
+            return Item.thumbprint(encoded(true), suiteName);
         } catch (InvalidFormatException e) {
             throw new CryptographyException("Unable to generate thumbprint for item, data invalid.");
         }
@@ -179,7 +191,7 @@ public abstract class Item {
      * Returns the thumbprint of a DiME encoded item string. This may be used to easily identify an item or detect if
      * an item has been changed. This is created by securely hashing the item and will be unique and change as soon as
      * any content changes. This will generate the same value as the instance method thumbprint for the same (and
-     * unchanged) item.
+     * unchanged) item. The encoded format of the returned string is determined by the default cryptographic suite.
      * @param encoded The DiME encoded item string.
      * @return The hash of the item as a hex string.
      * @throws CryptographyException If something goes wrong.
@@ -193,6 +205,7 @@ public abstract class Item {
      *  an item has been changed. This is created by securely hashing the item and will be unique and change as soon as
      *  any content changes. This will generate the same value as the instance method thumbprint for the same (and
      *  unchanged) item. If no cryptographic suite name is provided, then the suite set as default will be used.
+     *  The encoded format of the returned string is determined by the cryptographic suite specified.
      * @param encoded The DiME encoded item string.
      * @param suiteName The name of the cryptographic suite to use, may be null.
      * @return The hash of the item as a hex string.
@@ -346,7 +359,7 @@ public abstract class Item {
         if (this.itemLinks == null) {
             this.itemLinks = new ArrayList<>();
         }
-        this.itemLinks.add(new ItemLink(item));
+        this.itemLinks.add(new ItemLink(item, Dime.crypto.getDefaultSuiteName()));
     }
 
     /**
@@ -358,7 +371,7 @@ public abstract class Item {
         if (items == null) { throw new IllegalArgumentException("Items to link with must not be null."); }
         this.itemLinks = new ArrayList<>();
         for (Item item: items) {
-            this.itemLinks.add(new ItemLink(item));
+            this.itemLinks.add(new ItemLink(item, Dime.crypto.getDefaultSuiteName()));
         }
     }
 
