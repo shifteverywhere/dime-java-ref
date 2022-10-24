@@ -34,7 +34,7 @@ class DimeTest {
 
     @Test
     void versionTest1() {
-        assertEquals(1, Dime.VERSION);
+        assertEquals("1.001", Dime.VERSION);
     }
 
     @Test
