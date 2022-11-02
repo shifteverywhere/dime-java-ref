@@ -231,7 +231,7 @@ public abstract class Item {
      * key in the provided identity. The verification will also check if the item has been issued by the provided
      * identity, if the "iss" claim has been set.
      * @param issuingIdentity The issuing identity to use when verifying.
-     * @param linkedItems
+     * @param linkedItems A list of item where item links should be verified, may be null.
      * @return The integrity state of the verification.
      */
     public IntegrityState verify(Identity issuingIdentity, List<Item> linkedItems) {

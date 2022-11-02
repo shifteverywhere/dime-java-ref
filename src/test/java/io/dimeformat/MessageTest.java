@@ -10,6 +10,7 @@
 package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
+import io.dimeformat.exceptions.CryptographyException;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.InvalidFormatException;
 import io.dimeformat.enums.KeyCapability;
@@ -490,6 +491,55 @@ class MessageTest {
             fail("Unexpected exception thrown: " + e);
         }
         fail("Should not happen.");
+    }
+
+    @Test
+    void setPayloadTest7() {
+        try {
+            Key key1 = Key.generateKey(KeyCapability.EXCHANGE);
+            Message message = new Message();
+            Key key2 = message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key1.publicCopy());
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key1.publicCopy(), key2);
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key1), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key1, key2.publicCopy()), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key2.publicCopy(), key1), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key1.publicCopy(), key2), StandardCharsets.UTF_8));
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key2, key1.publicCopy()), StandardCharsets.UTF_8));
+            try { message.getPayload(key2); fail("Exception not thrown."); } catch (CryptographyException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void setPayloadTest8() {
+        try {
+            Message message = new Message();
+            Key keyExchange = Key.generateKey(KeyCapability.EXCHANGE);
+            Key keySign = Key.generateKey(KeyCapability.SIGN);
+            // setPayload
+            try { message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), (Key) null); fail("Exception not thrown."); } catch (NullPointerException e) { /* all is well */ }
+            try { message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), keyExchange); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+            try { message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), keySign); fail("Exception not thrown."); } catch (CryptographyException e) { /* all is well */ }
+            // getPayload
+            try { message.getPayload(null); fail("Exception not thrown."); } catch (NullPointerException e) { /* all is well */ }
+            try { message.getPayload(keyExchange); fail("Exception not thrown."); } catch (IllegalStateException e) { /* all is well */ }
+            try { message.getPayload(keySign); fail("Exception not thrown."); } catch (CryptographyException e) { /* all is well */ }
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void setPayloadTest9() {
+        try {
+            Key key = Key.generateKey(KeyCapability.ENCRYPT);
+            Message message = new Message();
+            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), key);
+            assertEquals(Commons.PAYLOAD, new String(message.getPayload(key), StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
     @Test

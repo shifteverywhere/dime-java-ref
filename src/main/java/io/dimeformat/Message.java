@@ -125,33 +125,93 @@ public class Message extends Data {
     }
 
     /**
-     * Will encrypt and attach a payload using a shared encryption key between the issuer and audience of a message.
+     * Will encrypt and attach a payload using a shared encryption key generated from the provided keys. The two keys
+     * provided must not be null and only one must contain a secret (private) key, the order does not matter.
      * @param payload The payload to encrypt and attach to the message, must not be null and of length 1 or longer.
-     * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
-     * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
+     * @param firstKey The first key to use, must have capability EXCHANGE, must not be null.
+     * @param secondKey The second key to use, must have capability EXCHANGE, must not be null.
      * @throws CryptographyException If something goes wrong.
      */
-    public void setPayload(byte[] payload, Key issuerKey, Key audienceKey) throws CryptographyException {
+    public void setPayload(byte[] payload, Key firstKey, Key secondKey) throws CryptographyException {
         throwIfSigned();
         if (payload == null || payload.length == 0) { throw new IllegalArgumentException("Unable to set payload, payload must not be null or empty."); }
-        if (issuerKey == null) { throw new IllegalArgumentException("Unable to encrypt, issuer key must not be null."); }
-        if (audienceKey == null) { throw new IllegalArgumentException("Unable to encrypt, audience key must not be null."); }
-        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyCapability.ENCRYPT));
+        if (firstKey == null || secondKey == null) { throw new IllegalArgumentException("Unable to set payload, both keys must be of a non-null value."); }
+        if (firstKey.getSecret() != null && secondKey.getSecret() != null) { throw new IllegalArgumentException("Unable to set payload, both keys must not contain a secret (private) key."); }
+        Key primaryKey = firstKey.getSecret() != null ? firstKey : secondKey;
+        Key secondaryKey = secondKey.getSecret() == null ? secondKey : firstKey;
+        Key sharedKey = primaryKey.generateSharedSecret(secondaryKey, List.of(KeyCapability.ENCRYPT));
         setPayload(Dime.crypto.encrypt(payload, sharedKey));
     }
 
     /**
-     * Returns the decrypted message payload, if it is able to decrypt it.
-     * @param issuerKey This is the key of the issuer of the message, must be of type EXCHANGE, must not be null.
-     * @param audienceKey This is the key of the audience of the message, must be of type EXCHANGE, must not be null.
-     * @return The message payload.
+     * Will encrypt and attach a payload using the private key. The provided key may either have the capability EXCHANGE
+     * or ENCRYPT. If EXCHANGE is used, then a second key will be generated and then used to generate a shared
+     * encryption key with the provided key. The public key of the generated EXCHANGE key will be set in the "pub" claim
+     * ({@link #getPublicKey()}), but also returned.
+     * If a key with capability ENCRYPT is used, then the payload will be encrypted with this key. This key will then be
+     * returned. The unique id of the encryption key will be set in the key id ("kid") claim.
+     * @param payload The payload to encrypt and attach to the message, must not be null and of length 1 or longer.
+     * @param key A key to either use for generating a shared key (EXCHANGE) or encrypting the message directly (ENCRYPT).
+     * @return The generated EXCHANGE key, or the encryption key (if provided key had capability ENCRYPT).
      * @throws CryptographyException If something goes wrong.
      */
-    public byte[] getPayload(Key issuerKey, Key audienceKey) throws CryptographyException {
-        if (issuerKey == null) { throw new IllegalArgumentException("Provided issuer key may not be null."); }
-        if (audienceKey == null) { throw new IllegalArgumentException("Provided audience key may not be null."); }
-        Key sharedKey = issuerKey.generateSharedSecret(audienceKey, List.of(KeyCapability.ENCRYPT));
+    public Key setPayload(byte[] payload, Key key) throws CryptographyException {
+        if (key == null) { throw new NullPointerException("Unable to set payload, key must not be null"); }
+        if (key.hasCapability(KeyCapability.EXCHANGE)) {
+            if (key.getSecret() != null) { throw new IllegalArgumentException("Unable to set payload, key should not contain a secret (or private) key."); }
+            Key firstKey = Key.generateKey(KeyCapability.EXCHANGE);
+            setPayload(payload, firstKey, key);
+            setPublicKey(firstKey.publicCopy());
+            return firstKey;
+        } else if (key.hasCapability(KeyCapability.ENCRYPT)) {
+            setPayload(Dime.crypto.encrypt(payload, key));
+            putClaim(Claim.KID, key.getClaim(Claim.KID));
+            return key;
+        }
+        throw new CryptographyException("Key capability mismatch.");
+    }
+
+    /**
+     * Returns the decrypted message payload, if it is able to decrypt it. Two keys must be provided, where only one of
+     * the keys may contain a secret (private), the order does not matter. The keys provided must be the same as when
+     * used {@link #setPayload(byte[], Key, Key)} or equivalent, although it may be the opposite pair of public and
+     * public/secret.
+     * @param firstKey The first key to use, must be of type EXCHANGE, must not be null.
+     * @param secondKey The second key to use, must be of type EXCHANGE, must not be null.
+     * @return The decrypted message payload.
+     * @throws CryptographyException If something goes wrong.
+     */
+    public byte[] getPayload(Key firstKey, Key secondKey) throws CryptographyException {
+        if (firstKey == null || secondKey == null) { throw new IllegalArgumentException("Unable to get payload, both keys must be of a non-null value."); }
+        if (firstKey.getSecret() != null && secondKey.getSecret() != null) { throw new IllegalArgumentException("Unable to get payload, both keys must not contain a secret (private) key."); }
+        Key primaryKey = firstKey.getSecret() != null ? firstKey : secondKey;
+        Key secondaryKey = secondKey.getSecret() == null ? secondKey : firstKey;
+        try {
+            Key sharedKey = secondaryKey.generateSharedSecret(primaryKey, List.of(KeyCapability.ENCRYPT));
+            return Dime.crypto.decrypt(getPayload(), sharedKey);
+        } catch (CryptographyException e) { /* ignored */ }
+        Key sharedKey = primaryKey.generateSharedSecret(secondaryKey, List.of(KeyCapability.ENCRYPT));
         return Dime.crypto.decrypt(getPayload(), sharedKey);
+    }
+
+    /**
+     * Returns the decrypted message payload, if it is able to decrypt it. The provided key may either have the
+     * capability EXCHANGE or ENCRYPT. If EXCHANGE is used, then the "pub" claim will be used as a source for the second
+     * exchange key to use when generating a shared encryption key.
+     * If the key has capability ENCRYPT, then the payload will be decrypted using the provided key directly.
+     * @param key A key to either use for generating a shared key (EXCHANGE) or decrypting the message directly (ENCRYPT).
+     * @return The decrypted message payload.
+     * @throws CryptographyException If something goes wrong.
+     */
+    public byte[] getPayload(Key key) throws CryptographyException {
+        if (key == null) { throw new NullPointerException("Unable to get payload, key must not be null"); }
+        if (key.hasCapability(KeyCapability.EXCHANGE)) {
+            if (getClaim(Claim.PUB) == null) { throw new IllegalStateException("Unable to get payload, no public key attached to message."); }
+            return getPayload(getPublicKey(), key);
+        } else if (key.hasCapability(KeyCapability.ENCRYPT)) {
+            return Dime.crypto.decrypt(getPayload(), key);
+        }
+        throw new CryptographyException("Key capability mismatch.");
     }
 
     /// PACKAGE-PRIVATE ///
