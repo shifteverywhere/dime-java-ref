@@ -353,6 +353,32 @@ class IdentityIssuingRequestTest {
     }
 
     @Test
+    void capabilityTest7() {
+        try {
+            IdentityCapability[] allCapabilities = new IdentityCapability[] {
+                    IdentityCapability.GENERIC,
+                    IdentityCapability.IDENTIFY,
+                    IdentityCapability.ISSUE,
+                    IdentityCapability.PROVE,
+                    IdentityCapability.SEAL,
+                    IdentityCapability.SELF,
+                    IdentityCapability.TIMESTAMP
+            };
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, allCapabilities).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME);
+            assertTrue(identity.hasCapability(IdentityCapability.GENERIC));
+            assertTrue(identity.hasCapability(IdentityCapability.IDENTIFY));
+            assertTrue(identity.hasCapability(IdentityCapability.ISSUE));
+            assertTrue(identity.hasCapability(IdentityCapability.PROVE));
+            assertTrue(identity.hasCapability(IdentityCapability.SEAL));
+            assertTrue(identity.hasCapability(IdentityCapability.SELF));
+            assertTrue(identity.hasCapability(IdentityCapability.TIMESTAMP));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
     void principlesTest1() {
         try {
             Map<String, Object> principles = new HashMap<>();
