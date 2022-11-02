@@ -26,6 +26,7 @@ class Commons {
     public static final String MIMETYPE = "text/plain";
     public static final String CONTEXT = "test-context";
     public static final String SIGN_KEY_CONTEXT = "id-key";
+    public static final String ISSUER_URL = "https://example.dimeformat.io";
 
     public static String fullHeaderFor(String itemIdentifier) {
         return Envelope.HEADER + ":" + itemIdentifier;

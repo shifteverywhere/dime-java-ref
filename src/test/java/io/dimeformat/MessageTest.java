@@ -66,6 +66,8 @@ class MessageTest {
             assertNotNull(message.getClaim(Claim.IAT));
             message.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(message.getClaim(Claim.ISS));
+            message.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(message.getClaim(Claim.ISU));
             message.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(message.getClaim(Claim.KID));
             message.putClaim(Claim.MIM, Commons.MIMETYPE);

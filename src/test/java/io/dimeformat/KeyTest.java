@@ -62,6 +62,8 @@ class KeyTest {
             assertNotNull(key.getClaim(Claim.IAT));
             key.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(key.getClaim(Claim.ISS));
+            key.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(key.getClaim(Claim.ISU));
             key.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(key.getClaim(Claim.KID));
             key.putClaim(Claim.MTD, new String[] { "abc", "def" });

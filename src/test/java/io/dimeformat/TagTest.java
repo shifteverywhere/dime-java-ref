@@ -62,6 +62,8 @@ class TagTest {
             assertNotNull(tag.getClaim(Claim.IAT));
             tag.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(tag.getClaim(Claim.ISS));
+            tag.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(tag.getClaim(Claim.ISU));
             tag.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(tag.getClaim(Claim.KID));
             tag.putClaim(Claim.MTD, new String[] { "abc", "def" });

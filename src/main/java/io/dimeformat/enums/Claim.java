@@ -15,71 +15,78 @@ package io.dimeformat.enums;
 public enum Claim {
 
     /**
-     * Ambit
+     * Ambit - Describes the region, location or boundaries where the item is intended or valid (All).
      */
     AMB,
     /**
-     * Audience
+     * Audience ID - The identifier of the indented receiver, or audience, of the item (All).
      */
     AUD,
     /**
-     * Capability
+     * Capability - Describes the capabilities, or usages/constrains, of an item (Identity, Identity Issuing Request,
+     * Key).
      */
     CAP,
     /**
-     * Context
+     * Context - The context for in which the item is to be used or valid (All).
      */
     CTX,
     /**
-     * Expires at
+     * Expires at - The date and time when the item should be considered invalid and should no longer be used (All).
      */
     EXP,
     /**
-     * Issued at
+     * Issued at - The date and time when the item should be considered valid and only used after (until expires at, if
+     * specified) (All).
      */
     IAT,
     /**
-     * Issuer
+     * Issuer ID - The identifier of the issuer of the item (All).
      */
     ISS,
     /**
-     * Key
+     * Issuer URL - A URL or other form of resource locator where the issuer identity or public key may be fetched (All).
+     */
+    ISU,
+    /**
+     * Secret key - A secret key in raw format, may be a private key or a shared key (Key).
      */
     KEY,
     /**
-     * Key ID
+     * Key ID - The identifier of a key that is related to the item (All).
      */
     KID,
     /**
-     * Link
+     * Item links - Item links to other items that has been securely linked to the item (All).
      */
     LNK,
     /**
-     * MIME type
+     * MIME type - The MIME type of any payload that is attached to the item (Data, Message).
      */
     MIM,
     /**
-     * Method
+     * Method - Intended for use with external systems and data formats. Will be specified further in the future (All).
      */
     MTD,
     /**
-     * Public key
+     * Public key - A public key in raw format (Identity, Identity Issuing Request, Key, Message).
      */
     PUB,
     /**
-     * Principles
+     * Principle information - A key-value object with further information related to the principle related to the item
+     * (Identity, Identity Issuing Request).
      */
     PRI,
     /**
-     * Subject
+     * Subject ID - The identifier of the subject related to the item (All).
      */
     SUB,
     /**
-     * System
+     * System name - The name of the system where the item originated from or belongs to (All).
      */
     SYS,
     /**
-     * Unique ID
+     * Unique ID - A unique identifier for the item (All).
      */
     UID;
 

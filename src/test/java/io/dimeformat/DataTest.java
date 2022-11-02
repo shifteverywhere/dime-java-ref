@@ -92,6 +92,8 @@ class DataTest {
             assertNotNull(data.getClaim(Claim.IAT));
             data.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(data.getClaim(Claim.ISS));
+            data.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(data.getClaim(Claim.ISU));
             data.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(data.getClaim(Claim.KID));
             data.putClaim(Claim.MIM, Commons.MIMETYPE);

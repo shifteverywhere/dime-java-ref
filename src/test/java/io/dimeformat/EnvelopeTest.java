@@ -62,6 +62,8 @@ class EnvelopeTest {
             assertNotNull(envelope.getClaim(Claim.IAT));
             envelope.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(envelope.getClaim(Claim.ISS));
+            envelope.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(envelope.getClaim(Claim.ISU));
             envelope.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(envelope.getClaim(Claim.KID));
             envelope.putClaim(Claim.MTD, new String[] { "abc", "def" });

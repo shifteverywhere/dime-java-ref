@@ -61,6 +61,8 @@ class IdentityTest {
             assertNotNull(identity.getClaim(Claim.IAT));
             identity.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(identity.getClaim(Claim.ISS));
+            identity.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(identity.getClaim(Claim.ISU));
             identity.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(identity.getClaim(Claim.KID));
             identity.putClaim(Claim.MTD, new String[] { "abc", "def" });

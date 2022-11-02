@@ -66,6 +66,8 @@ class IdentityIssuingRequestTest {
             assertNotNull(iir.getClaim(Claim.IAT));
             iir.putClaim(Claim.ISS, UUID.randomUUID());
             assertNotNull(iir.getClaim(Claim.ISS));
+            iir.putClaim(Claim.ISU, Commons.ISSUER_URL);
+            assertNotNull(iir.getClaim(Claim.ISU));
             iir.putClaim(Claim.KID, UUID.randomUUID());
             assertNotNull(iir.getClaim(Claim.KID));
             iir.putClaim(Claim.MTD, new String[] { "abc", "def" });
