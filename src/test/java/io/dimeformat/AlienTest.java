@@ -14,12 +14,10 @@ import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.Test;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

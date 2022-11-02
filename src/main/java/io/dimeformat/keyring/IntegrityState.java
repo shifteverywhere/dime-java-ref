@@ -17,60 +17,77 @@ import io.dimeformat.Item;
 public enum IntegrityState {
 
     /**
-     * The integrity of the item was verified successfully, item can be trusted.
+     * All parts of the DiME item was successfully verified and the item may be trusted.
      */
     COMPLETE,
     /**
-     * Signature validated is correct and item is intact (data integrity).
+     * All parts of the DiME item was successfully verified. However, not all linked items where verified, although, those
+     * that where was successful.
+     */
+    PARTIALLY_COMPLETE,
+    /**
+     * All verified parts of the DiME item was successful. However, some parts where skipped, like linked items as no
+     * list of items where provided.
+     */
+    INTACT,
+    /**
+     * The signature of the DiME item was verified successfully. No other parts where verified.
      */
     VALID_SIGNATURE,
     /**
-     * Dates validated are correct and item within its validity period.
+     * The dates (issued at and/or expires at) in the DiME item were verified successfully. No other parts where verified.
      */
     VALID_DATES,
     /**
-     * Item links validated are correct.
+     * Any linked items where verified successfully against a provided item list. No items where skipped or missing. No
+     * other parts where verified.
      */
     VALID_ITEM_LINKS,
     /**
-     * Signature is missing from the item being verified.
+     * All linked items where verified successfully against a provided item list. Any list, linked items or provided
+     * items, may contain items not in the other list. No other parts where verified.
+     */
+    PARTIALLY_VALID_ITEM_LINKS,
+    /**
+     * Unable to verify the digital signature, as the DiME item did not contain a signature.
      */
     FAILED_NO_SIGNATURE,
     /**
-     * The item could not be verified to be trusted.
+     * The digital signature could not be successfully verified, and, thus the DiME item must not be trusted.
      */
     FAILED_NOT_TRUSTED,
     /**
-     * The key or keys used to verify the item does not match any signatures in that item.
+     * The public key used to verify the DiME item does not match the key pair used to generate the digital signature.
      */
     FAILED_KEY_MISMATCH,
     /**
-     * The issuer id of the item does not match the subject id of the identity used for verification.
+     * The issuer ID ("iss") in the DiME identity used when verifying does not match issuer ID ("iss") set in the item
+     * verified.
      */
     FAILED_ISSUER_MISMATCH,
     /**
-     * The item verified has passed its own expiration date and should not be used or trusted.
+     * The expiration date ("exp") set in the DiME item verified has passed, and the item should no longer be used.
      */
     FAILED_USED_AFTER_EXPIRED,
     /**
-     * The item verified has not yet passed its issued at date and should not yet be used.
+     * The issued at date ("iat") set in the DiME item has not yet passed, and the item should not be used yet.
      */
     FAILED_USED_BEFORE_ISSUED,
     /**
-     * There is a mismatch in the expires at and issued at dates in the item. Item should not be used or trusted.
+     * The dates set in the DiME item verified are incorrect, where the issued at date ("iat") is after the expiration
+     * date ("exp").
      */
     FAILED_DATE_MISMATCH,
     /**
-     * Any or all linked items could not be verified successfully. Full integrity of the item could not be verified,
-     * should not be trusted.
+     * One, or several, linked items could not be verified successfully.
      */
     FAILED_LINKED_ITEM_FAULT,
     /**
-     * There is a mismatch in item links and provided items.
+     * Provided item list to verify linked items contains additional, non-linked, items.
      */
     FAILED_LINKED_ITEM_MISMATCH,
     /**
-     * No linked items found, so verification could not be completed.
+     * No linked items found when verifying with a provided item list.
      */
     FAILED_LINKED_ITEM_MISSING,
     /**
@@ -91,7 +108,13 @@ public enum IntegrityState {
      * @return True if valid, false otherwise.
      */
     public boolean isValid() {
-        return this == COMPLETE || this == VALID_SIGNATURE || this == VALID_DATES || this == VALID_ITEM_LINKS;
+        return this == COMPLETE
+                || this == PARTIALLY_COMPLETE
+                || this == INTACT
+                || this == VALID_SIGNATURE
+                || this == VALID_DATES
+                || this == VALID_ITEM_LINKS
+                || this == PARTIALLY_VALID_ITEM_LINKS;
     }
 
 }

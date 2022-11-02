@@ -274,18 +274,21 @@ public abstract class Item {
      * @return The integrity state of the verification.
      */
     public IntegrityState verify(Key verifyKey, List<Item> linkedItems) {
-        IntegrityState state = verifySignature(verifyKey);
+        IntegrityState state = verifyDates();
         if (!state.isValid()) {
             return state;
         }
+        boolean partiallyIntact = false;
         if (linkedItems != null) {
             state = verifyLinkedItems(linkedItems);
             if (!state.isValid()) {
                 return state;
             }
+            partiallyIntact = state == IntegrityState.PARTIALLY_VALID_ITEM_LINKS;
         }
-        state = verifyDates();
-        return !state.isValid() ? state : IntegrityState.COMPLETE;
+        state = verifySignature(verifyKey);
+        return !state.isValid() ? state : partiallyIntact ? IntegrityState.INTACT :
+                linkedItems == null && getClaim(Claim.LNK) != null ? IntegrityState.PARTIALLY_COMPLETE : IntegrityState.COMPLETE;
     }
 
     /**

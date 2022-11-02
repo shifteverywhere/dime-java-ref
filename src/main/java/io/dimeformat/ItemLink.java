@@ -140,7 +140,7 @@ public final class ItemLink {
      * @return The state of the integrity verification.
      */
     public static IntegrityState verify(List<Item> items, List<ItemLink> links) {
-        if (items == null || links == null) {  return IntegrityState.FAILED_LINKED_ITEM_MISSING; }
+        if (items == null || links == null) { throw new NullPointerException("Unable to verify linked items, provided lists must not be null."); }
         for (Item item: items) {
             boolean matchFound = false;
             for (ItemLink link: links) {
@@ -159,7 +159,7 @@ public final class ItemLink {
                 return IntegrityState.FAILED_LINKED_ITEM_MISMATCH;
             }
         }
-        return IntegrityState.VALID_ITEM_LINKS;
+        return items.size() == links.size() ? IntegrityState.VALID_ITEM_LINKS : IntegrityState.PARTIALLY_VALID_ITEM_LINKS;
     }
 
     /// PACKAGE-PRIVATE ///

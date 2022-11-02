@@ -186,8 +186,8 @@ class ItemLinkTest {
             assertTrue(ItemLink.verify(revItems, links).isValid());
             assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links).isValid());
             assertTrue(ItemLink.verify(List.of(Commons.getAudienceKey()), links).isValid());
-            assertFalse(ItemLink.verify(null, links).isValid());
-            assertFalse(ItemLink.verify(items, null).isValid());
+            try { ItemLink.verify(null, links); fail("Exception not thrown."); } catch (NullPointerException e) { /* all is well */ }
+            try { ItemLink.verify(items, null); fail("Exception not thrown."); } catch (NullPointerException e) { /* all is well */ }
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
