@@ -1,5 +1,14 @@
 # CHANGES
 
+## Version 1.2.3 - 2022-11-10
+- Conforms to DiME data format version 1.002
+- Improves working the encrypted message payloads and allows encryption with symmetric key
+- Internal verification order changed according to Dime 1.002
+- Adds Issuer URL claim ("isu")
+- Adds identity capabilities SEAL and TIMESTAMP
+- Fixes an issue with converting items containing item links to legacy
+- Fixes an issue where KID was not set correctly when encrypting message payloads
+
 ## Version 1.2.2 - 2022-10-25
 - Conforms to DiME data format version 1.001
 - Refactored verify methods to match C# interface
