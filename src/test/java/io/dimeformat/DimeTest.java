@@ -237,7 +237,7 @@ class DimeTest {
             assertEquals("S21Tkgozxhzk5ttFgHhgey6t1419WCMUUM98ZhniVAjfT4iniUknfUrNqfPqdLua2SvxFf8SXkHS1PTBCrdkYXN6qTEm7Mwa2LRd", key.getSecret());
             assertEquals("S21TZSL1uvF5mTWKiomQKNhmkcYPw5XZ1VBfbSPqmyqG5GaNCUGB7Pj19WShuJuLkhREEJ4kLThehqRkadJLSTAkL9DtyhmLxGfn", key.getPublic());
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
         }
     }
 
@@ -255,7 +255,7 @@ class DimeTest {
             String s = importKey.getPublic();
             assertTrue(importKey.getPublic().startsWith("2TD"));
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
         }
     }
 
@@ -324,7 +324,7 @@ class DimeTest {
             assertTrue(iir.isLegacy());
             assertTrue(iir.getPublicKey().getPublic().startsWith("2TD"));
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown:" + e);
         }
     }
 
@@ -353,7 +353,42 @@ class DimeTest {
             assertTrue(identity.isLegacy());
             assertTrue(identity.getPublicKey().getPublic().startsWith("2TD"));
         } catch (Exception e) {
-            fail("Unexpected exception thrown.");
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyItemLinkTest1() {
+        try {
+            Data data = new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB));
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
+            data.addItemLink(Commons.getIssuerKey());
+            data.sign(Commons.getIssuerKey());
+
+            assertEquals(1, data.getItemLinks().size());
+            ItemLink link1 = data.getItemLinks().get(0);
+            assertNotNull(link1);
+            String encoded1 = link1.toEncoded();
+            assertNotNull(encoded1);
+            assertTrue(encoded1.startsWith(Key.HEADER + "."));
+            assertTrue(encoded1.contains(Commons.getIssuerKey().getClaim(Claim.UID).toString()));
+            assertTrue(encoded1.endsWith("." + Dime.crypto.getDefaultSuiteName()));
+
+            data.convertToLegacy();
+            assertFalse(data.isSigned());
+            data.sign(Commons.getIssuerKey());
+
+            assertEquals(1, data.getItemLinks().size());
+            ItemLink link2 = data.getItemLinks().get(0);
+            assertNotNull(link2);
+
+            String encoded2 = link1.toEncoded();
+            assertNotNull(encoded2);
+            assertTrue(encoded2.startsWith(Key.HEADER + "."));
+            assertTrue(encoded2.contains(Commons.getIssuerKey().getClaim(Claim.UID).toString()));
+            assertFalse(encoded2.endsWith("." + Dime.crypto.getDefaultSuiteName()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
         }
     }
 

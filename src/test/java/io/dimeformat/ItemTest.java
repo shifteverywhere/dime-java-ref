@@ -39,7 +39,7 @@ public class ItemTest {
     @Test
     void verifyTest2() {
         try {
-            Key key = Key.generateKey(List.of(KeyCapability.SIGN));
+            Key key = Key.generateKey(KeyCapability.SIGN);
             key.addItemLink(Commons.getIssuerIdentity());
             key.addItemLink(Commons.getAudienceIdentity());
             key.sign(key);

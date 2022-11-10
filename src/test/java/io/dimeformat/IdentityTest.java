@@ -34,10 +34,11 @@ class IdentityTest {
     @Test
     void claimTest1() {
         try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
-            Identity identity = IdentityIssuingRequest.generateIIR(Commons.getAudienceKey(), caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getAudienceKey(), Commons.SYSTEM_NAME);
+            Identity identity = IdentityIssuingRequest.generateIIR(key, caps).selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR * 10, key, Commons.SYSTEM_NAME);
             assertNotNull(identity.getClaim(Claim.PUB));
-            assertEquals((String) Commons.getAudienceKey().getClaim(Claim.PUB), identity.getClaim(Claim.PUB));
+            assertEquals((String) key.getClaim(Claim.PUB), identity.getClaim(Claim.PUB));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

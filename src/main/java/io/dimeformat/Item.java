@@ -362,7 +362,8 @@ public abstract class Item {
         if (this.itemLinks == null) {
             this.itemLinks = new ArrayList<>();
         }
-        this.itemLinks.add(new ItemLink(item, Dime.crypto.getDefaultSuiteName()));
+        String cryptoSuite = !isLegacy() ? Dime.crypto.getDefaultSuiteName() : null;
+        this.itemLinks.add(new ItemLink(item, cryptoSuite));
     }
 
     /**
@@ -373,8 +374,9 @@ public abstract class Item {
         throwIfSigned();
         if (items == null) { throw new IllegalArgumentException("Items to link with must not be null."); }
         this.itemLinks = new ArrayList<>();
+        String cryptoSuite = !isLegacy() ? Dime.crypto.getDefaultSuiteName() : null;
         for (Item item: items) {
-            this.itemLinks.add(new ItemLink(item, Dime.crypto.getDefaultSuiteName()));
+            this.itemLinks.add(new ItemLink(item, null));
         }
     }
 
@@ -403,6 +405,11 @@ public abstract class Item {
      */
     public void convertToLegacy() {
         strip();
+        if (getItemLinks() != null) {
+            for (ItemLink link: getItemLinks()) {
+                link.cryptoSuiteName = null;
+            }
+        }
         legacy = true;
     }
 

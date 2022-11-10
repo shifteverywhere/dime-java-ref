@@ -42,7 +42,7 @@ public final class ItemLink {
     /**
      * The cryptographic suite used to generate the item link.
      */
-    public final String cryptoSuiteName;
+    public String cryptoSuiteName;
 
     /**
      * Creates an item link from the provided DiME item.
@@ -171,7 +171,7 @@ public final class ItemLink {
                 .append(this.uniqueId.toString())
                 .append(Dime.COMPONENT_DELIMITER)
                 .append(this.thumbprint);
-        if (!cryptoSuiteName.equals("STN")) {
+        if (cryptoSuiteName != null && !cryptoSuiteName.equals("STN")) {
             builder.append(Dime.COMPONENT_DELIMITER)
                     .append(this.cryptoSuiteName);
         }
