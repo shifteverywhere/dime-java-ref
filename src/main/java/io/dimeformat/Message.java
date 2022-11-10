@@ -165,7 +165,7 @@ public class Message extends Data {
             return firstKey;
         } else if (key.hasCapability(KeyCapability.ENCRYPT)) {
             setPayload(Dime.crypto.encrypt(payload, key));
-            putClaim(Claim.KID, key.getClaim(Claim.KID));
+            putClaim(Claim.KID, key.getClaim(Claim.UID));
             return key;
         }
         throw new CryptographyException("Key capability mismatch.");
