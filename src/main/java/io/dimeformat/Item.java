@@ -376,7 +376,7 @@ public abstract class Item {
         this.itemLinks = new ArrayList<>();
         String cryptoSuite = !isLegacy() ? Dime.crypto.getDefaultSuiteName() : null;
         for (Item item: items) {
-            this.itemLinks.add(new ItemLink(item, null));
+            this.itemLinks.add(new ItemLink(item, cryptoSuite));
         }
     }
 
