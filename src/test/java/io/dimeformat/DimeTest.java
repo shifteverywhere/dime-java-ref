@@ -34,7 +34,7 @@ class DimeTest {
 
     @Test
     void versionTest1() {
-        assertEquals("1.001", Dime.VERSION);
+        assertEquals("1.002", Dime.VERSION);
     }
 
     @Test
@@ -236,6 +236,20 @@ class DimeTest {
             assertEquals(Instant.parse("2021-11-18T08:48:25.137918Z"), key.getClaim(Claim.IAT));
             assertEquals("S21Tkgozxhzk5ttFgHhgey6t1419WCMUUM98ZhniVAjfT4iniUknfUrNqfPqdLua2SvxFf8SXkHS1PTBCrdkYXN6qTEm7Mwa2LRd", key.getSecret());
             assertEquals("S21TZSL1uvF5mTWKiomQKNhmkcYPw5XZ1VBfbSPqmyqG5GaNCUGB7Pj19WShuJuLkhREEJ4kLThehqRkadJLSTAkL9DtyhmLxGfn", key.getPublic());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyKey1() {
+        try {
+            Key key = Key.generateKey(KeyCapability.EXCHANGE);
+            key.convertToLegacy();
+            Key publicKey = key.publicCopy();
+            assertTrue(publicKey.isLegacy());
+            assertNull(publicKey.getKeyBytes(Claim.KEY));
+            assertNotNull(publicKey.getKeyBytes(Claim.PUB));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

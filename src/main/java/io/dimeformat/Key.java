@@ -347,7 +347,10 @@ public class Key extends Item {
         if (this._suiteName == null) {
             this._suiteName = suiteName;
         } else if (!this._suiteName.equals(suiteName)) {
-            throw new CryptographyException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
+            String otherKeyPart = claim == Claim.KEY ? getClaim(Claim.PUB) : getClaim(Claim.KEY);
+            if (otherKeyPart != null) {
+                throw new CryptographyException("Public and secret keys generated using different cryptographic suites: " + this._suiteName + " and " + suiteName + ".");
+            }
         }
         byte[] rawKey;
         if (!legacyKey) {
