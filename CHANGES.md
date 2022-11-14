@@ -1,8 +1,12 @@
 # CHANGES
 
+## Version 1.2.4 - 2022-11-14
+- Fixes an issue with the used crypto suite was not attached to an item link
+- Fixes an issue with legacy keys and making a public copy
+
 ## Version 1.2.3 - 2022-11-10
 - Conforms to DiME data format version 1.002
-- Improves working the encrypted message payloads and allows encryption with symmetric key
+- Improves working with encrypted message payloads and allows encryption with symmetric key
 - Internal verification order changed according to Dime 1.002
 - Adds Issuer URL claim ("isu")
 - Adds identity capabilities SEAL and TIMESTAMP
