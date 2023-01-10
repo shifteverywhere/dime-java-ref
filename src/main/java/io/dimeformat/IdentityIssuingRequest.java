@@ -372,8 +372,11 @@ public class IdentityIssuingRequest extends Item {
                 capabilities.add(IdentityCapability.SELF);
             }
         } else {
+            if (wantsCapability(IdentityCapability.SELF)) {
+                throw new IllegalArgumentException("Unable to issue identity, only self-issued identities may request SELF capability.");
+            }
             if ((allowedCapabilities == null || allowedCapabilities.length == 0) && (requiredCapabilities == null || requiredCapabilities.length == 0)) {
-                throw new IllegalArgumentException("Allowed capabilities and/or required capabilities must be defined to issue identity.");
+                throw new IllegalArgumentException("Unable to issue identity, allowed capabilities and/or required capabilities must be defined to issue identity.");
             }
             // First check include any missing required capabilities to the iir
             if (requiredCapabilities != null && requiredCapabilities.length > 0) {
@@ -388,7 +391,7 @@ public class IdentityIssuingRequest extends Item {
                 List<IdentityCapability> tempCap = new ArrayList<>(capabilities);
                 tempCap.removeAll(Arrays.asList(allowedCapabilities));
                 if (!tempCap.isEmpty()) {
-                    throw new CapabilityException("Identity issuing request contains one or more disallowed capabilities.");
+                    throw new CapabilityException("Unable to issue identity, identity issuing request contains one or more disallowed capabilities.");
                 }
             }
         }
