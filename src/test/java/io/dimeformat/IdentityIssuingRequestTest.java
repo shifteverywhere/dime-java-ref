@@ -460,4 +460,21 @@ class IdentityIssuingRequestTest {
         }
     }
 
+    @Test
+    void keyMismatchIssuingTest1() {
+        try {
+            // Test to check to that it is not possible to issue an identity with the same public key as the issuing identity
+            Commons.initializeKeyRing();
+            IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.ISSUE };
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Commons.getIntermediateKey(), caps);
+            try {
+                iir.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, null);
+                fail("Should not happen.");
+            }  catch (IllegalArgumentException e) { /* All is well */ }
+
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
 }

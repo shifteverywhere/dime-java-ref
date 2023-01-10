@@ -313,7 +313,10 @@ public class IdentityIssuingRequest extends Item {
         if (!state.isValid()) {
             throw new IntegrityStateException(state, "Unable to verify Identity issuing request.");
         }
-        boolean isSelfSign = (issuerIdentity == null || this.getPublicKey().getPublic().equals(issuerKey.getPublic()));
+        boolean isSelfSign = this.getPublicKey().getPublic().equals(issuerKey.getPublic());
+        if (isSelfSign && issuerIdentity != null) {
+            throw new IllegalArgumentException("Unable to issue new identity since both issuing public key and issued public key is the same.");
+        }
         strip();
         this.completeCapabilities(allowedCapabilities, requiredCapabilities, isSelfSign);
         if (isSelfSign || issuerIdentity.hasCapability(IdentityCapability.ISSUE))
