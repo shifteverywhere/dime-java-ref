@@ -336,18 +336,13 @@ public class IdentityIssuingRequest extends Item {
                     ambitList,
                     methodList);
             if (issuerIdentity != null) {
+                state = issuerIdentity.verifyDates();
+                if (!state.isValid()) {
+                    throw new IntegrityStateException(state, "Unable to verify valid dates of issuer identity.");
+                }
                 if (includeChain && !Dime.keyRing.containsItem(issuerIdentity)) {
                     // The chain will only be set if the issuer identity is not a trusted identity in the key ring
-                    state = issuerIdentity.verify();
-                    if (!state.isValid()) {
-                        throw new IntegrityStateException(state, "Unable to verify issuer identity.");
-                    }
                     identity.setTrustChain(issuerIdentity);
-                } else {
-                    state = issuerIdentity.verifyDates();
-                    if (!state.isValid()) {
-                        throw new IntegrityStateException(state, "Unable to verify valid dates of issuer identity.");
-                    }
                 }
             }
             if (this.isLegacy()) {
