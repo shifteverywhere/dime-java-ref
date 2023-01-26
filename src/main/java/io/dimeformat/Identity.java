@@ -15,7 +15,6 @@ import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.enums.KeyCapability;
 import io.dimeformat.keyring.IntegrityState;
 import java.nio.charset.StandardCharsets;
-import java.security.IdentityScope;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -102,6 +101,44 @@ public class Identity extends Item {
      */
     public boolean isSelfIssued() {
         return ((UUID) getClaim(Claim.SUB)).compareTo(getClaim(Claim.ISS)) == 0 && hasCapability(IdentityCapability.SELF);
+    }
+
+    /**
+     * Verifies the integrity and over all validity and trust of the item. The verification will be made using the public
+     * key in the provided identity. The verification will also check if the item has been issued by the provided
+     * identity, if the "iss" claim has been set. If the identity has a trust chain, then this will be taken into
+     * considerations while verifying.
+     * @param trustedIdentity A trusted identity to verify with, may be from anywhere in the trust chain.
+     * @param linkedItems A list of item where item links should be verified, may be null.
+     * @return The integrity state of the verification.
+     */
+    @Override
+    public IntegrityState verify(Identity trustedIdentity, List<Item> linkedItems) {
+        IntegrityState state = IntegrityState.FAILED_NOT_TRUSTED;
+        Identity trustChain = getTrustChain();
+        if (trustChain != null) {
+            state = super.verify(trustChain, null);
+            if (state.isValid()) {
+                if (!trustChain.getClaim(Claim.SUB).equals(trustedIdentity.getClaim(Claim.SUB))) {
+                    state = trustChain.verify(trustedIdentity, null);
+                } else {
+                    if (trustedIdentity.isSelfIssued()) {
+                        // If this is the end of the trust chain, then verify the final identity
+                        return trustedIdentity.verify(trustedIdentity.getPublicKey());
+                    } else {
+                        // If this is a truncated trust chain, then verify only the dates
+                        state = trustedIdentity.verifyDates();
+                        return !state.isValid() ? state : IntegrityState.INTACT;
+                    }
+                }
+            }
+            if (state.isValid() && linkedItems != null) {
+                state = verifyLinkedItems(linkedItems);
+            }
+        } else {
+            state = super.verify(trustedIdentity, linkedItems);
+        }
+        return state;
     }
 
     @Override

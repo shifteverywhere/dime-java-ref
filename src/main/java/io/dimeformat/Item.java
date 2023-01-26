@@ -230,21 +230,20 @@ public abstract class Item {
      * Verifies the integrity and over all validity and trust of the item. The verification will be made using the public
      * key in the provided identity. The verification will also check if the item has been issued by the provided
      * identity, if the "iss" claim has been set.
-     * @param issuingIdentity The issuing identity to use when verifying.
+     * @param trustedIdentity A trusted identity to verify with.
      * @param linkedItems A list of item where item links should be verified, may be null.
      * @return The integrity state of the verification.
      */
-    public IntegrityState verify(Identity issuingIdentity, List<Item> linkedItems) {
-
+    public IntegrityState verify(Identity trustedIdentity, List<Item> linkedItems) {
         UUID issuerId = getClaim(Claim.ISS);
-        if (issuerId != null && !issuerId.equals(issuingIdentity.getClaim(Claim.SUB))) {
+        if (issuerId != null && !issuerId.equals(trustedIdentity.getClaim(Claim.SUB))) {
             return IntegrityState.FAILED_ISSUER_MISMATCH;
         }
-        IntegrityState state = issuingIdentity.verifyDates();
+        IntegrityState state = trustedIdentity.verifyDates();
         if (!state.isValid()) {
             return state;
         }
-        return verify(issuingIdentity.getPublicKey(), linkedItems);
+        return verify(trustedIdentity.getPublicKey(), linkedItems);
     }
 
     /**

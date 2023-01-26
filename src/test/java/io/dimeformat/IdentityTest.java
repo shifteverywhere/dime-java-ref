@@ -12,6 +12,7 @@ package io.dimeformat;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
 import io.dimeformat.exceptions.CapabilityException;
+import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.enums.KeyCapability;
 import java.time.Instant;
@@ -308,18 +309,21 @@ class IdentityTest {
             Commons.initializeKeyRing();
             IdentityCapability[] nodeCaps = new IdentityCapability[] { IdentityCapability.GENERIC, IdentityCapability.ISSUE };
             Key key1 = Key.generateKey(List.of(KeyCapability.SIGN));
-            Identity node1 = IdentityIssuingRequest.generateIIR(key1, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, nodeCaps, nodeCaps);
+            Identity node1 = IdentityIssuingRequest.generateIIR(key1, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_HOUR, Commons.getTrustedKey(), Commons.getTrustedIdentity(), true, nodeCaps, nodeCaps);
             Key key2 = Key.generateKey(List.of(KeyCapability.SIGN));
-            Identity node2 = IdentityIssuingRequest.generateIIR(key2, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key1, node1, true, nodeCaps, nodeCaps);
+            Identity node2 = IdentityIssuingRequest.generateIIR(key2, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_HOUR, key1, node1, true, nodeCaps, nodeCaps);
             Key key3 = Key.generateKey(List.of(KeyCapability.SIGN));
-            Identity node3 = IdentityIssuingRequest.generateIIR(key3, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key2, node2, true, nodeCaps, nodeCaps);
+            Identity node3 = IdentityIssuingRequest.generateIIR(key3, nodeCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_HOUR, key2, node2, true, nodeCaps, nodeCaps);
             IdentityCapability[] leafCaps = new IdentityCapability[] { IdentityCapability.GENERIC };
-            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key3, node3, true, leafCaps, leafCaps);
-            assertTrue(leaf.verify().isValid()); // Verify the whole trust chain and key ring
-            assertFalse(leaf.verify(node1).isValid());
-            assertFalse(leaf.verify(node2).isValid());
-            assertTrue(leaf.verify(node3).isValid()); // verify as issuer
-            assertFalse(leaf.verify(Commons.getIntermediateIdentity()).isValid()); // verify as issuer
+            Identity leaf = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)), leafCaps).issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_HOUR, key3, node3, true, leafCaps, leafCaps);
+            IntegrityState state = leaf.verify();
+            assertSame(IntegrityState.COMPLETE, leaf.verify());
+            Commons.clearKeyRing();
+            assertFalse(leaf.verify().isValid());
+            assertSame(IntegrityState.INTACT, leaf.verify(node1));
+            assertSame(IntegrityState.INTACT, leaf.verify(node2));
+            assertSame(IntegrityState.INTACT, leaf.verify(node3));
+            assertFalse(leaf.verify(Commons.getIntermediateIdentity()).isValid());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
