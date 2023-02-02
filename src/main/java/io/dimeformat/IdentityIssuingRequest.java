@@ -309,10 +309,6 @@ public class IdentityIssuingRequest extends Item {
     private static final int MINIMUM_NBR_COMPONENTS = 3;
 
     private Identity issueNewIdentity(String systemName, UUID subjectId, long validFor, Key issuerKey, Identity issuerIdentity, boolean includeChain, IdentityCapability[] allowedCapabilities, IdentityCapability[] requiredCapabilities, String[] ambit, String[] methods) throws IntegrityStateException, CapabilityException, CryptographyException {
-        IntegrityState state = verify(this.getPublicKey());
-        if (!state.isValid()) {
-            throw new IntegrityStateException(state, "Unable to verify Identity issuing request.");
-        }
         boolean isSelfSign = this.getPublicKey().getPublic().equals(issuerKey.getPublic());
         if (isSelfSign && issuerIdentity != null) {
             throw new IllegalArgumentException("Unable to issue new identity since both issuing public key and issued public key is the same.");
@@ -336,7 +332,7 @@ public class IdentityIssuingRequest extends Item {
                     ambitList,
                     methodList);
             if (issuerIdentity != null) {
-                state = issuerIdentity.verifyDates();
+                IntegrityState state = issuerIdentity.verifyDates();
                 if (!state.isValid()) {
                     throw new IntegrityStateException(state, "Unable to verify valid dates of issuer identity.");
                 }

@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2023 Shift Everywhere AB. All rights reserved.
 //
 plugins {
     id 'java-library'
@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'io.dimeformat'
-version '1.2.4'
+version '1.2.5'
 description 'DiME (Data Integrity Message Envelope). A powerful universal data format that is built for secure, and integrity protected communication between trusted entities in a network using an application-based publik-key infrastructure (APKI).'
 
 repositories {
@@ -63,7 +63,7 @@ publishing {
 
             groupId = 'io.dimeformat'
             artifactId = 'dime-java-ref'
-            version = '1.2.4'
+            version = '1.2.5'
 
             from components.java
 

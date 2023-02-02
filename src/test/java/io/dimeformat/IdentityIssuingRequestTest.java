@@ -11,7 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.IdentityCapability;
-import io.dimeformat.exceptions.IntegrityStateException;
+import io.dimeformat.keyring.IntegrityState;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import io.dimeformat.exceptions.CapabilityException;
@@ -153,10 +153,8 @@ class IdentityIssuingRequestTest {
             json.put("pub", key2.getPublic());
             IdentityIssuingRequest iir2 = Item.importFromEncoded(components[0] + "." + Utility.toBase64(json.toString()) + "." + components[2]);
             assertNotNull(iir2);
-            try {
-                iir2.issueIdentity(UUID.randomUUID(), 100, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, caps);
-                fail("Exception not thrown.");
-            } catch (IntegrityStateException e) { /* all is well */ }
+            assertSame(IntegrityState.FAILED_NOT_TRUSTED, iir2.verify(key1));
+            assertSame(IntegrityState.FAILED_KEY_MISMATCH, iir2.verify(key2));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

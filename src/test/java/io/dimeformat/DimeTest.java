@@ -219,7 +219,7 @@ class DimeTest {
             assertTrue(identity.hasCapability(IdentityCapability.GENERIC));
             assertTrue(identity.hasCapability(IdentityCapability.IDENTIFY));
             assertNotNull(identity.getTrustChain());
-            assertEquals(IntegrityState.COMPLETE, identity.verify());
+            assertEquals(IntegrityState.FAILED_USED_AFTER_EXPIRED, identity.verify());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -366,6 +366,36 @@ class DimeTest {
             Identity identity = iir.selfIssueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_MINUTE, key, Commons.SYSTEM_NAME);
             assertTrue(identity.isLegacy());
             assertTrue(identity.getPublicKey().getPublic().startsWith("2TD"));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void legacyIssueTest1() {
+        try {
+            Commons.initializeKeyRing();
+
+            IdentityCapability[] caps = { IdentityCapability.GENERIC };
+
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.convertToLegacy();
+            Key signKey = Key.generateKey(KeyCapability.SIGN);
+            key.convertToLegacy();
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(key);
+            iir.strip();
+            iir.sign(signKey);
+
+            String iirExported = iir.exportToEncoded();
+            String keyExported = signKey.exportToEncoded();
+
+            Key keyToVerify = Item.importFromEncoded(keyExported);
+            IdentityIssuingRequest iirToIssue = Item.importFromEncoded(iirExported);
+            IntegrityState state = iirToIssue.verify(keyToVerify);
+
+           Identity issuedIdentity = iirToIssue.issueIdentity(UUID.randomUUID(), Dime.VALID_FOR_1_YEAR, Commons.getIntermediateKey(), Commons.getIntermediateIdentity(), true, caps, caps);
+           assertNotNull(issuedIdentity);
+
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

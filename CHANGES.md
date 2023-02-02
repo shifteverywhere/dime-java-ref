@@ -1,8 +1,14 @@
 # CHANGES
 
+## Version 1.2.5 - 2023-02-02
+- Removes verification of identity issuing requests when issuing new identity, if required, verify manually first
+- Removes verification of issuer when issuing new identity, if required, issuers need to be verified manually first
+- Fixes an issue with issuing an identity with the same key as the issuing identity
+- Fixes an issue when requesting SELF capability for an identity that is not self-issued
+
 ## Version 1.2.4 - 2022-11-14
 - Fixes an issue with the used crypto suite was not attached to an item link
-- Fixes an issue with legacy keys and making a public copy
+- Fixes an issue with legacy keys and creating a public copy
 
 ## Version 1.2.3 - 2022-11-10
 - Conforms to DiME data format version 1.002
@@ -81,4 +87,4 @@
 ## Version 1.0.0 - 2022-01-24
 - Official version 1.0.0 (**Hurray!**)
 
-**Copyright (c) 2022 Shift Everywhere AB. All rights reserved.**
+**Copyright (c) 2023 Shift Everywhere AB. All rights reserved.**
