@@ -69,12 +69,12 @@ public abstract class Item {
     }
 
     /**
-     * Will import an item from a DiME encoded string. Di:ME envelopes cannot be imported using this method, for
-     * envelopes use Envelope.importFromEncoded(String) instead.
+     * Will import an item from a DiME encoded string. DiME envelopes cannot be imported using this method, for
+     * envelopes use {@link Envelope#importFromEncoded(String)} instead.
      * @param encoded The Di:ME encoded string to import an item from.
-     * @param <T> The subclass of item of the imported Di:ME item.
+     * @param <T> The subclass of item of the imported DiME item.
      * @return The imported Di:ME item.
-     * @throws InvalidFormatException If the encoded string is of a Di:ME envelope.
+     * @throws InvalidFormatException If the encoded string is of a DiME envelope.
      */
     @SuppressWarnings("unchecked")
     public static <T extends Item> T importFromEncoded(String encoded) throws InvalidFormatException {
@@ -433,18 +433,11 @@ public abstract class Item {
         try {
             int index = encoded.indexOf(Dime.COMPONENT_DELIMITER);
             if (index == -1) { return null; }
-            var t = Item.classFromTag(encoded.substring(0, index));
-            if (t == null) { return null; }
-            T item;
-            try {
-                item = (T) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
-            } catch (Exception e) {
-                throw new InvalidFormatException("Unexpected exception (I1002).", e);
-            }
+            Item item = Item.itemFromHeader(encoded.substring(0, index));
             item.decode(encoded);
-            return item;
-        } catch (ClassCastException e) {
-            return null; // This is unlikely to happen
+            return (T) item;
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected and fatal exception caught while encoding item: ", e);
         }
     }
 
@@ -557,8 +550,13 @@ public abstract class Item {
         return this._claims;
     }
 
-    private static Class<?> classFromTag(String tag) {
-        switch (tag) {
+    private static Item itemFromHeader(String header) throws Exception {
+        var t = Item.classFromItemHeader(header);
+        return (t != null) ? (Item) Objects.requireNonNull(t).getDeclaredConstructor().newInstance() : null;
+    }
+
+    private static Class<?> classFromItemHeader(String header) {
+        switch (header) {
             case Data.HEADER: return Data.class;
             case Identity.HEADER: return Identity.class;
             case IdentityIssuingRequest.HEADER: return IdentityIssuingRequest.class;

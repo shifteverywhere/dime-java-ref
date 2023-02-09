@@ -128,58 +128,102 @@ public class Envelope extends Item {
     }
 
     /**
-     * Adds a Di:ME item (of type Item or any subclass thereof) to the envelope. For signed envelopes, this needs to be
-     * done before signing the envelope.
-     * @param item The Di:ME item to add.
+     * Adds a DiME item (of type Item or any subclass thereof) to the envelope. For signed envelopes, this needs to be
+     * done before signing the envelope. It is not possible to add an item twice to an envelope.
+     * @param item The DiME item to add.
+     * @exception IllegalStateException If envelope is already signed or an item is added twice.
+     * @exception IllegalArgumentException If an envelope is being added.
      */
     public void addItem(Item item) {
-        if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
+        if (isSigned()) { throw new IllegalStateException("Unable to add item, envelope is already signed."); }
         if (item instanceof Envelope) { throw new IllegalArgumentException("Not allowed to add an envelope to another envelope."); }
         if (this.items == null) {
             this.items = new ArrayList<>();
         }
-        this.items.add(item);
+        UUID uid = item.getClaim(Claim.UID);
+        if (uid != null && getItem(Claim.UID, uid) == null) {
+            this.items.add(item);
+        } else {
+            throw new IllegalStateException("Unable to add item, item with uid: " + uid.toString() + ", is already added.");
+        }
     }
 
     /**
-     * Adds a list of Di:ME items (of type Item or any subclass thereof) to the envelope. For signed envelopes, this
-     * needs to be done before signing the envelope.
-     * @param items The Di:ME items to add.
+     * Adds a list of DiME items (of type Item or any subclass thereof) to the envelope. For signed envelopes, this
+     * needs to be done before signing the envelope. It is not possible to add an item twice to an envelope.
+     * @param items The DiME items to add.
+     * @exception IllegalStateException If envelope is already signed or an item is added twice.
+     * @exception IllegalArgumentException If an envelope is being added.
      */
     public void setItems(List<Item> items) {
         if (isSigned()) { throw new IllegalStateException("Unable to set items, envelope is already signed."); }
-        this.items = new ArrayList<>(items);
+        this.items = new ArrayList<>();
+        for (Item item: items) {
+            addItem(item);
+        }
+    }
+
+    /**
+     * Returns any item in the envelope that matches a specified claim and value. If no item could be found, then this
+     * will return null. Provided claim value must not be null.
+     * @param claim The claim for which the provided value should be compared with.
+     * @param value The value of the claim that should be searched for.
+     * @return The found item, or null if none could be found.
+     * @param <T> The class of the claim value provided.
+     */
+    public <T> Item getItem(Claim claim, T value) {
+        if (value == null) { throw new IllegalArgumentException("Unable to find item, provided claim value must not be null."); }
+        for (Item item : items) {
+            T compareValue = item.getClaim(claim);
+            if (compareValue != null && value.equals(compareValue)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns any items in the envelope that matches a specified claim and value, If no items could be found, then this
+     * will return an empty array. Provided claim value must not be null.
+     * @param claim The claim for which the provided value should be compared with.
+     * @param value The value of the claim that should be searched for.
+     * @return
+     * @param <T> The class of the claim value provided.
+     */
+    public <T> List<Item> getItems(Claim claim, T value) {
+        if (value == null) { throw new IllegalArgumentException("Unable to find item, provided claim value must not be null."); }
+        List<Item> items = new ArrayList<>();
+        for (Item item : this.items) {
+            T compareValue = item.getClaim(claim);
+            if (compareValue != null && value.equals(compareValue)) {
+                items.add(item);
+            }
+        }
+        return items;
     }
 
     /**
      * Returns any item inside the envelope that matches the provided context (ctx).
      * @param context The context to look for.
      * @return The found item, or null if none was found.
+     * @deprecated This is deprecated and will be removed in future versions, use {@link #getItems(Claim, Object)} or
+     * {@link #getItems(Claim, Object)} instead.
      */
+    @Deprecated
     public Item getItem(String context) {
-        if (context == null || items == null || items.size() == 0) return null;
-        for (Item item : items) {
-            String ctx = item.getClaim(Claim.CTX);
-            if (ctx != null && ctx.equalsIgnoreCase(context)) {
-                return item;
-            }
-        }
-        return null;
+        return getItem(Claim.CTX, context);
     }
 
     /**
      * Returns any item inside the envelope that matches the provided unique id (uid).
      * @param uniqueId The unique id to look for.
      * @return The found item, or null if none was found.
+     * @deprecated This is deprecated and will be removed in future versions, use {@link #getItems(Claim, Object)} or
+     * {@link #getItems(Claim, Object)} instead.
      */
+    @Deprecated
     public Item getItem(UUID uniqueId) {
-        if (uniqueId == null || items == null || items.size() == 0) return null;
-        for (Item item : items) {
-            if (item.getClaim(Claim.UID).equals(uniqueId)) {
-                return item;
-            }
-        }
-        return null;
+        return getItem(Claim.UID, uniqueId);
     }
 
     /**

@@ -124,17 +124,17 @@ class EnvelopeTest {
             envelope.addItem(key);
   //          String encoded = envelope.exportToEncoded();
             // Context
-            Item item1 = envelope.getItem(Commons.SIGN_KEY_CONTEXT);
+            Item item1 = envelope.getItem(Claim.CTX, Commons.SIGN_KEY_CONTEXT);
             assertTrue(item1 instanceof Key);
             assertEquals(Commons.SIGN_KEY_CONTEXT, item1.getClaim(Claim.CTX));
-            Item item2 = envelope.getItem(Commons.CONTEXT);
+            Item item2 = envelope.getItem(Claim.CTX, Commons.CONTEXT);
             assertTrue(item2 instanceof Message);
             assertEquals(Commons.CONTEXT, item2.getClaim(Claim.CTX));
             // Unique ID
-            Item item3 = envelope.getItem((UUID) key.getClaim(Claim.UID));
+            Item item3 = envelope.getItem(Claim.UID, (UUID) key.getClaim(Claim.UID));
             assertTrue(item3 instanceof Key);
             assertEquals((UUID) key.getClaim(Claim.UID), item3.getClaim(Claim.UID));
-            Item item4 = envelope.getItem((UUID) message.getClaim(Claim.UID));
+            Item item4 = envelope.getItem(Claim.UID, (UUID) message.getClaim(Claim.UID));
             assertTrue(item4 instanceof Message);
             assertEquals((UUID) message.getClaim(Claim.UID), item4.getClaim(Claim.UID));
         } catch (Exception e) {
@@ -148,19 +148,19 @@ class EnvelopeTest {
             String exported = "Di:MSG.eyJhdWQiOiI1ZWQyZTE3YS0wMjhjLTRjMjgtOWI5ZC0zMTFhYjY4YTAxYzQiLCJjdHgiOiJ0ZXN0LWNvbnRleHQiLCJpYXQiOiIyMDIyLTEwLTI0VDA4OjI4OjQzLjcxNzc4M1oiLCJpc3MiOiJjNDI1OTIzYS0xMjYyLTQ3ZmYtYWMwZC1kNTc0YWU0OTA2MTQiLCJ1aWQiOiJiZmYyNWFjNC02OWU0LTRkYmYtYjhlZC0xZDJiMjdlYmQ0ZjUifQ.UmFjZWNhciBpcyByYWNlY2FyIGJhY2t3YXJkcy4.YjkyMjMwYzBkNTY0YjU0NS5mMzUzMTZmMGU3NzI4NzFiYzQ3Y2M2YjMxYWRkZDcwZWJhMTQ2NGIyOWI4Yzg4ODAxNjM2ZjAzM2Q1MWQ1YWNlNzQ4NWJjODRmY2NiYjBlNjM3YWVkNTJmOGMzYjkxOTA5NWU2MTQzZTEyZGVkOGZjOTYyZWVjZDAzZDRiYTkwYQ:KEY.eyJjYXAiOlsic2lnbiJdLCJjdHgiOiJpZC1rZXkiLCJpYXQiOiIyMDIyLTEwLTI0VDA4OjI4OjQ4LjYyOTA4N1oiLCJrZXkiOiJTVE4uSzZzcU5kV3Bhd05GVmdGQ2ZjU1hHRWtjNTUxamJkYllQYXZyUk1LUUUyNVhFUEhMaThqcEYxeG5yRVR5TkJXZ0RzUnZoeHJjeTg1eVRmSG52Snl5OHZ4amV5RE05IiwicHViIjoiU1ROLm1McUVicWVEWlpQVWZ6QUpyZERyaVRKa3pyTTVBS2lveGtnTkJQazdpeGVIRGJ6cGMiLCJ1aWQiOiI0ZmU4ZjVjNi01OWQyLTQ3NjMtYjMxZC04MjU5YjUzMWFjMDgifQ";
             Envelope envelope = Envelope.importFromEncoded(exported);
             // Context
-            Item item1 = envelope.getItem(Commons.SIGN_KEY_CONTEXT);
+            Item item1 = envelope.getItem(Claim.CTX, Commons.SIGN_KEY_CONTEXT);
             assertTrue(item1 instanceof Key);
             assertEquals(Commons.SIGN_KEY_CONTEXT, item1.getClaim(Claim.CTX));
-            Item item2 = envelope.getItem(Commons.CONTEXT);
+            Item item2 = envelope.getItem(Claim.CTX, Commons.CONTEXT);
             assertTrue(item2 instanceof Message);
             assertEquals(Commons.CONTEXT, item2.getClaim(Claim.CTX));
             // Unique ID
             UUID uid1 = UUID.fromString("4fe8f5c6-59d2-4763-b31d-8259b531ac08");
-            Item item3 = envelope.getItem(uid1);
+            Item item3 = envelope.getItem(Claim.UID, uid1);
             assertTrue(item3 instanceof Key);
             assertEquals(uid1, item3.getClaim(Claim.UID));
             UUID uid2 = UUID.fromString("bff25ac4-69e4-4dbf-b8ed-1d2b27ebd4f5");
-            Item item4 = envelope.getItem(uid2);
+            Item item4 = envelope.getItem(Claim.UID, uid2);
             assertTrue(item4 instanceof Message);
             assertEquals(uid2, item4.getClaim(Claim.UID));
         } catch (Exception e) {
@@ -172,11 +172,29 @@ class EnvelopeTest {
     void getItemTest3() {
         Envelope envelope = new Envelope();
         envelope.addItem(Key.generateKey(KeyCapability.SIGN));
-        assertNull(envelope.getItem((String)null));
-        assertNull(envelope.getItem(""));
-        assertNull(envelope.getItem("invalid-context"));
-        assertNull(envelope.getItem((UUID)null));
-        assertNull(envelope.getItem(UUID.randomUUID()));
+        try { envelope.getItem(Claim.CTX, (String)null); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        assertNull(envelope.getItem(Claim.CTX,""));
+        assertNull(envelope.getItem(Claim.CTX,"invalid-context"));
+        try { envelope.getItem(Claim.UID, (UUID)null); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
+        assertNull(envelope.getItem(Claim.UID, UUID.randomUUID()));
+    }
+
+    @Test
+    void getItemsTest1() {
+        Envelope envelope = new Envelope();
+        Key key1 = Key.generateKey(List.of(KeyCapability.SIGN), Commons.CONTEXT);
+        key1.setClaimValue(Claim.ISS, Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        Key key2 = Key.generateKey(List.of(KeyCapability.EXCHANGE), Commons.CONTEXT);
+        key2.setClaimValue(Claim.ISS, Commons.getIssuerIdentity().getClaim(Claim.SUB));
+        Key key3 = Key.generateKey(List.of(KeyCapability.ENCRYPT), Commons.CONTEXT);
+        key3.setClaimValue(Claim.ISS, Commons.getAudienceIdentity().getClaim(Claim.SUB));
+        envelope.setItems(List.of(key1, key2, key3));
+        assertSame(3, envelope.getItems(Claim.CTX, Commons.CONTEXT).size());
+        assertSame(2, envelope.getItems(Claim.ISS, Commons.getIssuerIdentity().getClaim(Claim.SUB)).size());
+        assertSame(1, envelope.getItems(Claim.ISS, Commons.getAudienceIdentity().getClaim(Claim.SUB)).size());
+        assertSame(1, envelope.getItems(Claim.UID, key2.getClaim(Claim.UID)).size());
+        assertSame(0, envelope.getItems(Claim.UID, UUID.randomUUID()).size());
+        try { envelope.getItems(Claim.UID, (UUID)null); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
     }
 
     @Test

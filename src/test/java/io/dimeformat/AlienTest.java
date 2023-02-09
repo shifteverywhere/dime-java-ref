@@ -164,9 +164,9 @@ class AlienTest {
             Envelope envelope = Envelope.importFromEncoded(alienEnvelope);
             assertNotNull(envelope);
             assertEquals(2, envelope.getItems().size());
-            Key alienExchangeKey = (Key) envelope.getItem(UUID.fromString("2e126463-aedd-41f0-a7df-76896e8ad2e7"));
+            Key alienExchangeKey = (Key) envelope.getItem(Claim.UID, UUID.fromString("2e126463-aedd-41f0-a7df-76896e8ad2e7"));
             assertNotNull(alienExchangeKey);
-            Message message = (Message) envelope.getItem(UUID.fromString("388e24f1-7e73-4cc9-b7ff-8d42e2fcb445"));
+            Message message = (Message) envelope.getItem(Claim.UID, UUID.fromString("388e24f1-7e73-4cc9-b7ff-8d42e2fcb445"));
             assertNotNull(message);
             Key exchangeKey = Item.importFromEncoded(localExchangeKey);
             assertNotNull(exchangeKey);
