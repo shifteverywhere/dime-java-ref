@@ -9,6 +9,9 @@
 //
 package io.dimeformat.crypto;
 
+import io.dimeformat.Item;
+import io.dimeformat.Key;
+import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.enums.KeyCapability;
 import java.util.List;
@@ -17,16 +20,6 @@ import java.util.List;
  * An interface that classes need to implement to provide cryptographic services.
  */
 public interface ICryptoSuite {
-
-    /**
-     * Array position for a secret key. This includes private keys and encryption keys.
-     */
-    int SECRET_KEY_INDEX = 0;
-
-    /**
-     * Array position for a public key.
-     */
-    int PUBLIC_KEY_INDEX = 1;
 
     /**
      * Returns the name of the cryptographic suite, usually a short series of letters, i.e. STN for the standard
@@ -41,25 +34,26 @@ public interface ICryptoSuite {
      * @param key The key to generate a name for.
      * @return A unique name.
      */
-    byte[] generateKeyName(byte[][] key);
+    String generateKeyName(Key key);
 
     /**
-     * Generates a cryptographic signature from a data byte array using the provided key.
-     * @param data The data that should be signed.
+     * Generates a cryptographic signature from an item byte array using the provided key.
+     * @param item The item that should be signed.
      * @param key The key to use when signing the data.
      * @return The signature as a byte array.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateSignature(byte[] data, byte[] key) throws CryptographyException;
+    byte[] generateSignature(Item item, Key key) throws CryptographyException;
 
     /**
-     * Verifies a cryptographic signature for a data byte array using the provided key.
-     * @param data The data that the signature should be verified towards.
-     * @param signature The signature to verify.
-     * @param key The key to use when verifying.
+     * Verifies a cryptographic signature for an item using the provided key.
+     * @param item The item that should be verified towards the signature.
+     * @param signature The raw signature to verify, as a byte-array.
+     * @param key The key to use when verifying the signature.
      * @return True is verified successfully, false if not.
+     * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    boolean verifySignature(byte[] data, byte[] signature, byte[] key);
+    boolean verifySignature(Item item, byte[] signature, Key key) throws CryptographyException;
 
     /**
      * Generates a cryptographic key for the provided usage, if possible.
@@ -67,7 +61,7 @@ public interface ICryptoSuite {
      * @return The generated key.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException;
+    Key generateKey(List<KeyCapability> capabilities) throws CryptographyException;
 
     /**
      *  Generates a shared secret from two keys or key pars. These keys must have {#{@link KeyCapability#EXCHANGE}}
@@ -79,7 +73,7 @@ public interface ICryptoSuite {
      * @return The generated shared key.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] generateSharedSecret(byte[][] clientKey, byte[][] serverKey, List<KeyCapability> capabilities) throws CryptographyException;
+    Key generateSharedSecret(Key clientKey, Key serverKey, List<KeyCapability> capabilities) throws CryptographyException;
 
     /**
      * Encrypts a plain text byte array using the provided key.
@@ -88,7 +82,7 @@ public interface ICryptoSuite {
      * @return The encrypted cipher text as a byte array.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] encrypt(byte[] data, byte[] key) throws CryptographyException;
+    byte[] encrypt(byte[] data, Key key) throws CryptographyException;
 
     /**
      * Decrypts a cipher text byte array using the provided key.
@@ -97,7 +91,7 @@ public interface ICryptoSuite {
      * @return The plain text as a byte array.
      * @throws CryptographyException If any cryptographic operations goes wrong.
      */
-    byte[] decrypt(byte[] data, byte[] key) throws CryptographyException;
+    byte[] decrypt(byte[] data, Key key) throws CryptographyException;
 
     /**
      * Generates a secure hash digest of the provided data.
@@ -108,17 +102,17 @@ public interface ICryptoSuite {
     String generateHash(byte[] data) throws CryptographyException;
 
     /**
-     * Encodes a key from a byte array to a string.
-     * @param key The key to encode.
+     * Encodes a key from a byte-array to a string.
+     * @param rawKey The raw key byte-array to encode.
      * @return The encoded key.
      */
-    String encodeKey(byte[] key);
+    String encodeKeyBytes(byte[] rawKey, Claim claim);
 
     /**
      * Decodes an encoded key to a byte array.
      * @param encodedKey The encoded key.
      * @return The decoded key.
      */
-    byte[] decodeKey(String encodedKey);
+    byte[] decodeKeyBytes(String encodedKey, Claim claim);
 
 }

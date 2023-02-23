@@ -9,12 +9,10 @@
 //
 package io.dimeformat.crypto;
 
-import io.dimeformat.Key;
-import io.dimeformat.Utility;
+import io.dimeformat.*;
 import io.dimeformat.enums.Claim;
 import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.enums.KeyCapability;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -31,9 +29,10 @@ public final class Crypto {
      * Default constructor.
      */
     public Crypto() {
-        registerCryptoSuite(new StandardSuite(StandardSuite.STANDARD_SUITE));
-        registerCryptoSuite(new StandardSuite(StandardSuite.BASE58_SUITE));
-        _defaultSuiteName = StandardSuite.STANDARD_SUITE;
+        registerCryptoSuite(new NaClSuite(NaClSuite.SUITE_NAME));
+        registerCryptoSuite(new LegacySuite(LegacySuite.LEGACY_DSC_SUITE));
+        registerCryptoSuite(new LegacySuite(LegacySuite.LEGACY_STN_SUITE));
+        _defaultSuiteName = NaClSuite.SUITE_NAME;
     }
 
     /**
@@ -65,44 +64,43 @@ public final class Crypto {
     public String generateKeyName(Key key) {
         if (key == null) { throw new IllegalArgumentException("Unable to generate key identifier, key must not be null."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        byte[] id = impl.generateKeyName(new byte[][] { key.getKeyBytes(Claim.KEY), key.getKeyBytes(Claim.PUB) });
-        if (id != null) {
-            return Utility.toHex(id);
-        }
-        return null;
+        return impl.generateKeyName(key);
     }
 
     /**
-     * Generates a cryptographic signature from a data string.
-     * @param data The string to sign.
-     * @param key The key to use for the signature.
+     * Generates a cryptographic signature from a provided item and key.
+     * @param item The item that should be signed.
+     * @param key The key that should be used to sign the item.
      * @return The signature that was generated.
      * @throws CryptographyException If something goes wrong.
      */
-    public byte[] generateSignature(String data, Key key) throws CryptographyException {
-        if (data == null || data.length() == 0) { throw new IllegalArgumentException("Unable to sign, data must not be null or of length zero."); }
-        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, secret key in key must not be null."); }
-        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
+    public Signature generateSignature(Item item, Key key) throws CryptographyException {
+        if (item == null) { throw new IllegalArgumentException("Unable to generate signature, item to sign must not be null."); }
+        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to generate signature, key or secret key must not be null."); }
+        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to generate signature, provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.generateSignature(data.getBytes(StandardCharsets.UTF_8), key.getKeyBytes(Claim.KEY));
+        byte[] bytes = impl.generateSignature(item, key);
+        String name = item.isLegacy() ? null : generateKeyName(key);
+        return new Signature(bytes, name);
     }
 
     /**
-     * Verifies a cryptographic signature for a data string.
-     * @param data The string that should be verified with the signature.
-     * @param signature The signature that should be verified.
-     * @param key The key that should be used for the verification.
+     * Verifies a cryptographic signature of an item using provided signature and key.
+     * @param item The item to verify the signature with.
+     * @param signature The signature to verify with.
+     * @param key The key to use when verifying.
      * @return True if verified successfully, false otherwise.
      * @throws CryptographyException If something goes wrong.
      */
-    public boolean verifySignature(String data, byte[] signature, Key key) throws CryptographyException {
-        if (key == null) { throw new IllegalArgumentException("Unable to verify signature, key must not be null."); }
-        if (data == null || data.length() == 0) { throw new IllegalArgumentException("Data must not be null, or of length zero."); }
-        if (signature == null || signature.length == 0) { throw new IllegalArgumentException("Signature must not be null, or of length zero."); }
-        if (key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify, public key in key must not be null."); }
-        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Provided key does not specify SIGN usage."); }
+    public boolean verifySignature(Item item, Signature signature, Key key) throws CryptographyException {
+        if (item == null) { throw new IllegalArgumentException("Unable to verify signature, item to sign must not be null."); }
+        if (signature == null) { throw new IllegalArgumentException("Unable to verify signature, item to sign must not be null."); }
+        if (key == null || key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify signature, key or public key must not be null."); }
+        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to verify signature, provided key does not specify SIGN usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.verifySignature(data.getBytes(StandardCharsets.UTF_8), signature, key.getKeyBytes(Claim.PUB));
+        return impl.verifySignature(item,
+                signature.getBytes(),
+                key);
     }
 
     /**
@@ -112,7 +110,7 @@ public final class Crypto {
      * @return The generated key.
      * @throws CryptographyException If something goes wrong.
      */
-    public byte[][] generateKey(List<KeyCapability> capabilities) throws CryptographyException {
+    public Key generateKey(List<KeyCapability> capabilities) throws CryptographyException {
         return generateKey(capabilities, getDefaultSuiteName());
     }
 
@@ -123,7 +121,7 @@ public final class Crypto {
      * @return The generated key.
      * @throws CryptographyException If anything goes wrong.
      */
-    public byte[][] generateKey(List<KeyCapability> capabilities, String suiteName) throws CryptographyException {
+    public Key generateKey(List<KeyCapability> capabilities, String suiteName) throws CryptographyException {
         if (capabilities == null || capabilities.size() == 0) { throw new CryptographyException("Key usage must not be null or empty."); }
         ICryptoSuite impl = getCryptoSuite(suiteName);
         return impl.generateKey(capabilities);
@@ -139,13 +137,11 @@ public final class Crypto {
      * @return The generated shared secret key.
      * @throws CryptographyException If anything goes wrong.
      */
-    public byte[] generateSharedSecret(Key clientKey, Key serverKey, List<KeyCapability> capabilities) throws CryptographyException {
+    public Key generateSharedSecret(Key clientKey, Key serverKey, List<KeyCapability> capabilities) throws CryptographyException {
         if (!clientKey.hasCapability(KeyCapability.EXCHANGE) || !serverKey.hasCapability(KeyCapability.EXCHANGE)) { throw new IllegalArgumentException("Provided keys do not specify EXCHANGE usage."); }
         if (!clientKey.getCryptoSuiteName().equals(serverKey.getCryptoSuiteName())) { throw  new IllegalArgumentException(("Client key and server key are not generated using the same cryptographic suite")); }
         ICryptoSuite impl = getCryptoSuite(clientKey.getCryptoSuiteName());
-        byte[][] rawClientKeys = new byte[][] { clientKey.getKeyBytes(Claim.KEY), clientKey.getKeyBytes(Claim.PUB) };
-        byte[][] rawServerKeys = new byte[][] { serverKey.getKeyBytes(Claim.KEY), serverKey.getKeyBytes(Claim.PUB) };
-        return impl.generateSharedSecret(rawClientKeys, rawServerKeys, capabilities);
+        return impl.generateSharedSecret(clientKey, serverKey, capabilities);
     }
 
     /**
@@ -160,7 +156,7 @@ public final class Crypto {
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new CryptographyException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.encrypt(plainText, key.getKeyBytes(Claim.KEY));
+        return impl.encrypt(plainText, key);
     }
 
     /**
@@ -175,7 +171,7 @@ public final class Crypto {
         if (key == null) { throw new IllegalArgumentException("Key must not be null."); }
         if (!key.hasCapability(KeyCapability.ENCRYPT)) { throw new CryptographyException("Provided key does not specify ENCRYPT usage."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
-        return impl.decrypt(cipherText, key.getKeyBytes(Claim.KEY));
+        return impl.decrypt(cipherText, key);
     }
 
     /**
@@ -203,25 +199,25 @@ public final class Crypto {
     /**
      * Encodes a key from a byte array to a string. The encoding format is determined by the cryptographic suite
      * specified.
-     * @param key The key to encode.
+     * @param rawKey The raw key bytes to encode.
      * @param suiteName The cryptographic suite to use.
      * @return The encoded key.
      */
-    public String encodeKey(byte[] key, String suiteName) {
+    public String encodeKeyBytes(byte[] rawKey, Claim claim, String suiteName) {
         ICryptoSuite crypto = getCryptoSuite(suiteName);
-        return crypto.encodeKey(key);
+        return crypto.encodeKeyBytes(rawKey, claim);
     }
 
     /**
      * Decodes an encoded key to a byte array. The encoded format must match the cryptographic suite specified to be
      * successful.
-     * @param encodedKey The encoded key.
+     * @param encodedKey The encoded raw key bytes.
      * @param suiteName The cryptographic suite to use.
      * @return The decoded key.
      */
-    public byte[] decodeKey(String encodedKey, String suiteName) {
+    public byte[] decodeKeyBytes(String encodedKey, Claim claim, String suiteName) {
         ICryptoSuite crypto = getCryptoSuite(suiteName);
-        return crypto.decodeKey(encodedKey);
+        return crypto.decodeKeyBytes(encodedKey, claim);
     }
 
     /**

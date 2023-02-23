@@ -9,6 +9,7 @@
 //
 package io.dimeformat;
 
+import io.dimeformat.enums.Claim;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +22,7 @@ class CryptoTest {
 
     @Test
     void hasCryptoSuiteTest1() {
-        assertTrue(Dime.crypto.hasCryptoSuite("DSC"));
+        assertTrue(Dime.crypto.hasCryptoSuite("NaCl"));
         assertFalse(Dime.crypto.hasCryptoSuite("NSA"));
     }
 
@@ -29,7 +30,8 @@ class CryptoTest {
     void allCryptoSuitesTest1() {
         Set<String> suiteNames = Dime.crypto.allCryptoSuites();
         assertNotNull(suiteNames);
-        assertEquals(2, suiteNames.size());
+        assertEquals(3, suiteNames.size());
+        assertTrue(suiteNames.contains("NaCl"));
         assertTrue(suiteNames.contains("DSC"));
         assertTrue(suiteNames.contains("STN"));
     }
@@ -64,10 +66,15 @@ class CryptoTest {
     @Test
     void generateSignatureTest1() {
         try {
-            String data = Commons.PAYLOAD;
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
-            byte[] sig = Dime.crypto.generateSignature(data, key);
-            Dime.crypto.verifySignature(data, sig, key);
+            Signature signature = Dime.crypto.generateSignature(key, key);
+            Dime.crypto.verifySignature(key, signature, key);
+
+            String sig = Utility.toBase64(signature.getBytes());
+            String k = key.exportToEncoded();
+
+            int i = 0;
+
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -76,10 +83,10 @@ class CryptoTest {
     @Test
     void generateSignatureTest2() {
         try {
-            byte[] sig = Utility.fromBase64("Fdb/SMaBcpWKzpGCTuqsYduh6OnJ6UXyDAUPHTbNZCioFd1Ek5VcGys8Zg3TGzur3GusB9lbWPyDp2L+pO0LAQ");
-            String encoded = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIyLTEwLTAzVDE3OjI5OjQ1Ljc2NzEzMFoiLCJrZXkiOiJTVE4uNTRWNTd5RHRnMWpZN2J0SlhmaG9aeU1TeE5ndGtIb3lqcFZ3ZEU1UnRVZzl2c1prRHlzNzdqWWoxQmpTQVJIN1lHQkRuNDJSM3hhekh0dVZUNDU5MzRTN3o3cjdFIiwicHViIjoiU1ROLjJyZWZjM0Z4RmJYUkwzeDY4Q0VYdzhSWU1LTmd1OVpuajNMR3hDbkFYMjl0anRUVVZDIiwidWlkIjoiZmQwZDhlMzYtOTc0ZS00MTIwLWI2NWUtMDAxYzdkNDM3N2ExIn0";
+            String encoded = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIzLTAyLTIzVDEzOjI3OjQ3LjE4MTM2NzcwOFoiLCJrZXkiOiJOYUNsLmRvVzlxVVlhUVZ5a1dmaEhkMFNqVzlIT1Frd0ZtaXQvY2tBQWtkNlNHZy9MTDZ1djJ5a1N4YUVRTmlPMmE3anhmaVdvU1g1N1hqR0hvWU8wN3V6WnlnIiwicHViIjoiTmFDbC55eStycjlzcEVzV2hFRFlqdG11NDhYNGxxRWwrZTE0eGg2R0R0TzdzMmNvIiwidWlkIjoiMDNhNWE4OTAtNTFkZS00N2U0LTg1MGMtYzhlOTY2MmY4ZjAxIn0";
             Key key = Item.importFromEncoded(encoded);
-            Dime.crypto.verifySignature(Commons.PAYLOAD, sig, key);
+            Signature signature = new Signature(Utility.fromBase64("cjk/O3yicD1F5Y53XuEshnOe5EsNaRurQHA7ynC7p3jSRNEEoe8ZlZuOKB3qNO6uQfdgkWonzFjoyuWjtEX8Cg"),null);
+            Dime.crypto.verifySignature(key, signature, key);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -195,20 +202,21 @@ class CryptoTest {
     @Test
     void suiteTest1() {
         try {
+            String suiteName = Dime.crypto.getDefaultSuiteName();
             Key dscKey = Key.generateKey(KeyCapability.SIGN);
             assertNotNull(dscKey);
-            assertEquals("DSC", dscKey.getCryptoSuiteName());
-            Utility.fromBase64(dscKey.getSecret().substring(4));
-            Utility.fromBase64(dscKey.getPublic().substring(4));
+            assertEquals(suiteName, dscKey.getCryptoSuiteName());
+            Utility.fromBase64(dscKey.getSecret().substring(suiteName.length() + 1));
+            Utility.fromBase64(dscKey.getPublic().substring(suiteName.length() + 1));
             String exported = dscKey.exportToEncoded();
             assertNotNull(exported);
             String claims = exported.split("\\.")[1];
             JSONObject json = new JSONObject(new String(Utility.fromBase64(claims)));
             assertNotNull(json);
-            assertTrue(json.has("key"));
-            assertTrue(json.has("pub"));
-            assertTrue(json.getString("key").startsWith("DSC."));
-            assertTrue(json.getString("pub").startsWith("DSC."));
+            assertTrue(json.has(Claim.KEY.name().toLowerCase()));
+            assertTrue(json.has(Claim.PUB.name().toLowerCase()));
+            assertTrue(json.getString("key").startsWith(suiteName + "."));
+            assertTrue(json.getString("pub").startsWith(suiteName + "."));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

@@ -125,6 +125,25 @@ class Commons {
         }
     }
 
+    /// PROTECTED ///
+
+    static Identity generateIdentity(Key subjectKey, Key issuerKey, Identity issuerIdentity, long validFor, IdentityCapability[] capabilities) {
+        try {
+            UUID subjectId = UUID.randomUUID();
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(subjectKey, capabilities);
+            Identity identity;
+            if (issuerIdentity == null) {
+                identity = iir.selfIssueIdentity(subjectId, validFor, issuerKey, Commons.SYSTEM_NAME);
+            } else {
+                identity = iir.issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, true, capabilities, null);
+            }
+            return identity;
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+        return null;
+    }
+
     /// PRIVATE ///
 
     // -- TRUSTED IDENTITY ---
@@ -157,23 +176,6 @@ class Commons {
         } catch (Exception e) {
             throw new RuntimeException(); // Should not happen
         }
-    }
-
-    private static Identity generateIdentity(Key subjectKey, Key issuerKey, Identity issuerIdentity, long validFor, IdentityCapability[] capabilities) {
-        try {
-            UUID subjectId = UUID.randomUUID();
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(subjectKey, capabilities);
-            Identity identity;
-            if (issuerIdentity == null) {
-                identity = iir.selfIssueIdentity(subjectId, validFor, issuerKey, Commons.SYSTEM_NAME);
-            } else {
-                identity = iir.issueIdentity(subjectId, validFor, issuerKey, issuerIdentity, true, capabilities, null);
-            }
-            return identity;
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-        return null;
     }
 
 }

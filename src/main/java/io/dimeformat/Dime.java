@@ -35,7 +35,7 @@ public final class Dime {
     /**
      * The current version of the implemented Di:ME specification.
      */
-    public static final String VERSION = "1.002";
+    public static final String VERSION = "1.003";
 
     /**
      * A convenience constant for no expiration date.

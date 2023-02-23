@@ -61,7 +61,7 @@ public final class ItemLink {
         if (item == null) { throw new IllegalArgumentException("Provided item must not be null."); }
         this.itemIdentifier = item.getHeader();
         try {
-            this.thumbprint = item.generateThumbprint();
+            this.thumbprint = item.generateThumbprint(false);
         } catch (CryptographyException e) {
             throw new IllegalArgumentException("Unable to create item link, exception caught: " + e);
         }
@@ -127,7 +127,7 @@ public final class ItemLink {
         try {
             return uniqueId.equals(item.getClaim(Claim.UID))
                     && itemIdentifier.equals(item.getHeader())
-                    && thumbprint.equals(item.generateThumbprint(cryptoSuiteName));
+                    && thumbprint.equals(item.generateThumbprint(false, cryptoSuiteName));
         } catch (CryptographyException e) {
             return false;
         }
@@ -147,7 +147,7 @@ public final class ItemLink {
                 if (link.uniqueId.equals(item.getClaim(Claim.UID))) {
                     matchFound = true;
                     try {
-                        if (!link.itemIdentifier.equals(item.getHeader()) || !link.thumbprint.equals(item.generateThumbprint(link.cryptoSuiteName))) {
+                        if (!link.itemIdentifier.equals(item.getHeader()) || !link.thumbprint.equals(item.generateThumbprint(false, link.cryptoSuiteName))) {
                             return IntegrityState.FAILED_LINKED_ITEM_FAULT;
                         }
                     } catch (CryptographyException e) {

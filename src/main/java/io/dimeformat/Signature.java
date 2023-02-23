@@ -30,9 +30,25 @@ public class Signature {
      * @param bytes The raw bytes of a signature.
      * @param name The key name.
      */
-    Signature(byte[] bytes, String name) {
+    public Signature(byte[] bytes, String name) {
         this.bytes = bytes;
         this.name = name;
+    }
+
+    /**
+     * Returns the raw bytes of the signature.
+     * @return
+     */
+    public byte[] getBytes() {
+        return this.bytes;
+    }
+
+    /**
+     * Returns the name of the key that may be used to verify the signature.
+     * @return
+     */
+    public String getName() {
+        return this.name;
     }
 
     /**

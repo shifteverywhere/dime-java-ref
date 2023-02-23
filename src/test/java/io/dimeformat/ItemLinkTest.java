@@ -55,7 +55,7 @@ class ItemLinkTest {
             assertEquals(Key.HEADER, link.itemIdentifier);
             assertEquals(key.generateThumbprint(), link.thumbprint);
             assertEquals(key.getClaim(Claim.UID), link.uniqueId);
-            assertEquals("DSC", link.cryptoSuiteName);
+            assertEquals(Dime.crypto.getDefaultSuiteName(), link.cryptoSuiteName);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -159,7 +159,7 @@ class ItemLinkTest {
     @Test
     void verifyTest2() {
         Key key = Key.generateKey(KeyCapability.SIGN);
-        assertEquals("DSC", key.getCryptoSuiteName());
+        assertEquals(Dime.crypto.getDefaultSuiteName(), key.getCryptoSuiteName());
         ItemLink link = new ItemLink(key, "STN");
         assertTrue(link.verify(key));
         assertEquals("STN", link.cryptoSuiteName);

@@ -71,7 +71,7 @@ public abstract class Item {
     /**
      * Will import an item from a DiME encoded string. DiME envelopes cannot be imported using this method, for
      * envelopes use {@link Envelope#importFromEncoded(String)} instead.
-     * @param encoded The Di:ME encoded string to import an item from.
+     * @param encoded The DiME encoded string to import an item from.
      * @param <T> The subclass of item of the imported DiME item.
      * @return The imported Di:ME item.
      * @throws InvalidFormatException If the encoded string is of a DiME envelope.
@@ -89,7 +89,7 @@ public abstract class Item {
     }
 
     /**
-     * Exports the item to a Di:ME encoded string.
+     * Exports the item to a DiME encoded string.
      * @return The Di:ME encoded representation of the item.
      */
     public String exportToEncoded() {
@@ -99,6 +99,25 @@ public abstract class Item {
         }
         envelope.addItem(this);
         return envelope.exportToEncoded();
+    }
+
+    @Override
+    public String toString() {
+        return exportToEncoded();
+    }
+
+    /**
+     * This will return the encoded item as a byte-array. This should only be used when needing a raw version of the
+     * item for cryptographic operations. For distribution and storage {@link #exportToEncoded()} should be used.
+     * @param withSignatures Indicates if returned byte-array should contain any attached signatures.
+     * @return The item as a byte-array.
+     */
+    public byte[] rawEncoded(boolean withSignatures) {
+        try {
+            return encoded(withSignatures).getBytes(StandardCharsets.UTF_8);
+        } catch (InvalidFormatException e) {
+            return null;
+        }
     }
 
     /**
@@ -116,19 +135,18 @@ public abstract class Item {
 
     /**
      * Will sign an item with the proved key. The Key instance must contain a secret key and be of type IDENTITY.
-     * @param key The key to sign the item with, must be of type IDENTITY.
+     * @param signingKey The key to sign the item with, must be of type IDENTITY.
      * @throws CryptographyException If something goes wrong.
      */
-    public void sign(Key key) throws CryptographyException {
+    public void sign(Key signingKey) throws CryptographyException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
-        if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, key for signing must not be null. (I1004)"); }
-        if (isSigned() && Signature.find(Dime.crypto.generateKeyName(key), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
+        if (signingKey == null || signingKey.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, key for signing must not be null. (I1004)"); }
+        if (isSigned() && Signature.find(Dime.crypto.generateKeyName(signingKey), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
         try {
-            byte[] signature = Dime.crypto.generateSignature(encoded(false), key);
-            String name = isLegacy() ? null : Dime.crypto.generateKeyName(key);
-            getSignatures().add(new Signature(signature, name));
+            Signature signature = Dime.crypto.generateSignature(this, signingKey);
+            getSignatures().add(signature);
             this.isSigned = true;
-        } catch (InvalidFormatException e) {
+        } catch (Exception e) {
             throw new CryptographyException("Unable to sign item, invalid data.");
         }
     }
@@ -163,25 +181,39 @@ public abstract class Item {
     /**
      * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
      * changed. This is created by securely hashing the item and will be unique and change as soon as any content
-     * changes. The encoded format of the returned string is determined by the default cryptographic suite.
-     * @return The hash of the item as an encoded string.
+     * changes. Any signatures attached to the item will be included in the generation of the thumbprint. The encoded
+     * format of the returned string is determined by the default cryptographic suite.
+     * @return The hash (thumbprint) of the item as an encoded string.
      * @throws CryptographyException If something goes wrong.
      */
     public String generateThumbprint() throws CryptographyException {
-        return generateThumbprint(Dime.crypto.getDefaultSuiteName());
+        return generateThumbprint(true, Dime.crypto.getDefaultSuiteName());
+    }
+
+    /**
+     * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
+     * changed. This is created by securely hashing the item and will be unique and change as soon as any content
+     * changes. The encoded format of the returned string is determined by the default cryptographic suite.
+     * @param includeSignatures If attached signatures should be included when generating the thumbprint.
+     * @return The hash (thumbprint) of the item as an encoded string.
+     * @throws CryptographyException If something goes wrong.
+     */
+    public String generateThumbprint(boolean includeSignatures) throws CryptographyException {
+        return generateThumbprint(includeSignatures, Dime.crypto.getDefaultSuiteName());
     }
 
     /**
      * Returns the thumbprint of the item. This may be used to easily identify an item or detect if an item has been
      * changed. This is created by securely hashing the item and will be unique and change as soon as any content
      * changes. The encoded format of the returned string is determined by the cryptographic suite specified.
+     * @param includeSignatures If attached signatures should be included when generating the thumbprint.
      * @param suiteName The name of the cryptographic suite to use, may be null.
-     * @return The hash of the item as an encoded string.
+     * @return The hash (thumbprint) of the item as an encoded string.
      * @throws CryptographyException If something goes wrong.
      */
-    public String generateThumbprint(String suiteName) throws CryptographyException {
+    public String generateThumbprint(boolean includeSignatures, String suiteName) throws CryptographyException {
         try {
-            return Item.thumbprint(encoded(true), suiteName);
+            return Item.thumbprint(encoded(includeSignatures), suiteName);
         } catch (InvalidFormatException e) {
             throw new CryptographyException("Unable to generate thumbprint for item, data invalid.");
         }
@@ -327,9 +359,8 @@ public abstract class Item {
             return IntegrityState.FAILED_KEY_MISMATCH;
         }
         try {
-            return !Dime.crypto.verifySignature(encoded(false), signature.bytes, verifyKey)
-                    ? IntegrityState.FAILED_NOT_TRUSTED : IntegrityState.VALID_SIGNATURE;
-        } catch (InvalidFormatException | CryptographyException e) {
+            return Dime.crypto.verifySignature(this, signature, verifyKey) ? IntegrityState.VALID_SIGNATURE : IntegrityState.FAILED_NOT_TRUSTED;
+        } catch (Exception e) {
             return IntegrityState.FAILED_INTERNAL_FAULT;
         }
     }
