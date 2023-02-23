@@ -58,6 +58,8 @@ class IdentityIssuingRequestTest {
             assertNotNull(iir.getClaim(Claim.AMB));
             iir.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(iir.getClaim(Claim.AUD));
+            iir.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(iir.getClaim(Claim.CNM));
             iir.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(iir.getClaim(Claim.CTX));
             iir.putClaim(Claim.EXP, Instant.now());

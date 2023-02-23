@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * An encapsulating object that can carry one or more Di:ME items. This is usually the format
+ * An encapsulating object that can carry one or more DiME items. This is usually the format
  * that is exported and stored or transmitted. It will start with the header 'Di'.
  * Envelopes may be either anonymous or signed. An anonymous envelope, most frequently used,
  * is not cryptographically sealed, although the items inside normally are. A signed envelope
@@ -229,18 +229,18 @@ public class Envelope extends Item {
     /**
      * Signs the envelope using the provided key. The key must be of type IDENTITY. It is not possible to sign an
      * anonymous envelope. It is also not possible to sign an envelope if it already has been signed or does not
-     * contain any Di:ME items.
-     * @param key The key to use when signing.
+     * contain any DiME items.
+     * @param signingKey The key to use when signing.
      * @throws CryptographyException If something goes wrong.
      */
     @Override
-    public void sign(Key key) throws CryptographyException {
+    public void sign(Key signingKey) throws CryptographyException {
         if (isLegacy()) {
             if (isAnonymous()) { throw new IllegalStateException("Unable to sign, envelope is anonymous."); }
             if (isSigned()) { throw new IllegalStateException("Unable to sign, envelope is already signed."); }
         }
         if (this.items == null || this.items.isEmpty()) { throw new IllegalStateException("Unable to sign, at least one item must be attached before signing an envelope."); }
-        super.sign(key);
+        super.sign(signingKey);
     }
 
     @Override
@@ -253,7 +253,7 @@ public class Envelope extends Item {
 
     /**
      * Exports the envelope to a Di:ME encoded string.
-     * @return The Di:ME encoded representation of the envelope.
+     * @return The DiME encoded representation of the envelope.
      */
     @Override
     public String exportToEncoded() {
@@ -320,7 +320,7 @@ public class Envelope extends Item {
 
     /// PRIVATE ///
 
-    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CNM, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private ArrayList<Item> items;
 
 }

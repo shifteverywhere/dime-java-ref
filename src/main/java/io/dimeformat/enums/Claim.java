@@ -28,6 +28,10 @@ public enum Claim {
      */
     CAP,
     /**
+     * Common Name - A common name, or alias, for the item, may be used to simplify manual identification of items (All).
+     */
+    CNM,
+    /**
      * Context - The context for in which the item is to be used or valid (All).
      */
     CTX,

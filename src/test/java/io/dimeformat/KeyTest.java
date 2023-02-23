@@ -54,6 +54,8 @@ class KeyTest {
             assertNotNull(key.getClaim(Claim.AMB));
             key.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(key.getClaim(Claim.AUD));
+            key.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(key.getClaim(Claim.CNM));
             key.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(key.getClaim(Claim.CTX));
             key.putClaim(Claim.EXP, Instant.now());
@@ -296,6 +298,28 @@ class KeyTest {
             assertEquals(IntegrityState.COMPLETE, key.verify(Commons.getIssuerKey()));
             assertEquals(IntegrityState.FAILED_KEY_MISMATCH, key.verify(Commons.getAudienceKey()));
             assertFalse(key.strip(Commons.getAudienceKey()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void commonNameTest1() {
+        try {
+            Key key = Key.generateKey(KeyCapability.SIGN);
+            key.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertEquals(key.getClaim(Claim.CNM), Commons.COMMON_NAME);
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void commonNameTest2() {
+        try {
+            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjbm0iOiJEaU1FIiwiaWF0IjoiMjAyMy0wMi0yM1QxMzo1NjoxOC45NTM3MTE1ODZaIiwia2V5IjoiTmFDbC56TlE2cVJQOFpWV2prWlFVVFVhT2xmcUdYdEpOdjUvZUV2dUxzeGJJWndxeU03emNFSVNPNnc3ckdRNzBFc0kvT1kxZEx2aU45Wm1MTm51QklWeGZuUSIsInB1YiI6Ik5hQ2wuc2pPODNCQ0VqdXNPNnhrTzlCTENQem1OWFM3NGpmV1ppelo3Z1NGY1g1MCIsInVpZCI6IjliM2IwZjQyLWI5ZDMtNDU1MC1hNWEyLTRiMzY2OWY5OWYwYyJ9";
+            Key key = Item.importFromEncoded(exported);
+            assertEquals(key.getClaim(Claim.CNM), Commons.COMMON_NAME);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

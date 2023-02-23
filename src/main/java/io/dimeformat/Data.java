@@ -106,9 +106,9 @@ public class Data extends Item {
     }
 
     @Override
-    public void sign(Key key) throws CryptographyException {
+    public void sign(Key signingKey) throws CryptographyException {
         if (this.payload == null) { throw new IllegalStateException("Unable to sign item, no payload added."); }
-        super.sign(key);
+        super.sign(signingKey);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class Data extends Item {
 
     /// PRIVATE ///
 
-    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CNM, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 3;
     private static final int MAXIMUM_NBR_COMPONENTS = MINIMUM_NBR_COMPONENTS + 1;
     private static final int COMPONENTS_PAYLOAD_INDEX = 2;

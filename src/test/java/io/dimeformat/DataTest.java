@@ -84,6 +84,8 @@ class DataTest {
             assertNotNull(data.getClaim(Claim.AMB));
             data.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(data.getClaim(Claim.AUD));
+            data.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(data.getClaim(Claim.CNM));
             data.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(data.getClaim(Claim.CTX));
             data.putClaim(Claim.EXP, Instant.now());

@@ -54,6 +54,8 @@ class TagTest {
             assertNotNull(tag.getClaim(Claim.AMB));
             tag.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(tag.getClaim(Claim.AUD));
+            tag.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(tag.getClaim(Claim.CNM));
             tag.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(tag.getClaim(Claim.CTX));
             tag.putClaim(Claim.EXP, Instant.now());

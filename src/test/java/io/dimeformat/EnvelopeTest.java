@@ -54,6 +54,8 @@ class EnvelopeTest {
             assertNotNull(envelope.getClaim(Claim.AMB));
             envelope.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(envelope.getClaim(Claim.AUD));
+            envelope.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(envelope.getClaim(Claim.CNM));
             envelope.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(envelope.getClaim(Claim.CTX));
             envelope.putClaim(Claim.EXP, Instant.now());

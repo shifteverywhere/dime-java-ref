@@ -58,6 +58,8 @@ class MessageTest {
             assertNotNull(message.getClaim(Claim.AMB));
             message.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(message.getClaim(Claim.AUD));
+            message.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(message.getClaim(Claim.CNM));
             message.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(message.getClaim(Claim.CTX));
             message.putClaim(Claim.EXP, Instant.now());

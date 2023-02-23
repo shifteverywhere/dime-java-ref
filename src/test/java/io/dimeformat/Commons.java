@@ -24,6 +24,7 @@ class Commons {
     public static final String SYSTEM_NAME = "io.dimeformat.ref";
     public static final String PAYLOAD = "Racecar is racecar backwards.";
     public static final String MIMETYPE = "text/plain";
+    public static final String COMMON_NAME = "DiME";
     public static final String CONTEXT = "test-context";
     public static final String SIGN_KEY_CONTEXT = "id-key";
     public static final String ISSUER_URL = "https://example.dimeformat.io";

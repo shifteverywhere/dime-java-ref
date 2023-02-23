@@ -55,6 +55,8 @@ class IdentityTest {
             assertNotNull(identity.getClaim(Claim.AMB));
             identity.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(identity.getClaim(Claim.AUD));
+            identity.putClaim(Claim.CNM, Commons.COMMON_NAME);
+            assertNotNull(identity.getClaim(Claim.CNM));
             identity.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(identity.getClaim(Claim.CTX));
             identity.putClaim(Claim.EXP, Instant.now());
@@ -355,7 +357,7 @@ class IdentityTest {
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), 1L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(1001);
-            assertFalse(identity.verify().isValid(), "(This test may fail if run if the whole test suite is run in parallel)");
+            assertFalse(identity.verify().isValid(), "(Note this may happen if running tests in parallel)");
             Dime.setGracePeriod(1L);
             assertTrue(identity.verify().isValid());
             Dime.setGracePeriod(0L);
@@ -386,7 +388,7 @@ class IdentityTest {
             IdentityCapability[] caps = new IdentityCapability[] { IdentityCapability.GENERIC };
             Identity identity = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN))).issueIdentity(UUID.randomUUID(), 1L, Commons.getTrustedKey(), Commons.getTrustedIdentity(), false, caps, caps);
             Thread.sleep(2000);
-            assertFalse(identity.verify().isValid(), "(This test may fail if run if the whole test suite is run in parallel)");
+            assertFalse(identity.verify().isValid(), "(Note this may happen if running tests in parallel)");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

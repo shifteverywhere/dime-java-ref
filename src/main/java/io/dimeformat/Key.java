@@ -313,7 +313,7 @@ public class Key extends Item {
 
     /// PRIVATE ///
 
-    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CNM, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int CRYPTO_SUITE_INDEX = 0;
     private static final int ENCODED_KEY_INDEX = 1;
     private static final int LEGACY_KEY_HEADER_SIZE = 6;
