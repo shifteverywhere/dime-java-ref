@@ -49,6 +49,7 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public byte[] generateSignature(Item item, Key key) throws CryptographyException {
+        generateHash(item.rawEncoded(false));
         String thumbprint = item.generateThumbprint(false, this._suiteName);
         if (thumbprint != null && !thumbprint.isEmpty()) {
             byte[] signature = new byte[NaClSuite.NBR_SIGNATURE_BYTES];
