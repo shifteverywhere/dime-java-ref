@@ -37,7 +37,7 @@ public class Signature {
 
     /**
      * Returns the raw bytes of the signature.
-     * @return
+     * @return The raw bytes of the digital signature.
      */
     public byte[] getBytes() {
         return this.bytes;
@@ -45,7 +45,7 @@ public class Signature {
 
     /**
      * Returns the name of the key that may be used to verify the signature.
-     * @return
+     * @return The name of the key.
      */
     public String getName() {
         return this.name;

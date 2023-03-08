@@ -1,4 +1,6 @@
-io.covrsecurity.onyonservice
-io.covrsecurity.onyonservice.auth
-io.covrsecurity.onyonservice.resources
-io.covrsecurity.onyonservice.storage
+io.dimeformat
+io.dimeformat.crypto
+io.dimeformat.enums
+io.dimeformat.exceptions
+io.dimeformat.keyring
+org.webpki.jcs

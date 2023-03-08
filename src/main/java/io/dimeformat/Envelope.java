@@ -187,7 +187,7 @@ public class Envelope extends Item {
      * will return an empty array. Provided claim value must not be null.
      * @param claim The claim for which the provided value should be compared with.
      * @param value The value of the claim that should be searched for.
-     * @return
+     * @return The matching item or items, as a list, will be empty if none where found.
      * @param <T> The class of the claim value provided.
      */
     public <T> List<Item> getItems(Claim claim, T value) {
