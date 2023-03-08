@@ -432,7 +432,9 @@ public abstract class Item {
 
     /**
      * Converts the item to legacy (before official Dime version 1).
+     * @deprecated Legacy support will be removed in the next version.
      */
+    @Deprecated
     public void convertToLegacy() {
         strip();
         if (getItemLinks() != null) {
@@ -446,7 +448,9 @@ public abstract class Item {
     /**
      * Checks if the item is legacy (before official Dime version 1).
      * @return True if legacy, false is not.
+     * @deprecated Legacy support will be removed in the next version.
      */
+    @Deprecated
     public boolean isLegacy() { return this.legacy; }
 
     /// PACKAGE-PRIVATE ///
@@ -455,6 +459,7 @@ public abstract class Item {
     static final int COMPONENTS_IDENTIFIER_INDEX = 0;
     static final int COMPONENTS_CLAIMS_INDEX = 1;
 
+    @Deprecated
     void markAsLegacy() {
         legacy = true;
     }
@@ -568,6 +573,7 @@ public abstract class Item {
 
     private ClaimsMap _claims;
     private List<Signature> _signatures;
+    @Deprecated
     private boolean legacy = false;
 
     private ClaimsMap getClaimMap() {

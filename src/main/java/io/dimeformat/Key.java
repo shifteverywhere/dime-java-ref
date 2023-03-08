@@ -9,7 +9,6 @@
 //
 package io.dimeformat;
 
-import io.dimeformat.crypto.ICryptoSuite;
 import io.dimeformat.enums.*;
 import io.dimeformat.exceptions.CryptographyException;
 import io.dimeformat.exceptions.InvalidFormatException;
@@ -280,6 +279,7 @@ public class Key extends Item {
         setClaimValue(claim, key);
     }
 
+    @Deprecated
     static void convertKeyToLegacy(Item item, KeyCapability capability, Claim claim) {
         String key = item.getClaim(claim);
         if (key == null) { return; }
@@ -322,6 +322,7 @@ public class Key extends Item {
     private byte[] _secretBytes;
     private byte[] _publicBytes;
 
+    @Deprecated
     private static KeyCapability getCapabilityFromLegacy(byte[] key) {
         switch (key[1]) {
             case 0x10: return KeyCapability.keyCapabilityFromLegacy("encryption");
