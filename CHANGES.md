@@ -1,6 +1,15 @@
 # CHANGES
 
+## Version 1.2.6 - 2023-03-08
+- Allows fetching of items from envelopes based on any claim, not just context ("ctx")
+- Deprecated Envelope#getItem(String), fetching from context
+- Introduced NaCl crypto suite with large performance gains when signing
+- Implements the claim Common Name ("cnm")
+- Support for legacy format (before official DiME specification) has been marked deprecated and will be removed in the next version
+- Conforms to DiME data format version 1.004
+
 ## Version 1.2.5 - 2023-02-02
+- Adds support to verify identities using an arbitrary identity from the trust chain
 - Removes verification of identity issuing requests when issuing new identity, if required, verify manually first
 - Removes verification of issuer when issuing new identity, if required, issuers need to be verified manually first
 - Fixes an issue with issuing an identity with the same key as the issuing identity
