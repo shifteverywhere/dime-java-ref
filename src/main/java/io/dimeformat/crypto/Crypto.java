@@ -200,6 +200,7 @@ public final class Crypto {
      * Encodes a key from a byte array to a string. The encoding format is determined by the cryptographic suite
      * specified.
      * @param rawKey The raw key bytes to encode.
+     * @param claim The name of the claim to encode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
      * @param suiteName The cryptographic suite to use.
      * @return The encoded key.
      */
@@ -212,6 +213,7 @@ public final class Crypto {
      * Decodes an encoded key to a byte array. The encoded format must match the cryptographic suite specified to be
      * successful.
      * @param encodedKey The encoded raw key bytes.
+     * @param claim The name of the claim to decode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
      * @param suiteName The cryptographic suite to use.
      * @return The decoded key.
      */

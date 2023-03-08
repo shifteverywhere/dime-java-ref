@@ -104,6 +104,7 @@ public interface ICryptoSuite {
     /**
      * Encodes a key from a byte-array to a string.
      * @param rawKey The raw key byte-array to encode.
+     * @param claim The name of the claim to encode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
      * @return The encoded key.
      */
     String encodeKeyBytes(byte[] rawKey, Claim claim);
@@ -111,6 +112,7 @@ public interface ICryptoSuite {
     /**
      * Decodes an encoded key to a byte array.
      * @param encodedKey The encoded key.
+     * @param claim The name of the claim to encode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
      * @return The decoded key.
      */
     byte[] decodeKeyBytes(String encodedKey, Claim claim);
