@@ -1,11 +1,14 @@
 # CHANGES
 
+## Version 1.2.7 - 2023-03-09
+- Updates dependencies, particularly org.json:json due to CVE-2022-45688
+
 ## Version 1.2.6 - 2023-03-08
 - Allows fetching of items from envelopes based on any claim, not just context ("ctx")
 - Deprecated Envelope#getItem(String), fetching from context
 - Introduced NaCl crypto suite with large performance gains when signing
 - Implements the claim Common Name ("cnm")
-- Support for legacy format (before official DiME specification) has been marked deprecated and will be removed in the next version
+- Support for legacy format (before official DiME specification) has been marked deprecated and will be removed in version 1.3
 - Conforms to DiME data format version 1.004
 
 ## Version 1.2.5 - 2023-02-02
