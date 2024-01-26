@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat.crypto;
 
@@ -37,7 +37,7 @@ public interface ICryptoSuite {
     String generateKeyName(Key key);
 
     /**
-     * Generates a cryptographic signature from an item byte array using the provided key.
+     * Generates a cryptographic signature from an item using the provided key.
      * @param item The item that should be signed.
      * @param key The key to use when signing the data.
      * @return The signature as a byte array.
@@ -112,7 +112,7 @@ public interface ICryptoSuite {
     /**
      * Decodes an encoded key to a byte array.
      * @param encodedKey The encoded key.
-     * @param claim The name of the claim to encode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
+     * @param claim The name of the claim to decode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
      * @return The decoded key.
      */
     byte[] decodeKeyBytes(String encodedKey, Claim claim);

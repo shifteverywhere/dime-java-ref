@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat.crypto;
 
@@ -36,12 +36,12 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public String generateKeyName(Key key) {
-        // This only supports key identifier for public keys, may be different for other crypto suites
+        // This only supports key names for public keys, may be different for other crypto suites
         byte[] bytes = key.getKeyBytes(Claim.PUB);
         if (bytes != null && bytes.length > 0) {
             try {
                 byte[] hash = hash(bytes);
-                byte[] name = Utility.subArray(hash, 0, 8); // First 8 bytes are used as an identifier
+                byte[] name = Utility.subArray(hash, 0, NaClSuite.KEY_NAME_LENGTH); // First 8 bytes are used as an identifier
                 return Utility.toHex(name);
             } catch (CryptographyException e) { /* ignored */ }
         }
@@ -49,7 +49,6 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public byte[] generateSignature(Item item, Key key) throws CryptographyException {
-        generateHash(item.rawEncoded(false));
         String thumbprint = item.generateThumbprint(false, this._suiteName);
         if (thumbprint != null && !thumbprint.isEmpty()) {
             byte[] signature = new byte[NaClSuite.NBR_SIGNATURE_BYTES];
@@ -89,7 +88,7 @@ class NaClSuite implements ICryptoSuite {
         } else {
             byte[] publicKey = new byte[NaClSuite.NBR_A_KEY_BYTES];
             byte[] secretKey;
-            switch (capabilities.get(0)) {
+            switch (firstUse) {
                 case SIGN:
                     secretKey = new byte[NaClSuite.NBR_A_KEY_BYTES * 2];
                     this._sodium.crypto_sign_keypair(publicKey, secretKey);
@@ -171,6 +170,7 @@ class NaClSuite implements ICryptoSuite {
     protected static final int NBR_NONCE_BYTES = 24;
     protected static final int NBR_MAC_BYTES = 16;
     protected static final int NBR_HASH_BYTES = 32;
+    protected static final int KEY_NAME_LENGTH = 8;
 
     protected final SodiumJava _sodium;
     protected final String _suiteName;

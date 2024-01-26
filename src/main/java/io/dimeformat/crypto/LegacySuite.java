@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat.crypto;
 
@@ -15,7 +15,7 @@ import io.dimeformat.exceptions.CryptographyException;
 
 /**
  * Implements the legacy suits used in previous specifications of DiME, i.e. STN and DSC.
- * @deprecated Will be removed in future versions, use
+ * @deprecated Will be removed in future versions, use NaCl instead (default).
  */
 @Deprecated
 class LegacySuite extends NaClSuite {

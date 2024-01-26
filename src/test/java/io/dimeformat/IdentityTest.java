@@ -423,6 +423,7 @@ class IdentityTest {
             assertEquals((Instant) Commons.getIssuerIdentity().getClaim(Claim.IAT), identity.getClaim(Claim.IAT));
             assertEquals((Instant) Commons.getIssuerIdentity().getClaim(Claim.EXP), identity.getClaim(Claim.EXP));
             assertEquals((UUID) Commons.getIntermediateIdentity().getClaim(Claim.SUB), identity.getClaim(Claim.ISS));
+            assertNotNull(identity.getPublicKey());
             assertEquals(Commons.getIssuerIdentity().getPublicKey().getPublic(), identity.getPublicKey().getPublic());
             assertTrue(identity.hasCapability(IdentityCapability.GENERIC));
             assertTrue(identity.hasCapability(IdentityCapability.IDENTIFY));

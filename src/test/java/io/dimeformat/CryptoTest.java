@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -22,8 +22,10 @@ class CryptoTest {
 
     @Test
     void hasCryptoSuiteTest1() {
-        assertTrue(Dime.crypto.hasCryptoSuite("NaCl"));
-        assertFalse(Dime.crypto.hasCryptoSuite("NSA"));
+        assertTrue(Dime.crypto.hasCryptoSuite("NaCl")); //default
+        assertTrue(Dime.crypto.hasCryptoSuite("DSC"));  // legacy base64
+        assertTrue(Dime.crypto.hasCryptoSuite("STN"));  // legacy base58
+        assertFalse(Dime.crypto.hasCryptoSuite("NSA")); // non-existing
     }
 
     @Test
@@ -37,9 +39,25 @@ class CryptoTest {
     }
 
     @Test
-    void setDefaultSuiteNameTest1() {
-        try { Dime.crypto.setDefaultSuiteName("NSA"); fail("Exception not thrown."); } catch (IllegalArgumentException e) { /* all is well */ }
-        Dime.crypto.setDefaultSuiteName("STN");
+    void defaultSuiteNameTest1() {
+       assertNotNull(Dime.crypto.getDefaultSuiteName());
+       assertEquals("NaCl", Dime.crypto.getDefaultSuiteName());
+    }
+
+    @Test
+    void defaultSuiteNameTest2() {
+        Dime.crypto.setDefaultSuiteName("DSC");
+        assertEquals("DSC", Dime.crypto.getDefaultSuiteName());
+        Dime.crypto.setDefaultSuiteName("NaCl");
+        assertEquals("NaCl", Dime.crypto.getDefaultSuiteName());
+    }
+
+    @Test
+    void defaultSuiteNameTest3() {
+        try {
+            Dime.crypto.setDefaultSuiteName("NSA"); // non-existing
+            fail("Exception not thrown.");
+        } catch (IllegalArgumentException e) { /* all is well */ }
     }
 
     @Test
@@ -53,11 +71,10 @@ class CryptoTest {
     @Test
     void generateKeyNameTest2() {
         try {
-            String hex = "506f85299f6a2a4b";
-            String encoded = "Di:KEY.eyJ1aWQiOiIyYTY5ZjJkMC1kNzQ2LTQxNzYtOTg5NS01MDcyNzRlNzJiYjkiLCJwdWIiOiJTVE4uMkI4VzZCNjRRTTlBeDRvdzNjb1Y0TlJrTW95MWNXUzR4N0FYYTRzdnd5dVJlQWtQNG8iLCJpYXQiOiIyMDIyLTA2LTExVDEwOjI3OjM0Ljk5NjIzOFoiLCJ1c2UiOlsic2lnbiJdLCJrZXkiOiJTVE4uQXhwZ3Z2N0FYS2lhalNEQlBCZ0ZCbndzSkoyUXpXSGFUaWpFY29LcEx6YUo5VVlpOGVKNGg0bkJFQnVSN2NldWtVQm5waWU1NkxZQW5EdHQ3Y2V3aVczd0FGTDdFIn0";
+            String name = "40950cea47a2b319";
+            String encoded = "Di:KEY.eyJjYXAiOlsiZXhjaGFuZ2UiXSwiaWF0IjoiMjAyNC0wMS0yNlQwOTo1NToyNC43NzI5NDMzWiIsImtleSI6Ik5hQ2wuRXdxVWU4M1JERitkNlpGaU1ZQ2NTNHg4OFZtZTUxS3JvVTlId3U4b1l3MCIsInB1YiI6Ik5hQ2wuemxuQ1BZTTl5SFprOWpTdGhxOXZVQWtYTy9pR2dFcmhaY040bzJoWXFUYyIsInVpZCI6IjY4ZDk2NWUzLTAxNmEtNGI2Yy05NzUyLTFmYzlhNzdhNjc1MSJ9";
             Key key = Item.importFromEncoded(encoded);
-            String identifier = Dime.crypto.generateKeyName(key);
-            assertEquals(hex, identifier);
+            assertEquals(name, Dime.crypto.generateKeyName(key));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -68,13 +85,7 @@ class CryptoTest {
         try {
             Key key = Key.generateKey(List.of(KeyCapability.SIGN));
             Signature signature = Dime.crypto.generateSignature(key, key);
-            Dime.crypto.verifySignature(key, signature, key);
-
-            String sig = Utility.toBase64(signature.getBytes());
-            String k = key.exportToEncoded();
-
-            int i = 0;
-
+            assertTrue(Dime.crypto.verifySignature(key, signature, key));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -83,10 +94,12 @@ class CryptoTest {
     @Test
     void generateSignatureTest2() {
         try {
-            String encoded = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIzLTAyLTIzVDEzOjI3OjQ3LjE4MTM2NzcwOFoiLCJrZXkiOiJOYUNsLmRvVzlxVVlhUVZ5a1dmaEhkMFNqVzlIT1Frd0ZtaXQvY2tBQWtkNlNHZy9MTDZ1djJ5a1N4YUVRTmlPMmE3anhmaVdvU1g1N1hqR0hvWU8wN3V6WnlnIiwicHViIjoiTmFDbC55eStycjlzcEVzV2hFRFlqdG11NDhYNGxxRWwrZTE0eGg2R0R0TzdzMmNvIiwidWlkIjoiMDNhNWE4OTAtNTFkZS00N2U0LTg1MGMtYzhlOTY2MmY4ZjAxIn0";
+            String encoded = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDI0LTAxLTI2VDE0OjExOjIyLjk1MzQ1NDZaIiwia2V5IjoiTmFDbC5RdS9KVmNjTk5hMlBPa0owMmoxOVNLNHlMam1mZzJyMlpDQzhrTi9LZUIxTDBYWVFDenpnRm40L1QvQjZ5d3NZVEFTNVdzQUk0b0NLdlNvZlN4Sm8rdyIsInB1YiI6Ik5hQ2wuUzlGMkVBczg0QlorUDAvd2Vzc0xHRXdFdVZyQUNPS0FpcjBxSDBzU2FQcyIsInVpZCI6ImQ0YzBmYjkwLWE1OTEtNDk2YS04OWNjLTAyNTlhYjhiMjU5NSJ9";
             Key key = Item.importFromEncoded(encoded);
-            Signature signature = new Signature(Utility.fromBase64("cjk/O3yicD1F5Y53XuEshnOe5EsNaRurQHA7ynC7p3jSRNEEoe8ZlZuOKB3qNO6uQfdgkWonzFjoyuWjtEX8Cg"),null);
-            Dime.crypto.verifySignature(key, signature, key);
+            Signature signature = new Signature(
+                    Utility.fromHex("c447e712b0cfd384a2d0e80ec0006962057d76406683dd9587b0bd08b09389d24cc8ba13d0d4c3b92a315602e83c04d5a48229f2c6d428183d51193b119b9a01"),
+                    null);
+            assertTrue(Dime.crypto.verifySignature(key, signature, key));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -95,8 +108,8 @@ class CryptoTest {
     @Test
     void generateSharedSecretTest1() {
         try {
-            Key clientKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
-            Key serverKey = Key.generateKey(List.of(KeyCapability.EXCHANGE));
+            Key clientKey = Key.generateKey(KeyCapability.EXCHANGE);
+            Key serverKey = Key.generateKey(KeyCapability.EXCHANGE);
             Key shared1 = clientKey.generateSharedSecret(serverKey.publicCopy(), List.of(KeyCapability.ENCRYPT));
             Key shared2 = clientKey.publicCopy().generateSharedSecret(serverKey, List.of(KeyCapability.ENCRYPT));
             assertTrue(shared1.hasCapability(KeyCapability.ENCRYPT));
@@ -110,9 +123,9 @@ class CryptoTest {
     @Test
     void generateSharedSecretTest2() {
         try {
-            String encodedClient = "Di:KEY.eyJ1aWQiOiI1ODc1YWNjZS01OTE5LTQwMzEtOWY2MS0zMzg4NGZmOTRiY2EiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjQ2ODE0OFoiLCJrZXkiOiIyREJWdDhWOWhSOTU0Mjl5MWdja3lXaVBoOXhVRVBxb2hFUTFKQjRnSjlodmpaV1hheE0zeWVURXYiLCJwdWIiOiIyREJWdG5NYUZ6ZkpzREIyTGtYS2hjV3JHanN2UG1TMXlraXdCTjVvZXF2eExLaDRBMllIWFlUc1EifQ";
-            String encodedServer = "Di:KEY.eyJ1aWQiOiJkNDQ5ZTYxMC1jZDhmLTQ0OTYtOTAxYS02N2ZmNDVjNmNkNzAiLCJpYXQiOiIyMDIxLTEyLTAyVDIyOjA4OjAzLjUyNDMyWiIsInB1YiI6IjJEQlZ0bk1aUDc5aEpWTUpwVnlIR29rRU1QWEM2cXkzOHNoeVRIaEpBekY5TlVRdlFmUWRxNGRjMyJ9";
-            String encodedShared = "STN.2bLW8dmYQr4jrLSKiTLggLU1cbVMkmK1uUChchxYzAMC9fshCG";
+            String encodedClient = "Di:KEY.eyJjYXAiOlsiZXhjaGFuZ2UiXSwiaWF0IjoiMjAyNC0wMS0yNlQwOTozMjozNC44NTYyMjM1WiIsImtleSI6Ik5hQ2wuU0ZWQUpZc1BESzBZS3NTbGx3Qm9LLzByU0FPRUY5aXB3RHJvdU9iMEt6WSIsInB1YiI6Ik5hQ2wuQm45WkV1S01BTXNpU2daL2NxYzhpTFg1QkIvMVhBSGJiRTBCVWNuYjVBYyIsInVpZCI6ImI4MzgzMGJlLWNkYWUtNGFjYi04YWEwLWVjYzUwYWIwZTBhMCJ9";
+            String encodedServer = "Di:KEY.eyJjYXAiOlsiZXhjaGFuZ2UiXSwiaWF0IjoiMjAyNC0wMS0yNlQwOTozMjozNC44NTY5MjgzWiIsInB1YiI6Ik5hQ2wuNU0rZFQ4U2lGS0x3YTdOdXRDRWhLWkFFcnlhamtheFFqK1ZteFM4MTNXRSIsInVpZCI6IjVjMmI4OWIwLWY4ZDItNDEwNS1iNzc1LTQzOGY4MTIwZDBhMiJ9";
+            String encodedShared = "NaCl.hTxsOaGVldUkwgSGLUMnxUdalTRpU7PulenQUIL+7o8";
             Key clientKey = Item.importFromEncoded(encodedClient);
             assertNotNull(clientKey);
             Key serverKey = Item.importFromEncoded(encodedServer);
@@ -145,7 +158,7 @@ class CryptoTest {
     void encryptTest1() {
         try {
             String data = Commons.PAYLOAD;
-            Key key = Key.generateKey(List.of(KeyCapability.ENCRYPT));
+            Key key = Key.generateKey(KeyCapability.ENCRYPT);
             byte[] cipherText = Dime.crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
             byte[] plainText = Dime.crypto.decrypt(cipherText, key);
@@ -160,7 +173,7 @@ class CryptoTest {
     void encryptTest2() {
         try {
             String data = Commons.PAYLOAD;
-            String encoded = "Di:KEY.eyJ1aWQiOiI3ZmM1ODcxMi0xYzY3LTQ4YmItODRmMS1kYjlkOGYyZWM2ZTMiLCJpYXQiOiIyMDIxLTEyLTAyVDIwOjI2OjU4LjQ2ODQ2MloiLCJrZXkiOiIyMmV0WkFOOHlQZmtNQkxpem83WE13S0Zrd29UTVJDeXpNdG9uMVV6RUVRODZqWGRjQmtTdTV0d1EifQ";
+            String encoded = "Di:KEY.eyJjYXAiOlsiZW5jcnlwdCJdLCJpYXQiOiIyMDI0LTAxLTI2VDA4OjQ4OjA5LjM4MjU1MjNaIiwia2V5IjoiTmFDbC5xaFV5Y0RDeUF3MkJiSmxWK3lSQ1pBZXRoNWl1YVo2WU15azJrK3NOYUNFIiwidWlkIjoiNWI5YTQ1ZjgtNzQzYi00MTFmLWJhODItMzA4YTgxNjdkYmM4In0";
             Key key = Item.importFromEncoded(encoded);
             byte[] cipherText = Dime.crypto.encrypt(data.getBytes(StandardCharsets.UTF_8), key);
             assertNotNull(cipherText);
@@ -175,10 +188,10 @@ class CryptoTest {
     @Test
     void decryptTest1() {
         try {
-            String cipherText = "NHubU8GAScHW7Re7+Ne8UPBB9xVEJX3WGUO4dMNNtR0VB9T5gJ8OZIpfgpURRkhuJD/7g+flZofsaP8NTVkhGrUFcZ4b";
-            String encoded = "Di:KEY.eyJ1aWQiOiI3ZmM1ODcxMi0xYzY3LTQ4YmItODRmMS1kYjlkOGYyZWM2ZTMiLCJpYXQiOiIyMDIxLTEyLTAyVDIwOjI2OjU4LjQ2ODQ2MloiLCJrZXkiOiIyMmV0WkFOOHlQZmtNQkxpem83WE13S0Zrd29UTVJDeXpNdG9uMVV6RUVRODZqWGRjQmtTdTV0d1EifQ";
+            String cipherText = "p5UDu1/yciMaoMYE2P6yN/giWOu5zCwmvL89eBMrbgeIymscVK4pVaWdfJ3i8OZ7cMiJ+/feDfF5GG9Y539jKnwDB3Vv";
+            String encoded = "Di:KEY.eyJjYXAiOlsiZW5jcnlwdCJdLCJpYXQiOiIyMDI0LTAxLTI2VDA4OjQ4OjA5LjM4MjU1MjNaIiwia2V5IjoiTmFDbC5xaFV5Y0RDeUF3MkJiSmxWK3lSQ1pBZXRoNWl1YVo2WU15azJrK3NOYUNFIiwidWlkIjoiNWI5YTQ1ZjgtNzQzYi00MTFmLWJhODItMzA4YTgxNjdkYmM4In0";
             Key key = Item.importFromEncoded(encoded);
-             byte[] plainText = Dime.crypto.decrypt(Utility.fromBase64(cipherText), key);
+            byte[] plainText = Dime.crypto.decrypt(Utility.fromBase64(cipherText), key);
             assertNotNull(plainText);
             assertEquals(Commons.PAYLOAD, new String(plainText, StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -203,12 +216,12 @@ class CryptoTest {
     void suiteTest1() {
         try {
             String suiteName = Dime.crypto.getDefaultSuiteName();
-            Key dscKey = Key.generateKey(KeyCapability.SIGN);
-            assertNotNull(dscKey);
-            assertEquals(suiteName, dscKey.getCryptoSuiteName());
-            Utility.fromBase64(dscKey.getSecret().substring(suiteName.length() + 1));
-            Utility.fromBase64(dscKey.getPublic().substring(suiteName.length() + 1));
-            String exported = dscKey.exportToEncoded();
+            Key naclKey = Key.generateKey(KeyCapability.SIGN);
+            assertNotNull(naclKey);
+            assertEquals(suiteName, naclKey.getCryptoSuiteName());
+            Utility.fromBase64(naclKey.getSecret().substring(suiteName.length() + 1));
+            Utility.fromBase64(naclKey.getPublic().substring(suiteName.length() + 1));
+            String exported = naclKey.exportToEncoded();
             assertNotNull(exported);
             String claims = exported.split("\\.")[1];
             JSONObject json = new JSONObject(new String(Utility.fromBase64(claims)));
@@ -225,20 +238,21 @@ class CryptoTest {
     @Test
     void suiteTest2() {
         try {
-            Key stnKey = Key.generateKey(List.of(KeyCapability.SIGN), Dime.NO_EXPIRATION, null, null, "STN");
-            assertNotNull(stnKey);
-            assertEquals("STN", stnKey.getCryptoSuiteName());
-            Base58.decode(stnKey.getSecret().substring(4));
-            Base58.decode(stnKey.getPublic().substring(4));
-            String exported = stnKey.exportToEncoded();
+            String suiteName = "DSC";
+            Key dscKey = Key.generateKey(List.of(KeyCapability.SIGN), Dime.NO_EXPIRATION, null, null, suiteName);
+            assertNotNull(dscKey);
+            assertEquals(suiteName, dscKey.getCryptoSuiteName());
+            Utility.fromBase64(dscKey.getSecret().substring(suiteName.length() + 1));
+            Utility.fromBase64(dscKey.getPublic().substring(suiteName.length() + 1));
+            String exported = dscKey.exportToEncoded();
             assertNotNull(exported);
             String claims = exported.split("\\.")[1];
             JSONObject json = new JSONObject(new String(Utility.fromBase64(claims)));
             assertNotNull(json);
-            assertTrue(json.has("key"));
-            assertTrue(json.has("pub"));
-            assertTrue(json.getString("key").startsWith("STN."));
-            assertTrue(json.getString("pub").startsWith("STN."));
+            assertTrue(json.has(Claim.KEY.name().toLowerCase()));
+            assertTrue(json.has(Claim.PUB.name().toLowerCase()));
+            assertTrue(json.getString("key").startsWith(suiteName + "."));
+            assertTrue(json.getString("pub").startsWith(suiteName + "."));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

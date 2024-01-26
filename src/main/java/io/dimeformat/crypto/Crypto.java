@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat.crypto;
 
@@ -77,7 +77,7 @@ public final class Crypto {
     public Signature generateSignature(Item item, Key key) throws CryptographyException {
         if (item == null) { throw new IllegalArgumentException("Unable to generate signature, item to sign must not be null."); }
         if (key == null || key.getSecret() == null) { throw new IllegalArgumentException("Unable to generate signature, key or secret key must not be null."); }
-        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to generate signature, provided key does not specify SIGN usage."); }
+        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to generate signature, provided key does not specify 'SIGN' capability."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         byte[] bytes = impl.generateSignature(item, key);
         String name = item.isLegacy() ? null : generateKeyName(key);
@@ -96,7 +96,7 @@ public final class Crypto {
         if (item == null) { throw new IllegalArgumentException("Unable to verify signature, item to sign must not be null."); }
         if (signature == null) { throw new IllegalArgumentException("Unable to verify signature, item to sign must not be null."); }
         if (key == null || key.getPublic() == null) { throw new IllegalArgumentException("Unable to verify signature, key or public key must not be null."); }
-        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to verify signature, provided key does not specify SIGN usage."); }
+        if (!key.hasCapability(KeyCapability.SIGN)) { throw new IllegalArgumentException("Unable to verify signature, provided key does not specify 'SIGN' capability."); }
         ICryptoSuite impl = getCryptoSuite(key.getCryptoSuiteName());
         return impl.verifySignature(item,
                 signature.getBytes(),
@@ -122,7 +122,7 @@ public final class Crypto {
      * @throws CryptographyException If anything goes wrong.
      */
     public Key generateKey(List<KeyCapability> capabilities, String suiteName) throws CryptographyException {
-        if (capabilities == null || capabilities.size() == 0) { throw new CryptographyException("Key usage must not be null or empty."); }
+        if (capabilities == null || capabilities.isEmpty()) { throw new CryptographyException("Key usage must not be null or empty."); }
         ICryptoSuite impl = getCryptoSuite(suiteName);
         return impl.generateKey(capabilities);
     }
@@ -200,7 +200,7 @@ public final class Crypto {
      * Encodes a key from a byte array to a string. The encoding format is determined by the cryptographic suite
      * specified.
      * @param rawKey The raw key bytes to encode.
-     * @param claim The name of the claim to encode the key for, should be {@link Claim#KEY} or {@link Claim#PUB}
+     * @param claim The name of the claim to encode the key for, must be {@link Claim#KEY} or {@link Claim#PUB}.
      * @param suiteName The cryptographic suite to use.
      * @return The encoded key.
      */
