@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -20,7 +20,55 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PerformanceTest {
 
-    static final int PERFORMANCE_ROUNDS = 10;
+    static final int PERFORMANCE_ROUNDS = 100000;
+
+    @Test
+    void signaturePerformanceTest() throws Exception {
+
+        System.out.println("-- Signature performance tests --\n");
+        System.out.println("Number of rounds: " + PERFORMANCE_ROUNDS + "\n");
+
+        Key key = Key.generateKey(KeyCapability.SIGN);
+        Message message = new Message(UUID.randomUUID(),
+                UUID.randomUUID(),
+                Dime.VALID_FOR_1_HOUR,
+                Commons.CONTEXT);
+        message.setPayload(Commons.PAYLOAD.getBytes(), Commons.MIMETYPE);
+
+        System.out.print("* Running signing tests...");
+        System.out.flush();
+        long totalStart = System.nanoTime();
+        long start = System.nanoTime();
+
+        for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
+            message.sign(key);
+            message.strip();
+        }
+
+        long end = System.nanoTime();
+        double result = PerformanceTest.convertToSeconds(end - start);
+        System.out.println(" DONE \n\t - Total: " + result+ "s\n");
+
+        System.out.print("* Running verification tests...");
+        System.out.flush();
+
+        message.sign(key);
+
+        start = System.nanoTime();
+
+        for(int i = 0; i < PerformanceTest.PERFORMANCE_ROUNDS; i++) {
+            message.verify(key);
+        }
+
+        end = System.nanoTime();
+        result = PerformanceTest.convertToSeconds(end - start);
+        System.out.println(" DONE \n\t - Total: " + result + "s\n");
+
+        long totalEnd = System.nanoTime();
+        double totalResult = PerformanceTest.convertToSeconds(totalEnd - totalStart);
+        System.out.println("\nTOTAL: " + totalResult + "s");
+
+    }
 
     @Test
     void identityPerformanceTest() {

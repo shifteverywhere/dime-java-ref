@@ -49,10 +49,9 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public byte[] generateSignature(Item item, Key key) throws CryptographyException {
-        String thumbprint = item.generateThumbprint(false, this._suiteName);
-        if (thumbprint != null && !thumbprint.isEmpty()) {
+        byte[] data = hash(item.rawEncoded(false));
+        if (data != null && data.length > 0) {
             byte[] signature = new byte[NaClSuite.NBR_SIGNATURE_BYTES];
-            byte[] data = thumbprint.getBytes(StandardCharsets.UTF_8);
             int result = this._sodium.crypto_sign_detached(signature,
                     null,
                     data,
@@ -67,9 +66,8 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public boolean verifySignature(Item item, byte[] signature, Key key) throws CryptographyException {
-        String thumbprint =item.generateThumbprint(false, this._suiteName);
-        if (thumbprint != null && !thumbprint.isEmpty()) {
-            byte[] data = thumbprint.getBytes(StandardCharsets.UTF_8);
+        byte[] data = hash(item.rawEncoded(false));
+            if (data != null && data.length > 0) {
             return (this._sodium.crypto_sign_verify_detached(signature,
                     data,
                     data.length,
@@ -175,9 +173,7 @@ class NaClSuite implements ICryptoSuite {
     protected final SodiumJava _sodium;
     protected final String _suiteName;
 
-    /// PRIVATE ///
-
-    private byte[] hash(byte[] data) throws CryptographyException {
+    protected byte[] hash(byte[] data) throws CryptographyException {
         byte[] hash = new byte[NaClSuite.NBR_HASH_BYTES];
         if (this._sodium.crypto_generichash(hash, hash.length, data, data.length, null, 0) != 0) {
             throw new CryptographyException("Cryptographic operation failed.");
