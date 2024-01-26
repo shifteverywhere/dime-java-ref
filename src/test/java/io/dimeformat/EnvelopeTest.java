@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -54,8 +54,8 @@ class EnvelopeTest {
             assertNotNull(envelope.getClaim(Claim.AMB));
             envelope.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(envelope.getClaim(Claim.AUD));
-            envelope.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(envelope.getClaim(Claim.CNM));
+            envelope.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(envelope.getClaim(Claim.CMN));
             envelope.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(envelope.getClaim(Claim.CTX));
             envelope.putClaim(Claim.EXP, Instant.now());

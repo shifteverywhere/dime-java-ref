@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -54,8 +54,8 @@ class KeyTest {
             assertNotNull(key.getClaim(Claim.AMB));
             key.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(key.getClaim(Claim.AUD));
-            key.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(key.getClaim(Claim.CNM));
+            key.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(key.getClaim(Claim.CMN));
             key.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(key.getClaim(Claim.CTX));
             key.putClaim(Claim.EXP, Instant.now());
@@ -214,15 +214,15 @@ class KeyTest {
     @Test
     void importTest1() {
         try {
-            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDIyLTEwLTAzVDE3OjM3OjAyLjYzMDAzOFoiLCJrZXkiOiJTVE4uYUJqa3pLWDJCNVp3RzFucmJtTkZtdWdacDZvM2k2Rms4b1ZtanRmb3B2Z1RQSmNQY0VNb3R0WmppMmVqVW1NV2dFRHVrTER5RkJjaFR3NUtCb0tqRkY1NXdDVFdrIiwicHViIjoiU1ROLkxvOGNRYlVVOXdpRFkxcmdEYnhZREF6c204Z2lzN1JyREZzbkgzQmN2Ylk4d3BCTkMiLCJ1aWQiOiJjOGYyNmIxZi0zNDA2LTRjMjktYTQ3ZS1iODQ4Mjc4MGFiNjQifQ";
+            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJpYXQiOiIyMDI0LTAxLTI2VDE1OjA5OjA5Ljk1NTYyNTVaIiwia2V5IjoiTmFDbC5PcDN3Yk0zaFNsdS93eXFFZkp2bDJhTHNBdGpQWmE4aVlYWUpvejhhY0pUUVoyTFkyZkhhL2VvQlVPRFhzaThzdFY1K1B4dHVYL29nTEh1ZUFQMDRrUSIsInB1YiI6Ik5hQ2wuMEdkaTJObngydjNxQVZEZzE3SXZMTFZlZmo4YmJsLzZJQ3g3bmdEOU9KRSIsInVpZCI6IjRiOTQxZWE0LTFjMmItNDBjZi1iYjMwLWIzZmE3N2ZkMDNhMCJ9";
             Key key = Item.importFromEncoded(exported);
             assertNotNull(key);
             assertEquals(1, key.getCapability().size());
             assertTrue(key.hasCapability(KeyCapability.SIGN));
-            assertEquals(UUID.fromString("c8f26b1f-3406-4c29-a47e-b8482780ab64"), key.getClaim(Claim.UID));
-            assertEquals(Instant.parse("2022-10-03T17:37:02.630038Z"), key.getClaim(Claim.IAT));
-            assertEquals("STN.aBjkzKX2B5ZwG1nrbmNFmugZp6o3i6Fk8oVmjtfopvgTPJcPcEMottZji2ejUmMWgEDukLDyFBchTw5KBoKjFF55wCTWk", key.getSecret());
-            assertEquals("STN.Lo8cQbUU9wiDY1rgDbxYDAzsm8gis7RrDFsnH3BcvbY8wpBNC", key.getPublic());
+            assertEquals(UUID.fromString("4b941ea4-1c2b-40cf-bb30-b3fa77fd03a0"), key.getClaim(Claim.UID));
+            assertEquals(Instant.parse("2024-01-26T15:09:09.9556255Z"), key.getClaim(Claim.IAT));
+            assertEquals("NaCl.Op3wbM3hSlu/wyqEfJvl2aLsAtjPZa8iYXYJoz8acJTQZ2LY2fHa/eoBUODXsi8stV5+PxtuX/ogLHueAP04kQ", key.getSecret());
+            assertEquals("NaCl.0Gdi2Nnx2v3qAVDg17IvLLVefj8bbl/6ICx7ngD9OJE", key.getPublic());
         } catch (Exception e) {
             fail("Unexpected exception thrown.");
         }
@@ -307,8 +307,8 @@ class KeyTest {
     void commonNameTest1() {
         try {
             Key key = Key.generateKey(KeyCapability.SIGN);
-            key.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertEquals(key.getClaim(Claim.CNM), Commons.COMMON_NAME);
+            key.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertEquals(key.getClaim(Claim.CMN), Commons.COMMON_NAME);
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }
@@ -317,9 +317,11 @@ class KeyTest {
     @Test
     void commonNameTest2() {
         try {
-            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjbm0iOiJEaU1FIiwiaWF0IjoiMjAyMy0wMi0yM1QxMzo1NjoxOC45NTM3MTE1ODZaIiwia2V5IjoiTmFDbC56TlE2cVJQOFpWV2prWlFVVFVhT2xmcUdYdEpOdjUvZUV2dUxzeGJJWndxeU03emNFSVNPNnc3ckdRNzBFc0kvT1kxZEx2aU45Wm1MTm51QklWeGZuUSIsInB1YiI6Ik5hQ2wuc2pPODNCQ0VqdXNPNnhrTzlCTENQem1OWFM3NGpmV1ppelo3Z1NGY1g1MCIsInVpZCI6IjliM2IwZjQyLWI5ZDMtNDU1MC1hNWEyLTRiMzY2OWY5OWYwYyJ9";
+            String exported = "Di:KEY.eyJjYXAiOlsic2lnbiJdLCJjbW4iOiJEaU1FIiwiaWF0IjoiMjAyNC0wMS0yNlQxNzoyODowNi4xOTY0MzRaIiwia2V5IjoiTmFDbC5GVjNOM3crSXAxeHY3OHZ2L3JrWUJibzQyZElGVnZ6cTN3SGo1cUZTazVjcXpiTStrbEFuYTZjalV3bURpeVRyc2FJdWY2MmFHNWFuNFArd1FrV0h5QSIsInB1YiI6Ik5hQ2wuS3MyelBwSlFKMnVuSTFNSmc0c2s2N0dpTG4rdG1odVdwK0Qvc0VKRmg4ZyIsInVpZCI6ImZjZDNkMzI2LWY2NzQtNGQyZi1iODFhLTA3NWZlYmIwYTFkNSJ9";
             Key key = Item.importFromEncoded(exported);
-            assertEquals(key.getClaim(Claim.CNM), Commons.COMMON_NAME);
+            assertNotNull(key);
+            assertNotNull(key.getClaim(Claim.CMN));
+            assertEquals(Commons.COMMON_NAME, key.getClaim(Claim.CMN));
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

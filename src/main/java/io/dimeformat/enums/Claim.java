@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat.enums;
 
@@ -30,7 +30,7 @@ public enum Claim {
     /**
      * Common Name - A common name, or alias, for the item, may be used to simplify manual identification of items (All).
      */
-    CNM,
+    CMN,
     /**
      * Context - The context for in which the item is to be used or valid (All).
      */

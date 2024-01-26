@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -54,8 +54,8 @@ class TagTest {
             assertNotNull(tag.getClaim(Claim.AMB));
             tag.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(tag.getClaim(Claim.AUD));
-            tag.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(tag.getClaim(Claim.CNM));
+            tag.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(tag.getClaim(Claim.CMN));
             tag.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(tag.getClaim(Claim.CTX));
             tag.putClaim(Claim.EXP, Instant.now());

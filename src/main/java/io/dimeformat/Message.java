@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -116,12 +116,6 @@ public class Message extends Data {
         setClaimValue(Claim.IAT, iat);
         setClaimValue(Claim.EXP, exp);
         setClaimValue(Claim.CTX, context);
-    }
-
-    @Override
-    public String generateThumbprint() throws CryptographyException {
-        if (!isSigned()) { throw new IllegalStateException("Unable to generate thumbprint, must be signed first."); }
-        return super.generateThumbprint();
     }
 
     /**
@@ -247,7 +241,7 @@ public class Message extends Data {
 
     /// PRIVATE ///
 
-    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CNM, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
+    private static final List<Claim> allowedClaims = List.of(Claim.AMB, Claim.AUD, Claim.CMN, Claim.CTX, Claim.EXP, Claim.IAT, Claim.ISS, Claim.ISU, Claim.KID, Claim.MIM, Claim.MTD, Claim.SUB, Claim.SYS, Claim.UID);
     private static final int MINIMUM_NBR_COMPONENTS = 4;
 
 }

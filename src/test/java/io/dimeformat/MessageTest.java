@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -58,8 +58,8 @@ class MessageTest {
             assertNotNull(message.getClaim(Claim.AMB));
             message.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(message.getClaim(Claim.AUD));
-            message.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(message.getClaim(Claim.CNM));
+            message.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(message.getClaim(Claim.CMN));
             message.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(message.getClaim(Claim.CTX));
             message.putClaim(Claim.EXP, Instant.now());
@@ -640,19 +640,6 @@ class MessageTest {
             issuerMessage2.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
             issuerMessage2.sign(Commons.getIssuerKey());
             assertNotEquals(issuerMessage1.generateThumbprint(), issuerMessage2.generateThumbprint());
-        } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e);
-        }
-    }
-
-    @Test
-    void thumbprintTest3() {
-        try {
-            Message message = new Message(Commons.getAudienceIdentity().getClaim(Claim.SUB), Commons.getIssuerIdentity().getClaim(Claim.SUB), Dime.VALID_FOR_1_MINUTE);
-            message.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
-            message.generateThumbprint();
-        } catch (IllegalStateException e) {
-            /* All is well */
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
         }

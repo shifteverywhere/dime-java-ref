@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -84,8 +84,8 @@ class DataTest {
             assertNotNull(data.getClaim(Claim.AMB));
             data.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(data.getClaim(Claim.AUD));
-            data.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(data.getClaim(Claim.CNM));
+            data.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(data.getClaim(Claim.CMN));
             data.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(data.getClaim(Claim.CTX));
             data.putClaim(Claim.EXP, Instant.now());

@@ -5,7 +5,7 @@
 //  entities in a network.
 //
 //  Released under the MIT licence, see LICENSE for more information.
-//  Copyright (c) 2022 Shift Everywhere AB. All rights reserved.
+//  Copyright (c) 2024 Shift Everywhere AB. All rights reserved.
 //
 package io.dimeformat;
 
@@ -55,8 +55,8 @@ class IdentityTest {
             assertNotNull(identity.getClaim(Claim.AMB));
             identity.putClaim(Claim.AUD, UUID.randomUUID());
             assertNotNull(identity.getClaim(Claim.AUD));
-            identity.putClaim(Claim.CNM, Commons.COMMON_NAME);
-            assertNotNull(identity.getClaim(Claim.CNM));
+            identity.putClaim(Claim.CMN, Commons.COMMON_NAME);
+            assertNotNull(identity.getClaim(Claim.CMN));
             identity.putClaim(Claim.CTX, Commons.CONTEXT);
             assertNotNull(identity.getClaim(Claim.CTX));
             identity.putClaim(Claim.EXP, Instant.now());
