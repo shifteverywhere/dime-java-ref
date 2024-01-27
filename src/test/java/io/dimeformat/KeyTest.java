@@ -327,4 +327,14 @@ class KeyTest {
         }
     }
 
+    @Test
+    void nameTest1()
+    {
+        Key key1 = Key.generateKey(KeyCapability.SIGN);
+        Key key2 = Key.generateKey(KeyCapability.SIGN);
+        assertNotNull(key1.getName());
+        assertNotNull(key2.getName());
+        assertNotEquals(key1.getName(), key2.getName());
+    }
+
 }

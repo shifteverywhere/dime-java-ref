@@ -102,6 +102,14 @@ public class Key extends Item {
     }
 
     /**
+     * Returns the unique name of this key. This name will be included in any signatures produced.
+     * @return The name of the key.
+     */
+    public String getName() {
+        return Dime.crypto.generateKeyName(this);
+    }
+
+    /**
      * Returns a list of cryptographic capabilities that the key may perform.
      * @return List of capabilities.
      */
