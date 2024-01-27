@@ -120,7 +120,7 @@ public class Envelope extends Item {
         } else {
             envelope.components.add(sections[sections.length -1]);
             envelope.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.SECTION_DELIMITER));
-            if (envelope.getSignatures().get(0).isLegacy()) {
+            if (envelope.extractSignatures().get(0).isLegacy()) {
                 envelope.markAsLegacy();
             }
         }
@@ -308,7 +308,7 @@ public class Envelope extends Item {
             this.encoded = builder.toString();
         }
         if (withSignature && isSigned()) {
-            return this.encoded + Dime.SECTION_DELIMITER + Signature.toEncoded(getSignatures());
+            return this.encoded + Dime.SECTION_DELIMITER + Signature.toEncoded(extractSignatures());
         }
         return this.encoded;
     }

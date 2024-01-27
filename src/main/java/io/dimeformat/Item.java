@@ -35,7 +35,18 @@ public abstract class Item {
      * @return true or false.
      */
     public boolean isSigned() {
-        return this.isSigned;
+        return _signatureList != null && !_signatureList.isEmpty();
+    }
+
+    /**
+     * Returns a read-only list of all attached signatures, null if no signatures are attached.
+     * @return Any attached signatures as a read-only list.
+     */
+    public List<Signature> getSignatures() {
+        if (isSigned()) {
+            return Collections.unmodifiableList(this._signatureList);
+        }
+        return null;
     }
 
     /**
@@ -141,10 +152,10 @@ public abstract class Item {
     public void sign(Key signingKey) throws CryptographyException {
         if (isLegacy() && isSigned()) { throw new IllegalStateException("Unable to sign, legacy item is already signed."); }
         if (signingKey == null || signingKey.getSecret() == null) { throw new IllegalArgumentException("Unable to sign, key for signing must not be null. (I1004)"); }
-        if (isSigned() && Signature.find(Dime.crypto.generateKeyName(signingKey), getSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
+        if (isSigned() && Signature.find(Dime.crypto.generateKeyName(signingKey), extractSignatures()) != null) { throw new IllegalStateException("Item already signed with provided key."); }
         try {
             Signature signature = Dime.crypto.generateSignature(this, signingKey);
-            getSignatures().add(signature);
+            extractSignatures().add(signature);
             this.isSigned = true;
         } catch (Exception e) {
             throw new CryptographyException("Unable to sign item, invalid data.");
@@ -158,7 +169,7 @@ public abstract class Item {
     public boolean strip() {
         this.encoded = null;
         this.components = null;
-        this._signatures = null;
+        this._signatureList = null;
         this.isSigned = false;
         return true;
     }
@@ -171,9 +182,9 @@ public abstract class Item {
     public boolean strip(Key key) {
         if (isLegacy() || !isSigned()) { return false; }
        String identifier = Dime.crypto.generateKeyName(key);
-        Signature signature = Signature.find(identifier, getSignatures());
+        Signature signature = Signature.find(identifier, extractSignatures());
         if (signature != null) {
-            return getSignatures().remove(signature);
+            return extractSignatures().remove(signature);
         }
         return false;
     }
@@ -354,7 +365,7 @@ public abstract class Item {
         if (verifyKey == null) {
             return Dime.keyRing.verify(this);
         }
-        Signature signature = isLegacy() ? getSignatures().get(0) : Signature.find(Dime.crypto.generateKeyName(verifyKey), getSignatures());
+        Signature signature = isLegacy() ? extractSignatures().get(0) : Signature.find(Dime.crypto.generateKeyName(verifyKey), extractSignatures());
         if (signature == null) {
             return IntegrityState.FAILED_KEY_MISMATCH;
         }
@@ -502,15 +513,15 @@ public abstract class Item {
         return getClaimMap().size() > 0;
     }
 
-    protected final List<Signature> getSignatures() {
-        if (this._signatures == null) {
+    protected final List<Signature> extractSignatures() {
+        if (this._signatureList == null) {
             if (isSigned()) {
-                this._signatures = Signature.fromEncoded(this.components.get(this.components.size() - 1));
+                this._signatureList = Signature.fromEncoded(this.components.get(this.components.size() - 1));
             } else {
-               this._signatures = new ArrayList<>();
+               this._signatureList = new ArrayList<>();
             }
         }
-        return this._signatures;
+        return this._signatureList;
     }
 
     /// --- ENCODING/DECODING --- ///
@@ -522,7 +533,7 @@ public abstract class Item {
             this.encoded = builder.toString();
         }
         if (withSignature && isSigned()) {
-            return this.encoded + Dime.COMPONENT_DELIMITER + Signature.toEncoded(getSignatures());
+            return this.encoded + Dime.COMPONENT_DELIMITER + Signature.toEncoded(extractSignatures());
         }
         return this.encoded;
     }
@@ -542,13 +553,10 @@ public abstract class Item {
     }
 
     protected final void decode(String encoded) throws InvalidFormatException {
-        String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
-        if (array.length < getMinNbrOfComponents()) { throw new InvalidFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
-        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getHeader()) != 0) { throw new InvalidFormatException("Unexpected Dime item identifier, expected: " + getHeader() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
-        this.components = new ArrayList<>(Arrays.asList(array));
+        this.components = new ArrayList<>(Arrays.asList(getComponents(encoded)));
         customDecoding(this.components);
         if (isSigned()) {
-            if (getSignatures().get(0).isLegacy()) {
+            if (extractSignatures().get(0).isLegacy()) {
                 markAsLegacy();
             }
             this.encoded = encoded.substring(0, encoded.lastIndexOf(Dime.COMPONENT_DELIMITER));
@@ -572,9 +580,16 @@ public abstract class Item {
     /// PRIVATE ///
 
     private ClaimsMap _claims;
-    private List<Signature> _signatures;
+    private List<Signature> _signatureList;
     @Deprecated
     private boolean legacy = false;
+
+    private String[] getComponents(String encoded) throws InvalidFormatException {
+        String[] array = encoded.split("\\" + Dime.COMPONENT_DELIMITER);
+        if (array.length < getMinNbrOfComponents()) { throw new InvalidFormatException("Unexpected number of components for Dime item, expected at least " + getMinNbrOfComponents() + ", got " + array.length +"."); }
+        if (array[Item.COMPONENTS_IDENTIFIER_INDEX].compareTo(getHeader()) != 0) { throw new InvalidFormatException("Unexpected Dime item identifier, expected: " + getHeader() + ", got " + array[Item.COMPONENTS_IDENTIFIER_INDEX] + "."); }
+        return array;
+    }
 
     private ClaimsMap getClaimMap() {
         if (this._claims != null) { return this._claims; }
@@ -589,10 +604,10 @@ public abstract class Item {
 
     private static Item itemFromHeader(String header) throws Exception {
         var t = Item.classFromItemHeader(header);
-        return (t != null) ? (Item) Objects.requireNonNull(t).getDeclaredConstructor().newInstance() : null;
+        return (Item) Objects.requireNonNull(t).getDeclaredConstructor().newInstance();
     }
 
-    private static Class<?> classFromItemHeader(String header) {
+    private static Class<?> classFromItemHeader(String header) throws IllegalArgumentException {
         switch (header) {
             case Data.HEADER: return Data.class;
             case Identity.HEADER: return Identity.class;
@@ -600,7 +615,7 @@ public abstract class Item {
             case Key.HEADER: return Key.class;
             case Message.HEADER: return Message.class;
             case Tag.HEADER: return Tag.class;
-            default: return null;
+            default: throw new IllegalArgumentException("Invalid item header: " + header);
         }
     }
 
