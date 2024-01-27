@@ -35,7 +35,7 @@ public abstract class Item {
      * @return true or false.
      */
     public boolean isSigned() {
-        return _signatureList != null && !_signatureList.isEmpty();
+        return isSigned;
     }
 
     /**
