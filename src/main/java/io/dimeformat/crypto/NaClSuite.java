@@ -49,8 +49,9 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public byte[] generateSignature(Item item, Key key) throws CryptographyException {
-        byte[] data = hash(item.rawEncoded(false));
-        if (data != null && data.length > 0) {
+        byte[] data = item.generateThumbprint(false, this._suiteName)
+                .getBytes(StandardCharsets.UTF_8);
+        if (data.length > 0) {
             byte[] signature = new byte[NaClSuite.NBR_SIGNATURE_BYTES];
             int result = this._sodium.crypto_sign_detached(signature,
                     null,
@@ -66,8 +67,9 @@ class NaClSuite implements ICryptoSuite {
     }
 
     public boolean verifySignature(Item item, byte[] signature, Key key) throws CryptographyException {
-        byte[] data = hash(item.rawEncoded(false));
-            if (data != null && data.length > 0) {
+        byte[] data = item.generateThumbprint(false, this._suiteName)
+                .getBytes(StandardCharsets.UTF_8);
+            if (data.length > 0) {
             return (this._sodium.crypto_sign_verify_detached(signature,
                     data,
                     data.length,

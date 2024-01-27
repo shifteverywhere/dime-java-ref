@@ -212,8 +212,7 @@ class IdentityIssuingRequestTest {
         try {
             IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
             String thumbprint = iir.generateThumbprint();
-            //assertTrue(thumbprint != null);
-            assertTrue(thumbprint.length() > 0);
+            assertFalse(thumbprint.isEmpty());
             assertEquals(thumbprint, iir.generateThumbprint());
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -223,8 +222,8 @@ class IdentityIssuingRequestTest {
     @Test
     void thumbprintTest2() {
         try {
-            IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
-            IdentityIssuingRequest iir2 = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
+            IdentityIssuingRequest iir1 = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN));
+            IdentityIssuingRequest iir2 = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN));
             assertNotEquals(iir1.generateThumbprint(), iir2.generateThumbprint(), "Thumbprints of different IIRs should not be the same");
         } catch (Exception e) {
             fail("Unexpected exception thrown: " + e);
@@ -234,10 +233,10 @@ class IdentityIssuingRequestTest {
     @Test
     void exportTest1() {
         try {
-            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(List.of(KeyCapability.SIGN)));
+            IdentityIssuingRequest iir = IdentityIssuingRequest.generateIIR(Key.generateKey(KeyCapability.SIGN));
             String exported = iir.exportToEncoded();
             assertNotNull(exported);
-            assertTrue(exported.length() > 0);
+            assertFalse(exported.isEmpty());
             assertTrue(exported.startsWith(Commons.fullHeaderFor(IdentityIssuingRequest.HEADER)));
             assertEquals(3, exported.split("\\" + ".").length);
         } catch (Exception e) {

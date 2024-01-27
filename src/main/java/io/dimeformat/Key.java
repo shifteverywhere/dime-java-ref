@@ -186,6 +186,7 @@ public class Key extends Item {
      */
     public static Key generateKey(List<KeyCapability> capabilities, long validFor, UUID issuerId, String context, String suiteName) {
         try {
+            if (context != null && context.length() > Dime.MAX_CONTEXT_LENGTH) { throw new IllegalArgumentException("Context must not be longer than " + Dime.MAX_CONTEXT_LENGTH + "."); }
             Key key = Dime.crypto.generateKey(capabilities, suiteName);
             if (validFor != Dime.NO_EXPIRATION) {
                 key.setClaimValue(Claim.EXP, ((Instant) key.getClaim(Claim.IAT)).plusSeconds(validFor));
