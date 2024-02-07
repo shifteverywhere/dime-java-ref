@@ -86,6 +86,19 @@ class ClaimsMap {
         _claims.remove(claim.toString());
     }
 
+    Map<Claim, Object> copyClaims() {
+
+        if (this._claims != null) {
+            HashMap<Claim, Object> claims = new HashMap<>();
+            for (String key: this._claims.keySet()) {
+                Claim claim = Claim.valueOf(key.toUpperCase());
+                claims.put(claim, this._claims.get(key));
+            }
+            return claims;
+        }
+        return null;
+    }
+
     /// PRIVATE ///
 
     protected HashMap<String, Object> _claims;

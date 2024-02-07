@@ -476,7 +476,7 @@ class EnvelopeTest {
             envelope.sign(Commons.getIssuerKey());
             String exported = envelope.exportToEncoded();
             assertNotNull(exported);
-            assertTrue(exported.length() > 0);
+            assertFalse(exported.isEmpty());
             assertTrue(exported.startsWith(Envelope.HEADER));
             assertEquals(3, exported.split(":").length);
         } catch (Exception e) {
@@ -511,7 +511,7 @@ class EnvelopeTest {
             envelope.sign(Commons.getIssuerKey());
             String exported = envelope.exportToEncoded();
             assertNotNull(exported);
-            assertTrue(exported.length() > 0);
+            assertFalse(exported.isEmpty());
             assertTrue(exported.startsWith(Envelope.HEADER));
             assertEquals(3, exported.split(":").length);
         } catch (Exception e) {

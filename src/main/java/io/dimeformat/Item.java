@@ -50,6 +50,14 @@ public abstract class Item {
     }
 
     /**
+     * Returns all set claims and values.
+     * @return A Map with all set claims and values.
+     */
+    public Map<Claim, Object> getClaims() {
+        return getClaimMap().copyClaims();
+    }
+
+    /**
      * Gets an item claim. Will throw IllegalArgumentException if claim requested is not support by the item type.
      * @param claim The claim to get the value for.
      * @return The claim value.
