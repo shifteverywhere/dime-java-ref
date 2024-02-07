@@ -1,5 +1,15 @@
 # CHANGES
 
+## Version 1.2.8 - 2024-02-07
+- Restrictions to only generate thumbprint of signed Message/Data items removed
+- Minor updates unit tests
+- Minor corrections to documentations
+- Fixes an issue with Common Name claim
+- Adds method to get all attached signatures of an Item as a list of Signature instances
+- Adds method to get the unique name of a key
+- Adds method to get all claims and values for an Item
+- Updates dependencies
+
 ## Version 1.2.7 - 2023-03-09
 - Updates dependencies, particularly org.json:json due to CVE-2022-45688
 
@@ -57,7 +67,7 @@
 - IntegrityState introduced to hold result of a verification
 - Introduced getClaim/putClaim/removeClaim to allow for more flexible claim handling
   - Removes many claim convenience methods, simplifies usage and code
-- Removes Claim.USE and replaces it with Claim.CAP (KeyCapability/IdentityCapability)
+- Removes "Claim.USE" and replaces it with "Claim.CAP" (KeyCapability/IdentityCapability)
 - Cleaned up, removed and renamed package specific exceptions
 
 **NOTE** *Version 1.2.0 includes changes that will break 1.1.1 and earlier. These are only code-breaking changes, so all previously created DiME items will continue to work.*
@@ -99,4 +109,4 @@
 ## Version 1.0.0 - 2022-01-24
 - Official version 1.0.0 (**Hurray!**)
 
-**Copyright (c) 2023 Shift Everywhere AB. All rights reserved.**
+**Copyright (c) 2024 Shift Everywhere AB. All rights reserved.**
