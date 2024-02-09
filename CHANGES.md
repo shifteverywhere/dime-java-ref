@@ -1,13 +1,18 @@
 # CHANGES
 
+## Version 1.2.9 - 2024-02-07
+- Updates dependencies
+- Specifies sourceCompatibility/targetCompatibility to JAVA 11 (55)
+
 ## Version 1.2.8 - 2024-02-07
-- Restrictions to only generate thumbprint of signed Message/Data items removed
+- Restrictions to only generate thumbprints of signed Message/Data items removed
 - Minor updates unit tests
-- Minor corrections to documentations
+- Minor corrections to documentation
 - Fixes an issue with Common Name claim
-- Adds method to get all attached signatures of an Item as a list of Signature instances
-- Adds method to get the unique name of a key
-- Adds method to get all claims and values for an Item
+- Adds a method to get all attached signatures of an Item as a list of Signature instances
+- Adds a method to get the unique name of a key
+- Adds a method to get all claims and values for an Item
+- Exposes a Map with all set claims in an item
 - Updates dependencies
 
 ## Version 1.2.7 - 2023-03-09
