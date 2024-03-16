@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"io.dimeformat"},{"l":"io.dimeformat.crypto"},{"l":"io.dimeformat.enums"},{"l":"io.dimeformat.exceptions"},{"l":"io.dimeformat.keyring"},{"l":"org.webpki.jcs"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"io.dimeformat"},{"l":"io.dimeformat.crypto"},{"l":"io.dimeformat.enums"},{"l":"io.dimeformat.exceptions"},{"l":"io.dimeformat.keyring"},{"l":"org.webpki.jcs"}]
