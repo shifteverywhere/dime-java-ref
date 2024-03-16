@@ -11,6 +11,7 @@ package io.dimeformat;
 
 import io.dimeformat.enums.Claim;
 import io.dimeformat.enums.KeyCapability;
+import io.dimeformat.keyring.IntegrityState;
 import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -153,7 +154,7 @@ class DataTest {
             data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8), Commons.MIMETYPE);
             String encoded = data.exportToEncoded();
             assertNotNull(encoded);
-            assertTrue(encoded.length() > 0);
+            assertFalse(encoded.isEmpty());
             assertTrue(encoded.startsWith(Commons.fullHeaderFor(Data.HEADER)));
             assertEquals(3, encoded.split("\\.").length);
             data.sign(Commons.getIssuerKey());
@@ -271,6 +272,83 @@ class DataTest {
             new Data(Commons.getIssuerIdentity().getClaim(Claim.SUB), context);
         } catch (IllegalArgumentException e) { return; } // All is well
         fail("Should not happen.");
+    }
+
+    @Test
+    void stripTest1() {
+        try {
+            Data data = new Data();
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            assertTrue(data.isSigned());
+            try { data.sign(Commons.getIssuerKey()); } catch (IllegalStateException e) { /* All is good */ }
+            assertTrue(data.strip());
+            assertFalse(data.isSigned());
+            data.sign(Commons.getIssuerKey());
+            assertTrue(data.isSigned());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void stripTest2() {
+        try {
+            Data data = new Data();
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            data.sign(Commons.getAudienceKey());
+            assertEquals(2, data.getSignatures().size());
+            assertTrue(data.isSigned());
+            assertTrue(data.strip());
+            try { data.sign(Commons.getIssuerKey()); } catch (IllegalStateException e) { /* All is good */ }
+            data.strip();
+            assertNull(data.getSignatures());
+            assertFalse(data.isSigned());
+            data.sign(Commons.getIssuerKey());
+            assertEquals(1, data.getSignatures().size());
+            assertTrue(data.isSigned());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void stripTest3() {
+        try {
+            Data data = new Data();
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            data.sign(Commons.getAudienceKey());
+            assertEquals(2, data.getSignatures().size());
+            assertTrue(data.isSigned());
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getAudienceKey()));
+            data.strip(Commons.getIssuerKey());
+            assertEquals(IntegrityState.FAILED_KEY_MISMATCH, data.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getAudienceKey()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
+    }
+
+    @Test
+    void stripTest4() {
+        try {
+            Data data = new Data();
+            data.setPayload(Commons.PAYLOAD.getBytes(StandardCharsets.UTF_8));
+            data.sign(Commons.getIssuerKey());
+            data.sign(Commons.getAudienceKey());
+            assertEquals(2, data.getSignatures().size());
+            assertTrue(data.isSigned());
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getAudienceKey()));
+            data.strip(Commons.getIssuerKey().getName());
+            assertEquals(IntegrityState.FAILED_KEY_MISMATCH, data.verify(Commons.getIssuerKey()));
+            assertEquals(IntegrityState.COMPLETE, data.verify(Commons.getAudienceKey()));
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e);
+        }
     }
 
 }
