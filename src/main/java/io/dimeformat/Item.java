@@ -85,6 +85,7 @@ public abstract class Item {
     public void removeClaim(Claim claim) {
         throwIfSigned();
         getClaimMap().remove(claim);
+        this.encoded = null;
     }
 
     /**
@@ -292,7 +293,7 @@ public abstract class Item {
     }
 
     /**
-     * Verifies the integrity and over all validity and trust of the item. The verification will be made using the public
+     * Verifies the integrity and the overall validity and trust of the item. The verification will be made using the public
      * key in the provided identity. The verification will also check if the item has been issued by the provided
      * identity, if the "iss" claim has been set.
      * @param trustedIdentity A trusted identity to verify with.
@@ -441,6 +442,7 @@ public abstract class Item {
         for (Item item: items) {
             this.itemLinks.add(new ItemLink(item, cryptoSuite));
         }
+        this.encoded = null;
     }
 
     /**
@@ -523,6 +525,7 @@ public abstract class Item {
 
     protected void setClaimValue(Claim claim, Object value) {
         getClaimMap().put(claim, value);
+        this.encoded = null;
     }
 
     protected abstract boolean allowedToSetClaimDirectly(Claim claim);
