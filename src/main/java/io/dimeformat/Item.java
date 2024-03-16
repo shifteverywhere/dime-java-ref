@@ -188,11 +188,25 @@ public abstract class Item {
      * @return True if the item was stripped of a signature, false otherwise.
      */
     public boolean strip(Key key) {
+        String identifier = Dime.crypto.generateKeyName(key);
+        return strip(identifier);
+    }
+
+    /**
+     * Will remove the signature created by a key identified by provided key name, if one can be found. The name of the
+     * key retrieved by using {@link Key#getName()} or {@link Signature#getName()}.
+     * @param keyName The unique name of the key.
+     * @return True if the item was stripped of a signature, false otherwise.
+     */
+    public boolean strip(String keyName)  {
         if (isLegacy() || !isSigned()) { return false; }
-       String identifier = Dime.crypto.generateKeyName(key);
-        Signature signature = Signature.find(identifier, extractSignatures());
+        if (keyName == null || keyName.isEmpty()) { return false; }
+        Signature signature = Signature.find(keyName, extractSignatures());
         if (signature != null) {
-            return extractSignatures().remove(signature);
+            if (extractSignatures().remove(signature)) {
+                this.isSigned = !extractSignatures().isEmpty();
+                return true;
+            }
         }
         return false;
     }
