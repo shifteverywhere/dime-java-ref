@@ -33,6 +33,11 @@ public class Message extends Data {
         return Message.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Message.allowedClaims;
+    }
+
     /**
      * Returns a public key that was included in the message. Normally this public key was used for a key exchange where
      * the shared key was used to encrypt the payload. This is optional.
@@ -40,7 +45,7 @@ public class Message extends Data {
      */
     public Key getPublicKey() {
         String pub = getClaim(Claim.PUB);
-        if (pub != null && pub.length() > 0) {
+        if (pub != null && !pub.isEmpty()) {
             try {
                 return new Key(List.of(KeyCapability.EXCHANGE), pub, Claim.PUB);
             } catch (CryptographyException ignored) { /* ignored */ }

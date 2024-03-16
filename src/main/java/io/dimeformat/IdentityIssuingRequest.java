@@ -36,6 +36,11 @@ public class IdentityIssuingRequest extends Item {
         return IdentityIssuingRequest.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return IdentityIssuingRequest.allowedClaims;
+    }
+
     /**
      * Returns the public key attached to the IIR. This is the public key attached by the entity and will get included in any
      * issued identity. The equivalent secret (private) key was used to sign the IIR, thus the public key can be used

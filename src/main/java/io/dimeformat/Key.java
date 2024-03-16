@@ -45,6 +45,12 @@ public class Key extends Item {
         return Key.HEADER;
     }
 
+
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Key.allowedClaims;
+    }
+
     /**
      * Returns the cryptographic suite used to generate they key.
      * @return Cryptographic suite

@@ -43,6 +43,11 @@ public class Envelope extends Item {
         return Envelope.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Envelope.allowedClaims;
+    }
+
     /**
      * Returns any attached Di:ME items. This will be an array of Item instances
      * and may be cast by looking at the tag of the item (getTag).

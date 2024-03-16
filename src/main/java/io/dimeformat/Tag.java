@@ -30,6 +30,11 @@ public class Tag extends Item {
         return Tag.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Tag.allowedClaims;
+    }
+
     /**
      * Default constructor.
      * @param issuerId The issuer of the item.

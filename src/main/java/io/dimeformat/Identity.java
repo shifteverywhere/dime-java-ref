@@ -39,6 +39,11 @@ public class Identity extends Item {
         return Identity.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Identity.allowedClaims;
+    }
+
     /**
      * Returns the public key attached to the identity of an entity. The Key instance returned will only contain a
      * public key with the capability 'SIGN'.

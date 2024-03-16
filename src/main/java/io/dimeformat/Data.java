@@ -32,6 +32,11 @@ public class Data extends Item {
         return Data.HEADER;
     }
 
+    @Override
+    public List<Claim> getSupportedClaims() {
+        return Data.allowedClaims;
+    }
+
     /**
      * Creates a new Data instance with the provided parameters.
      * @param issuerId The identifier of the issuer, must not be null.

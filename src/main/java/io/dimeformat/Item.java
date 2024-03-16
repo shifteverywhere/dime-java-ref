@@ -58,6 +58,12 @@ public abstract class Item {
     }
 
     /**
+     * Returns back a list of claims that are supported by the type of item.
+     * @return A list of supported claims.
+     */
+    public abstract List<Claim> getSupportedClaims();
+
+    /**
      * Gets an item claim. Will throw IllegalArgumentException if claim requested is not support by the item type.
      * @param claim The claim to get the value for.
      * @return The claim value.
